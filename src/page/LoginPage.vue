@@ -2,97 +2,97 @@
   <div
     ref="templateRoot"
     style="
-      width: 100%;
-      height: 100vh;
       background-size: 100% auto;
       background-repeat: repeat-y;
       color: white;
     "
-    :style="{
-      backgroundImage: cssBgImgCode,
-      fontSize: theFontSize,
-      minWidth: theFontSizeInPixel * 23 + 'px'
-    }"
+    :style="rootStyle"
   >
     <center-box :x-grow="isCaptchaPanelOpened ? undefined : 1 - 0.618 + ''">
-      <div
-        class="broderBreath"
-        style="box-sizing: border-box; height: 100%; width: 100%; background-color: rgba(0, 0, 0, 0.75)"
-        :style="{
-          padding: boxPaddingInPixel + 'px',
-          // R^2=2*((R-P)^2)  --->  R=(2+sqrt(2))*P
-          borderRadius: boxPaddingInPixel * 3.4142 + 'px'
-        }"
-      >
+      <div :style="{ padding: theFontSizeInPixel / 2 + 'px' }">
         <div
-          v-if="!isCaptchaPanelOpened"
-          style="box-sizing: border-box; height: 100%; border: 1px dashed aqua"
+          class="broderBreath"
+          style="box-sizing: border-box; background-color: rgba(0, 0, 0, 0.75)"
+          :style="{
+            padding: boxPaddingInPixel + 'px',
+            // R^2=2*((R-P)^2)  --->  R=(2+sqrt(2))*P
+            borderRadius: boxPaddingInPixel * 3.4142 + 'px'
+          }"
         >
-          <div style="width: 100%; text-align: center" :style="{ fontSize: theFontSizeInPixel * 2 + 'px' }">
-            {{ t("word.welcome") }}
-          </div>
-          <br />
           <div
-            style="box-sizing: border-box; width: 100%; border: 1px dashed aqua"
-            :style="{ paddingLeft: formDivHorizontalPadding, paddingRight: formDivHorizontalPadding }"
+            v-if="!isCaptchaPanelOpened"
+            style="box-sizing: border-box; height: 100%; border: 1px dashed aqua"
           >
-            <xfls-single-line-input
-              v-model:the-input-value="phoneNumber"
-              :the-font-size-in-pixel="theFontSizeInPixel"
-              :the-title="t('word.phoneNumber')"
-              the-input-type="number"
-            />
-            <br />
-            <xfls-single-line-input
-              v-model:the-input-value="verificationCode"
-              :the-font-size-in-pixel="theFontSizeInPixel"
-              :the-title="t('word.verificationCode')"
-              the-input-type="text"
+            <div
+              style="width: 100%; text-align: center"
+              :style="{ fontSize: theFontSizeInPixel * 2 + 'px' }"
             >
-              <template #inputRight>
-                <div
-                  style="background-color: darkgreen; cursor: pointer"
-                  :style="{ padding: '0 ' + theFontSizeInPixel / 2 + 'px' }"
-                  @click.prevent="
-                    () => {
-                      if (!isInSmsCoolDown) {
-                        isCaptchaPanelOpened = true;
+              {{ t("word.welcome") }}
+            </div>
+            <br />
+            <div
+              style="box-sizing: border-box; width: 100%; border: 1px dashed aqua"
+              :style="{ paddingLeft: formDivHorizontalPadding, paddingRight: formDivHorizontalPadding }"
+            >
+              <xfls-single-line-input
+                v-model:the-input-value="phoneNumber"
+                :the-font-size-in-pixel="theFontSizeInPixel"
+                :the-title="t('word.phoneNumber')"
+                the-input-type="number"
+              />
+              <br />
+              <xfls-single-line-input
+                v-model:the-input-value="verificationCode"
+                :the-font-size-in-pixel="theFontSizeInPixel"
+                :the-title="t('word.verificationCode')"
+                the-input-type="text"
+              >
+                <template #inputRight>
+                  <div
+                    style="background-color: darkgreen; cursor: pointer"
+                    :style="{ padding: '0 ' + theFontSizeInPixel / 2 + 'px' }"
+                    @click.prevent="
+                      () => {
+                        if (!isInSmsCoolDown) {
+                          isCaptchaPanelOpened = true;
+                        }
                       }
-                    }
-                  "
-                >
-                  {{ t("message.clickMe2Get") }}
-                  <!--<div class="myLoadingRotate" style="display: inline-block">-->
-                  <!--  <loading-four theme="outline" size="24" fill="#fff" />-->
-                  <!--</div>-->
-                </div>
-              </template>
-            </xfls-single-line-input>
+                    "
+                  >
+                    {{ t("message.clickMe2Get") }}
+                    <!--<div class="myLoadingRotate" style="display: inline-block">-->
+                    <!--  <loading-four theme="outline" size="24" fill="#fff" />-->
+                    <!--</div>-->
+                  </div>
+                </template>
+              </xfls-single-line-input>
+            </div>
+            <br />
+            <div
+              style="display: flex; justify-content: center"
+              :style="{ paddingBottom: theFontSizeInPixel / 2 + 'px' }"
+            >
+              <button class="mySubmitBtn" style="cursor: pointer">
+                {{ t("word.login") }}
+              </button>
+            </div>
           </div>
-          <br />
-          <div
-            style="display: flex; justify-content: center"
-            :style="{ paddingBottom: theFontSizeInPixel / 2 + 'px' }"
-          >
-            <button class="mySubmitBtn" style="cursor: pointer">
-              {{ t("word.login") }}
-            </button>
-          </div>
-        </div>
-        <captcha-box-type-rotate
-          v-if="isCaptchaPanelOpened"
-          :enable-result-feedback="true"
-          style="font-size: initial"
-          @on-click-close-button="(args) => (isCaptchaPanelOpened = false)"
-          @captcha-done="
-            (args) => {
-              isCaptchaPassed = args;
-              if (isCaptchaPassed) {
-                isCaptchaPanelOpened = false;
+          <captcha-box-type-rotate
+            v-if="isCaptchaPanelOpened"
+            :dom-box-width="360"
+            :enable-result-feedback="true"
+            style="font-size: initial"
+            @on-click-close-button="(args) => (isCaptchaPanelOpened = false)"
+            @captcha-done="
+              (args) => {
+                isCaptchaPassed = args;
+                if (isCaptchaPassed) {
+                  isCaptchaPanelOpened = false;
+                }
               }
-            }
-          "
-        />
+            "
+          />
+        </div>
       </div>
     </center-box>
   </div>
@@ -111,7 +111,6 @@ import CaptchaBoxTypeRotate from "../components/tianai-captcha/vue/CaptchaBoxTyp
 export default defineComponent({
   components: {
     CaptchaBoxTypeRotate,
-    // LoadingFour,
     XflsSingleLineInput,
     CenterBox
   },
@@ -120,10 +119,6 @@ export default defineComponent({
       type: String,
       default: yournameDusk
     }
-    // boxPaddingInPixel: {
-    //   type: Number,
-    //   default: 16
-    // }
   },
   setup() {
     const templateRoot = ref<HTMLDivElement>();
@@ -164,19 +159,29 @@ export default defineComponent({
     },
     isInSmsCoolDown() {
       return this.smsCoolDownTimeLeft > 0;
+    },
+    rootStyle(): Partial<CSSStyleDeclaration> {
+      const myself = this;
+      const uiCalculation = myself.store.state.uiCalculation;
+      return {
+        width: uiCalculation.window.innerWidth + "px",
+        height: uiCalculation.window.innerHeight + "px",
+        // width: uiCalculation.document.body.scrollWidth + "px",
+        // height: uiCalculation.document.body.scrollHeight + "px",
+        backgroundImage: myself.cssBgImgCode,
+        fontSize: myself.theFontSize
+        // minWidth: myself.theFontSizeInPixel * 26 + "px"
+      };
     }
   },
   beforeMount() {
     const myself = this;
-    // myself.documentBodyStyleBackup.height = document.body.style.height;
-    // // document.body.style.height = "100vh";
   },
   mounted() {
     const myself = this;
   },
   unmounted() {
-    const myself = this;
-    // document.body.style.height = myself.documentBodyStyleBackup.height;
+    const myself = this
   }
 });
 </script>

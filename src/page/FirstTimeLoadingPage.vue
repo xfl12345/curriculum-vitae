@@ -246,7 +246,7 @@ export default defineComponent({
       const ptr = {} as any;
       ptr.timer = setInterval(() => {
         if (i >= fontList.length) {
-          console.log(supportFontStatus);
+          // console.log(supportFontStatus);
           clearInterval(ptr.timer);
 
           if (Object.values(supportFontStatus).filter((value) => value).length === 0) {
@@ -275,9 +275,10 @@ export default defineComponent({
           return;
         }
         const fontName = fontList[i];
-        myself.fontDetection.currentItem.fontName = fontName;
+        const currentItem = myself.fontDetection.currentItem;
+        currentItem.fontName = fontName;
         const isSupport = detector.isSupported(fontName);
-        myself.fontDetection.currentItem.isSupport = isSupport;
+        currentItem.isSupport = isSupport;
         supportFontStatus[fontList[i]] = isSupport;
         myself.progress += progressUnit;
         i += 1;
