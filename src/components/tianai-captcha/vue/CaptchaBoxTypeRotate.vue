@@ -1,0 +1,319 @@
+<template>
+  <div
+    ref="templateRoot"
+    style="
+      background-color: #fff;
+      /*width: 278px;*/
+      /*height: 285px;*/
+      /*z-index: 9999;*/
+      box-sizing: border-box;
+      /*padding: 9px;*/
+      /*border-radius: 6px;*/
+      box-shadow: 0 0 11px 0 #999999;
+      user-select: none;
+    "
+    :style="{
+      width: boxWidthInPixel + 'px',
+      padding: boxPaddingInPixel + 'px',
+      borderRadius: boxPaddingInPixel + 'px'
+      // borderRadius: boxPaddingInPixel * 3.4142 + 'px'
+    }"
+  >
+    <div
+      style="position: relative"
+      :style="{ width: backgroundImageWidthInPixel + 'px', height: backgroundImageHeightInPixel + 'px' }"
+    >
+      <img
+        ref="rotateBgImg"
+        style="width: 100%; height: 100%; position: absolute"
+        :src="backgroundImageSource"
+        alt
+      />
+      <div
+        style="
+          position: absolute;
+          height: 100%;
+          width: 100%;
+          display: flex;
+          flex-direction: row;
+          justify-content: center;
+        "
+      >
+        <img
+          ref="rotateImage"
+          style="height: 100%; transform: rotate(0deg)"
+          :style="rotateImgDivStyle"
+          :src="sliderImageSource"
+          alt
+        />
+      </div>
+    </div>
+    <captcha-slider
+      ref="captchaSlider"
+      :allow-resume="false"
+      :bar-height-in-pixel="Math.round(backgroundImageWidthInPixel * 0.382 * 0.382)"
+      :bar-width-in-pixel="backgroundImageWidthInPixel"
+      :placeholder="placeHolder"
+      :props-placeholder-style="{
+        fontSize: Math.floor(backgroundImageWidthInPixel * 0.07) + 'px'
+      }"
+      style="margin: 11px 0"
+      @moving="movingSlider"
+      @move-end="valid"
+    />
+    <div
+      style="box-sizing: border-box; display: flex; vertical-align: middle"
+      :style="{
+        height: footerBoxHeightInPixel + boxPaddingInPixel + 'px',
+        paddingTop: boxPaddingInPixel + 'px'
+      }"
+    >
+      <img
+        ref="closeBtn"
+        style="vertical-align: inherit"
+        :style="footerBoxButtonStyle"
+        :src="closeIcon"
+        alt=""
+        @click="(event) => $emit('onClickCloseButton', event)"
+      />
+      <img
+        ref="refreshBtn"
+        style="vertical-align: inherit"
+        :style="footerBoxButtonStyle"
+        :src="refreshIcon"
+        alt=""
+        @click="refreshCaptcha"
+      />
+      <div
+        v-if="enableResultFeedback && actionCount > 0"
+        style="vertical-align: inherit; display: inline-block; margin-left: auto"
+        :style="{ color: isPassed ? 'darkgreen' : 'red', fontSize: footerBoxHeight }"
+      >
+        {{ isPassed ? "验证通过" : "验证失败" }}
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="tsx">
+import { defineComponent, PropType, ref } from "vue";
+import axios from "axios";
+import refreshIcon from "../../icon-park/refresh.svg";
+import closeIcon from "../../icon-park/close-one.svg";
+import { TianaiTrackEvent } from "../ts/TianaiTrackEvent";
+import { EnumSizingType } from "../../xfl-common/ts/EnumSizingType";
+import CaptchaSlider from "./CaptchaSlider.vue";
+
+export default defineComponent({
+  components: { CaptchaSlider },
+  props: {
+    sizingType: {
+      type: String as PropType<EnumSizingType>,
+      default: "border"
+    },
+    domBoxWidth: {
+      type: Number,
+      default: 278
+    },
+    pictureWidthInPixel: {
+      type: Number,
+      default: 260
+    },
+    placeHolder: {
+      type: String,
+      default: "拖动滑块完成拼图"
+    },
+    enableResultFeedback: {
+      type: Boolean,
+      default: false
+    }
+  },
+  emits: ["captchaDone", "onClickCloseButton"],
+  setup(props, ctx) {
+    const templateRoot = ref<HTMLDivElement>();
+
+    const rotateBgImg = ref<HTMLImageElement>();
+    const rotateImage = ref<HTMLImageElement>();
+
+    const captchaSlider = ref<InstanceType<typeof CaptchaSlider>>();
+
+    return {
+      templateRoot,
+      rotateBgImg,
+      rotateImage,
+      captchaSlider,
+      refreshIcon,
+      closeIcon
+    };
+  },
+  data() {
+    const myself = this;
+    const rotateImgDivStyle: Partial<CSSStyleDeclaration> = {};
+
+    return {
+      backgroundImageSource: "",
+      sliderImageSource: "",
+      rotateImgDivStyle,
+      currentCaptchaId: "",
+      isPassed: false,
+      actionCount: 0
+    };
+  },
+  computed: {
+    boxPaddingInPixel() {
+      const myself = this;
+      let result = 0;
+
+      switch (myself.sizingType) {
+        case "content": {
+          result = Math.floor(myself.pictureWidthInPixel * 0.035);
+          break;
+        }
+        case "border":
+        default: {
+          result = Math.ceil(myself.domBoxWidth * 0.03);
+          break;
+        }
+      }
+
+      return result;
+    },
+    boxWidthInPixel() {
+      const myself = this;
+      let result = 0;
+
+      switch (myself.sizingType) {
+        case "content": {
+          result = myself.pictureWidthInPixel + myself.boxPaddingInPixel * 2;
+          break;
+        }
+        case "border":
+        default: {
+          result = myself.domBoxWidth;
+          break;
+        }
+      }
+
+      return result;
+    },
+    boxInnerWidth() {
+      const myself = this;
+      let result = 0;
+
+      switch (myself.sizingType) {
+        case "content": {
+          result = myself.pictureWidthInPixel;
+          break;
+        }
+        case "border":
+        default: {
+          result = myself.boxWidthInPixel - 2 * myself.boxPaddingInPixel;
+          break;
+        }
+      }
+
+      return result;
+    },
+    sliderAvailableOffsetX() {
+      const myself = this;
+      if (myself.captchaSlider) {
+        return myself.captchaSlider!.buttonAvailableOffsetX;
+      }
+      return myself.backgroundImageWidthInPixel;
+    },
+    backgroundImageWidthInPixel() {
+      return this.boxInnerWidth;
+    },
+    backgroundImageHeightInPixel() {
+      return Math.floor(this.backgroundImageWidthInPixel * 0.618);
+    },
+    footerBoxHeightInPixel() {
+      return Math.round(this.boxInnerWidth * 0.0923);
+    },
+    footerBoxHeight() {
+      return this.footerBoxHeightInPixel + "px";
+    },
+    footerBoxButtonStyle(): Partial<CSSStyleDeclaration> {
+      const myself = this;
+      return {
+        height: myself.footerBoxHeight,
+        width: myself.footerBoxHeight,
+        marginRight: myself.footerBoxHeightInPixel / 4 + "px",
+        cursor: "pointer"
+      };
+    }
+  },
+  watch: {},
+  beforeCreate() {},
+  created() {},
+  beforeMount() {},
+  mounted() {
+    const myself = this;
+
+    myself.refreshCaptcha();
+  },
+  beforeUpdate() {},
+  updated() {},
+  activated() {},
+  deactivated() {},
+  beforeUnmount() {},
+  unmounted() {},
+  methods: {
+    reset() {
+      const myself = this;
+      myself.captchaSlider!.resetButton();
+      myself.rotateImgDivStyle.transform = "rotate(0deg)";
+    },
+    movingSlider(trackRecord: TianaiTrackEvent) {
+      const myself = this;
+      const moveX = trackRecord.moveX!;
+
+      myself.rotateImgDivStyle.transform =
+        "rotate(" + moveX / (myself.sliderAvailableOffsetX / 360) + "deg)";
+    },
+    refreshCaptcha() {
+      const myself = this;
+      myself.reset();
+      axios.get("/gen?type=ROTATE").then((response) => {
+        const data = response.data;
+        myself.currentCaptchaId = data.id;
+        myself.backgroundImageSource = data.captcha.backgroundImage;
+        myself.sliderImageSource = data.captcha.sliderImage;
+        // console.log(data);
+      });
+    },
+    valid(trackRecord: TianaiTrackEvent) {
+      const myself = this;
+      const sliderImg = myself.rotateImage!;
+
+      const data = {
+        bgImageWidth: myself.sliderAvailableOffsetX,
+        bgImageHeight: myself.backgroundImageHeightInPixel,
+        sliderImageWidth: sliderImg.width,
+        sliderImageHeight: sliderImg.height,
+        startSlidingTime: trackRecord.startTime,
+        entSlidingTime: trackRecord.stopTime,
+        trackList: trackRecord.tracks
+      };
+
+      const afterAjax = (result: boolean) => {
+        myself.isPassed = result;
+        myself.actionCount += 1;
+        myself.refreshCaptcha();
+        myself.$emit("captchaDone", myself.isPassed);
+      };
+
+      axios
+        .post("/check?id=" + myself.currentCaptchaId, data, {
+          headers: {
+            "Content-Type": "application/json"
+          }
+        })
+        .then(
+          (response) => afterAjax(response.data),
+          (reason) => afterAjax(false)
+        );
+    }
+  }
+});
+</script>

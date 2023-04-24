@@ -1,0 +1,8 @@
+{
+  "paperA4Standard": {
+    "size": {
+      "widthInMillimetre": 210,
+      "heightInMillimetre": 297
+    }
+  }
+}
