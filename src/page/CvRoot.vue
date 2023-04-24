@@ -5,25 +5,8 @@
     style="display: flex; justify-content: flex-start; position: relative"
     :style="rootNodeStyle"
   >
-    <div
-      v-if="isCvDataLoaded"
-      style="display: flex; width: 100%; height: 100%"
-      :style="[
-        cvBoxParentStyle,
-        {
-          // minHeight: isHiddenEggPanelOpened ? uiCalculation.fullscreen.height : undefined,
-          // minWidth: isHiddenEggPanelOpened ? uiCalculation.fullscreen.width : undefined
-        }
-      ]"
-    >
+    <div v-if="isCvDataLoaded" style="display: flex; width: 100%; height: 100%" :style="[cvBoxParentStyle]">
       <div ref="cvBox" style="box-sizing: border-box" :style="cvBoxStyle">
-        <!--
-        <div style="width: 100%" :style="{ fontSize: theFontSizeInPixel + 'px' }">
-          一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十
-        </div>
-        -->
-        <!--  font-family: 'KaiTi', serif;    -->
-        <!--   -->
         <cv-chapter
           :the-font-size-in-pixel="theFontSizeInPixel"
           :the-title="t('word.xfl_title_basic_information')"
@@ -137,19 +120,17 @@ import { defineComponent, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
-import { NSpace, NSlider, NConfigProvider, NGlobalStyle } from "naive-ui";
-import CenterBox from "../components/xfl-common/vue/CenterBox.vue";
 import CvChapter from "../components/CvChapter.vue";
 import RecordItem from "../components/RecordItem.vue";
-import TextPrettier from "../components/xfl-common/vue/TextPrettier.vue";
 import CommunityBox from "../components/CommunityBox.vue";
+import HiddenEggPanel from "../components/HiddenEggPanel.vue";
 import BasicInfoGlance from "../components/BasicInfoGlance.vue";
 import PersonalAbility from "../components/PersonalAbility.vue";
+import TextPrettier from "../components/xfl-common/vue/TextPrettier.vue";
 import { CurriculumVitaeData } from "../tsmod/CurriculumVitaeData";
 import { getCurriculumVitaeData, isSignedIn } from "../model/SecretDataApi";
 import { fontSizeCalc } from "../model/FontSizeCalculator";
 import { paperA4Standard } from "../assets/json/common.json";
-import HiddenEggPanel from "../components/HiddenEggPanel.vue";
 
 export default defineComponent({
   components: {
@@ -157,12 +138,6 @@ export default defineComponent({
     BasicInfoGlance,
     CommunityBox,
     CvChapter,
-    // CenterBox,
-    // NSpace,
-    // NSlider,
-    // NConfigProvider,
-    // // NThemeEditor,
-    // NGlobalStyle,
     PersonalAbility,
     RecordItem,
     TextPrettier
@@ -200,69 +175,21 @@ export default defineComponent({
     };
   },
   computed: {
-    uiCalculation() {
-      const fullscreen = {
-        width: "100vw",
-        height: "100vh"
-      };
-
-      if (window && window.screen) {
-        if (window.screen.width > window.screen.height) {
-          fullscreen.width = window.screen.width + "px";
-          fullscreen.height = window.screen.height + "px";
-        } else {
-          fullscreen.height = window.screen.width + "px";
-          fullscreen.width = window.screen.height + "px";
-        }
-      }
-
-      return {
-        fullscreen
-      };
-    },
     isCvDataLoaded() {
       return "basicInformation" in this.cvData;
     },
-    // rootScale: {
-    //   get() {
-    //     return this.store.state.uiCalculation.rootScale;
-    //   },
-    //   set(value: number) {
-    //     this.store.commit("setRootScale", value);
-    //   }
-    // },
     theFontSizeInPixel() {
       return fontSizeCalc(this.rootScale);
     },
     theFontSize() {
       return this.theFontSizeInPixel + "px";
     },
-    // rootNodeStyle() {
-    //   const myself = this;
-    //
-    //   let justifyContent = "center";
-    //   if (typeof myself.templateRoot !== "undefined" && myself.templateRoot.offsetWidth > 1700) {
-    //     justifyContent = "flex-start";
-    //   }
-    //
-    //   return {
-    //     justifyContent
-    //     // padding: paddingInPixel + "px"
-    //   };
-    // },
     cvBoxStyle(): Partial<CSSStyleDeclaration> {
       const myself = this;
       const standard = {
         width: paperA4Standard.size.widthInMillimetre,
         height: paperA4Standard.size.heightInMillimetre
       };
-      // // 0.382 = 1 - 0.618
-      // // 企图使边距合理化（黄金分割）
-      // let paddingInPixel = Math.floor(standard.width * myself.rootScale * 0.382 * 0.382);
-      // // 修改成偶数
-      // if ((paddingInPixel & 0x1) === 1) {
-      //   paddingInPixel += 1;
-      // }
 
       const width = standard.width * myself.rootScale + "px";
 
@@ -296,16 +223,9 @@ export default defineComponent({
   },
   mounted() {
     const myself = this;
-    // console.log("onMounted - start");
-    // const windowAsAny = window as any;
-    // windowAsAny.ttt = myself;
-    // console.log(myself.store.state.diyFontFamilyList);
-    // console.log("onMounted - end");
   },
   unmounted() {
     const myself = this;
-    // document.body.style.height = myself.documentBodyStyleBackup.height;
-    // document.body.style.width = myself.documentBodyStyleBackup.width;
   },
   methods: {
     openUrl(url: string) {
@@ -350,9 +270,6 @@ export default defineComponent({
       // this.store.commit("setUpdateBrowserSelfValue", true);
       this.isHiddenEggPanelOpened = false;
     },
-    // hiddenEggPanelOnClick(e: Event) {
-    //   e.stopPropagation();
-    // },
     cvBoxResize(widthAndHeight: any) {
       const myself = this;
 
@@ -360,7 +277,6 @@ export default defineComponent({
       if (widthAndHeight.width < parseInt(myself.cvBoxStyle.width!, 10)) {
         justifyContent = "flex-start";
       }
-      // console.log("width", widthAndHeight.width, "document.body.clientWidth", document.body.clientWidth);
 
       myself.cvBoxParentStyle.justifyContent = justifyContent;
     },
@@ -370,8 +286,4 @@ export default defineComponent({
     }
   }
 });
-
-// defineExpose({
-//   vueData
-// });
 </script>
