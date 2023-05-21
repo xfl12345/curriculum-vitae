@@ -12,7 +12,13 @@ import { useStore } from "vuex";
 const store = useStore();
 
 const fontFamily = computed(() => {
-  return store.state.diyFontFamilyList.join(", ") + ", " + store.state.browserDefaultFontFamily;
+  return (
+    store.state.diyFontFamilyList.join(", ") +
+    ", " +
+    store.state.diyDefaultFontFamilyList.join(", ") +
+    ", " +
+    store.state.browserDefaultFontFamily
+  );
 });
 // console.log(fontFamily.value);
 </script>

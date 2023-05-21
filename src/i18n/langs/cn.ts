@@ -3,11 +3,23 @@
 // eslint-disable-next-line import/no-unresolved
 
 export const cn = {
+  routerName: {
+    index: "导航首页",
+    firstTimeLoadingPage: "首次加载页面",
+    helloWorldPage: "Hello,world!",
+    login: "登录页面",
+    cv: "简历页面",
+    testFontSupport: "测试字体页面",
+    testPage: "开发者临时测试页面",
+    notFoundPage: "404页面"
+  },
   message: {
     helloWorld: "你好，世界",
     pleaseEnter: "请输入",
     pleaseEnterPhoneNumber: "请输入手机号",
-    clickMe2Get: "点我获取"
+    clickMe2Get: "点我获取",
+    loginSucceed: "登录成功",
+    loginFailed: "登录失败"
     // clickMe2GetVerificationCode: "点我获取验证码"
   },
   word: {

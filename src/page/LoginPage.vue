@@ -1,18 +1,14 @@
 <template>
   <div
     ref="templateRoot"
-    style="
-      background-size: 100% auto;
-      background-repeat: repeat-y;
-      color: white;
-    "
+    style="background-size: 100% auto; background-repeat: repeat-y; color: white"
     :style="rootStyle"
   >
     <center-box :x-grow="isCaptchaPanelOpened ? undefined : 1 - 0.618 + ''">
-      <div :style="{ padding: theFontSizeInPixel / 2 + 'px' }">
+      <div ref="contentBox" :style="{ padding: theFontSizeInPixel / 2 + 'px' }">
         <div
           class="broderBreath"
-          style="box-sizing: border-box; background-color: rgba(0, 0, 0, 0.75)"
+          style="background-color: rgba(0, 0, 0, 0.75)"
           :style="{
             padding: boxPaddingInPixel + 'px',
             // R^2=2*((R-P)^2)  --->  R=(2+sqrt(2))*P
@@ -27,7 +23,8 @@
               style="width: 100%; text-align: center"
               :style="{ fontSize: theFontSizeInPixel * 2 + 'px' }"
             >
-              {{ t("word.welcome") }}
+              <span v-if="loginResult === null">{{ t("word.welcome") }}</span>
+              <span :style="{ color: loginResult ? 'lawngreen' : 'red' }">{{ loginMessage }}</span>
             </div>
             <br />
             <div
@@ -49,8 +46,12 @@
               >
                 <template #inputRight>
                   <div
-                    style="background-color: darkgreen; cursor: pointer"
-                    :style="{ padding: '0 ' + theFontSizeInPixel / 2 + 'px' }"
+                    style="background-color: darkgreen; text-align: center"
+                    :style="{
+                      padding: '0 ' + theFontSizeInPixel / 2 + 'px',
+                      cursor: isInSmsCoolDown ? 'unset' : 'pointer',
+                      minWidth: theFontSizeInPixel * 4 + 'px'
+                    }"
                     @click.prevent="
                       () => {
                         if (!isInSmsCoolDown) {
@@ -59,10 +60,7 @@
                       }
                     "
                   >
-                    {{ t("message.clickMe2Get") }}
-                    <!--<div class="myLoadingRotate" style="display: inline-block">-->
-                    <!--  <loading-four theme="outline" size="24" fill="#fff" />-->
-                    <!--</div>-->
+                    <span>{{ isInSmsCoolDown ? smsCoolDownTimeLeft : t("message.clickMe2Get") }}</span>
                   </div>
                 </template>
               </xfls-single-line-input>
@@ -72,16 +70,17 @@
               style="display: flex; justify-content: center"
               :style="{ paddingBottom: theFontSizeInPixel / 2 + 'px' }"
             >
-              <button class="mySubmitBtn" style="cursor: pointer">
+              <button class="mySubmitBtn" style="cursor: pointer" @click="onClickLoginButton">
                 {{ t("word.login") }}
               </button>
             </div>
           </div>
           <captcha-box-type-rotate
             v-if="isCaptchaPanelOpened"
-            :dom-box-width="360"
+            :dom-box-width="captchaBoxDomWidth"
             :enable-result-feedback="true"
-            style="font-size: initial"
+            :tianai-captcha-client="tianaiCaptchaClient"
+            :props-css-style="{ fontSize: 'initial', boxShadow: 'none' }"
             @on-click-close-button="(args) => (isCaptchaPanelOpened = false)"
             @captcha-done="
               (args) => {
@@ -89,6 +88,9 @@
                 if (isCaptchaPassed) {
                   isCaptchaPanelOpened = false;
                 }
+                smsCoolDownHelper.start((eta) => {
+                  smsCoolDownTimeLeft = Math.floor(eta / 1000);
+                });
               }
             "
           />
@@ -102,11 +104,13 @@
 import { defineComponent, PropType, ref } from "vue";
 import { useStore } from "vuex";
 import { useI18n } from "vue-i18n";
-import { LoadingFour } from "@icon-park/vue-next";
+import { useRouter } from "vue-router";
 import yournameDusk from "../assets/pic/yourname_dusk.jpg";
 import CenterBox from "../components/xfl-common/vue/CenterBox.vue";
 import XflsSingleLineInput from "../components/xfl-common/vue/XflsSingleLineInput.vue";
 import CaptchaBoxTypeRotate from "../components/tianai-captcha/vue/CaptchaBoxTypeRotate.vue";
+import { XFLsCvCaptchaClient } from "../model/XFLsCvCaptchaClient";
+import { CountDownHelper } from "../components/xfl-common/ts/CountDownHelper";
 
 export default defineComponent({
   components: {
@@ -122,29 +126,38 @@ export default defineComponent({
   },
   setup() {
     const templateRoot = ref<HTMLDivElement>();
+    const contentBox = ref<HTMLDivElement>();
+
+    const router = useRouter();
     const store = useStore();
     const { t } = useI18n();
     return {
       templateRoot,
+      contentBox,
+      router,
       store,
       t
     };
   },
   data() {
+    const tianaiCaptchaClient = new XFLsCvCaptchaClient();
+    const smsCoolDownHelper = new CountDownHelper();
+    smsCoolDownHelper.timeout = 60 * 1000;
+
     return {
       phoneNumber: "",
       verificationCode: "",
+      loginResult: null as null | boolean,
+      loginMessage: "",
       isCaptchaPanelOpened: false,
       isCaptchaPassed: false,
-      smsCoolDownTimeLeft: 0
+      smsCoolDownTimeLeft: 0,
+      smsCoolDownHelper,
+      tianaiCaptchaClient,
+      captchaBoxDomWidth: 360
     };
   },
   computed: {
-    // 背景图片 CSS background-image: url (?)
-    cssBgImgCode(): string {
-      const myself = this;
-      return `url('${myself.bgImgURL}')`;
-    },
     theFontSizeInPixel(): number {
       return this.store.getters.theFontSizeInPixel;
     },
@@ -168,7 +181,7 @@ export default defineComponent({
         height: uiCalculation.window.innerHeight + "px",
         // width: uiCalculation.document.body.scrollWidth + "px",
         // height: uiCalculation.document.body.scrollHeight + "px",
-        backgroundImage: myself.cssBgImgCode,
+        backgroundImage: `url('${myself.bgImgURL}')`,
         fontSize: myself.theFontSize
         // minWidth: myself.theFontSizeInPixel * 26 + "px"
       };
@@ -179,9 +192,22 @@ export default defineComponent({
   },
   mounted() {
     const myself = this;
+    myself.captchaBoxDomWidth =
+      parseInt(getComputedStyle(myself.contentBox!).width, 10) - myself.boxPaddingInPixel * 2;
   },
   unmounted() {
-    const myself = this
+    const myself = this;
+  },
+  methods: {
+    onClickLoginButton() {
+      const myself = this;
+      myself.store.state.loginManager
+        .loginViaSms(myself.phoneNumber, myself.verificationCode)
+        .then((result: any) => {
+          myself.loginResult = result.code === 200;
+          myself.loginMessage = result.msg;
+        });
+    }
   }
 });
 </script>
@@ -197,7 +223,7 @@ export default defineComponent({
     box-shadow: 0 0 10px 3px rgba(105, 255, 250, 0.5);
   }
   100% {
-    box-shadow: 0 0 40px 3px rgb(105, 255, 250);
+    box-shadow: 0 0 40px 3px rgba(105, 255, 250, 1);
   }
 }
 
@@ -206,11 +232,13 @@ export default defineComponent({
   background-color: transparent;
   color: #00b0ff;
 }
+
 .mySubmitBtn:hover {
   border-style: outset;
   background-color: #00b0ff;
   color: white;
 }
+
 .mySubmitBtn,
 .mySubmitBtn:hover {
   font-family: inherit;

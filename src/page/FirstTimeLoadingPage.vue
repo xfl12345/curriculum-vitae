@@ -139,7 +139,6 @@ import { applyNewFont2GlobalDom, SupportedFontFamilyDetector } from "../componen
 
 export default defineComponent({
   components: { SvgRightPicturePath, CenterBox, CircleProgressBar },
-  props: {},
   setup(props, ctx) {
     const store = useStore();
     const router = useRouter();
@@ -161,6 +160,7 @@ export default defineComponent({
       .map((item) => item.toHexString());
     const checkItemNameList = ["正在检查您的浏览器，请稍等……", "正在检查浏览器对字体支持的情况"];
     return {
+      canMount: true,
       debugMode: false,
       progress: 0,
       progressMax,
@@ -223,9 +223,22 @@ export default defineComponent({
   watch: {},
   beforeCreate() {},
   created() {},
-  beforeMount() {},
+  beforeMount() {
+    const myself = this;
+    const exhibition = myself.$route.query.exhibition;
+    if (!exhibition) {
+      if (myself.store.state.browserInitiated) {
+        myself.canMount = false;
+        myself.router.push({ name: "cv" });
+      }
+    }
+  },
   mounted() {
     const myself = this;
+    if (!myself.canMount) {
+      return;
+    }
+
     myself.isMounted = true;
     // myself.store.state
 
@@ -235,7 +248,8 @@ export default defineComponent({
       const fontList = myself.store.state.diyFontFamilyList;
       const detector = new SupportedFontFamilyDetector();
       detector.selectedFontCanvas = this.canvas4font!;
-      detector.testChar = "楷";
+      // detector.testChar = "楷";
+      detector.testChar = "a";
       detector.defaultFontCanvas.width = detector.selectedFontCanvas.width;
       detector.defaultFontCanvas.height = detector.selectedFontCanvas.height;
 

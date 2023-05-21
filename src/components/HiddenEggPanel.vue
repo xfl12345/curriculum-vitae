@@ -51,9 +51,9 @@
                   :style="{
                     borderRadius: theFontSize
                   }"
-                  @click="$emit('jump2LoginPage')"
+                  @click="$emit('jump2IndexPage')"
                 >
-                  转跳登录界面
+                  前往导航页面
                 </button>
                 <button
                   style="cursor: pointer; font-size: inherit"
@@ -141,18 +141,16 @@ export default defineComponent({
       required: true
     }
   },
-  emits: ["update:rootScale", "update:isPanelOpened", "jump2LoginPage", "resetRootScale"],
+  emits: ["update:rootScale", "update:isPanelOpened", "jump2IndexPage", "resetRootScale"],
   setup(props, ctx) {
     const store = useStore();
     const templateRoot = ref<HTMLDivElement>();
     const contentBoxParent = ref<HTMLDivElement>();
 
-    const theFontSizeInPixel = store.getters.theFontSizeInPixel;
     return {
       templateRoot,
       contentBoxParent,
-      store,
-      theFontSizeInPixel
+      store
     };
   },
   data() {
@@ -161,6 +159,9 @@ export default defineComponent({
     };
   },
   computed: {
+    theFontSizeInPixel() {
+      return this.store.getters.theFontSizeInPixel;
+    },
     theFontSize() {
       return this.theFontSizeInPixel + "px";
     },
@@ -180,20 +181,12 @@ export default defineComponent({
         this.$emit("update:isPanelOpened", value);
       }
     },
-    backgroudBoxMinWidthInPixel() {
-      return this.theFontSizeInPixel * 53;
-    },
     uiCalculation() {
       const myself = this;
       const fullPage = {
         width: myself.store.state.uiCalculation.document.body.scrollWidth + "px",
         height: myself.store.state.uiCalculation.document.body.scrollHeight + "px"
       };
-
-      // if (document && document.body) {
-      //   fullPage.width = document.body.scrollWidth + "px";
-      //   fullPage.height = document.body.scrollHeight + "px";
-      // }
 
       return {
         fullPage
@@ -212,38 +205,12 @@ export default defineComponent({
         minWidth: myself.contentBoxMinWidthInPixel + "px"
       };
 
-      // theStyle.minHeight = minHeightInPixel + "px";
-      // theStyle.minWidth = minWidthInPixel + "px";
-      //
-      // const fullscreen = {
-      //   width: 1920,
-      //   height: 1080
-      // };
-      //
-      // if (window) {
-      //   if (window.innerWidth > window.innerHeight) {
-      //     fullscreen.width = window.innerWidth;
-      //     fullscreen.height = window.innerHeight;
-      //   } else {
-      //     // noinspection JSSuspiciousNameCombination
-      //     fullscreen.height = window.innerWidth;
-      //     // noinspection JSSuspiciousNameCombination
-      //     fullscreen.width = window.innerHeight;
-      //   }
-      // }
-
-      // if (fullscreen.width > minWidthInPixel) {
-      //
-      // }
-
       return theStyle;
     }
   },
   watch: {},
   beforeCreate() {},
-  created() {
-    this.theFontSizeInPixel = this.store.getters.theFontSizeInPixel;
-  },
+  created() {},
   beforeMount() {},
   mounted() {
     const myself = this;

@@ -87,8 +87,7 @@
     <hidden-egg-panel
       v-model:is-panel-opened="isHiddenEggPanelOpened"
       v-model:root-scale="rootScale"
-      :the-font-size-in-pixel="theFontSizeInPixel"
-      @jump2-login-page="jump2LoginPage"
+      @jump2-index-page="jump2IndexPage"
       @reset-root-scale="resetRootScale"
     />
     <div
@@ -128,7 +127,7 @@ import BasicInfoGlance from "../components/BasicInfoGlance.vue";
 import PersonalAbility from "../components/PersonalAbility.vue";
 import TextPrettier from "../components/xfl-common/vue/TextPrettier.vue";
 import { CurriculumVitaeData } from "../tsmod/CurriculumVitaeData";
-import { getCurriculumVitaeData, isSignedIn } from "../model/SecretDataApi";
+import { getCurriculumVitaeData } from "../model/SecretDataApi";
 import { fontSizeCalc } from "../model/FontSizeCalculator";
 import { paperA4Standard } from "../assets/json/common.json";
 
@@ -213,12 +212,16 @@ export default defineComponent({
   },
   beforeMount() {
     const myself = this;
-    if (!myself.store.state.isBrowserInitiated) {
+    if (!myself.store.state.browserInitiated) {
       myself.jump2InitPage();
-    } else if (!isSignedIn()) {
-      myself.jump2LoginPage();
-    } else if (!("basicInformation" in myself.cvData)) {
-      myself.refreshCvData();
+    } else {
+      myself.store.state.loginManager.isAlreadyLogin().then((result: boolean) => {
+        if (!result) {
+          myself.jump2LoginPage(); // 没登录
+        } else if (!myself.isCvDataLoaded) {
+          myself.refreshCvData(); // 没缓存
+        }
+      });
     }
   },
   mounted() {
@@ -232,10 +235,13 @@ export default defineComponent({
       window.open(url);
     },
     jump2LoginPage() {
-      this.router.push("login");
+      this.router.push({ name: "login" });
     },
     jump2InitPage() {
-      this.router.push("first-time-loading-page");
+      this.router.push({ name: "firstTimeLoadingPage", query: { exhibition: "false" } });
+    },
+    jump2IndexPage() {
+      this.router.push({ name: "index" });
     },
     refreshCvData() {
       const myself = this;

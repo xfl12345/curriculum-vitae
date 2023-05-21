@@ -2,22 +2,15 @@
   <div
     ref="templateRoot"
     style="
-      background-color: #fff;
       /*width: 278px;*/
       /*height: 285px;*/
       /*z-index: 9999;*/
       box-sizing: border-box;
       /*padding: 9px;*/
       /*border-radius: 6px;*/
-      box-shadow: 0 0 11px 0 #999999;
       user-select: none;
     "
-    :style="{
-      width: boxWidthInPixel + 'px',
-      padding: boxPaddingInPixel + 'px',
-      borderRadius: boxPaddingInPixel + 'px'
-      // borderRadius: boxPaddingInPixel * 3.4142 + 'px'
-    }"
+    :style="cssStyle"
   >
     <div
       style="position: relative"
@@ -44,7 +37,7 @@
           style="height: 100%; transform: rotate(0deg)"
           :style="rotateImgDivStyle"
           :src="sliderImageSource"
-          alt
+          alt="图片加载失败！可能请求太过频繁。"
         />
       </div>
     </div>
@@ -97,12 +90,19 @@
 
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
-import axios from "axios";
+import { generate } from "text-to-image";
 import refreshIcon from "../../icon-park/refresh.svg";
 import closeIcon from "../../icon-park/close-one.svg";
 import { TianaiTrackEvent } from "../ts/TianaiTrackEvent";
 import { EnumSizingType } from "../../xfl-common/ts/EnumSizingType";
 import CaptchaSlider from "./CaptchaSlider.vue";
+import { ITianaiCaptchaClient, TianaiCaptchaClient } from "../ts/TianaiCaptchaClient";
+import { cssMixer } from "../../xfl-common/ts/CssMixer";
+
+const defaultCssStyle: Partial<CSSStyleDeclaration> = {
+  backgroundColor: "#fff",
+  boxShadow: "0 0 11px 0 #999999"
+};
 
 export default defineComponent({
   components: { CaptchaSlider },
@@ -115,6 +115,15 @@ export default defineComponent({
       type: Number,
       default: 278
     },
+    tianaiCaptchaClient: {
+      type: Object as PropType<ITianaiCaptchaClient>,
+      required: true,
+      default: () => {
+        const client = new TianaiCaptchaClient();
+        client.captchaType = "ROTATE";
+        return client;
+      }
+    },
     pictureWidthInPixel: {
       type: Number,
       default: 260
@@ -126,6 +135,10 @@ export default defineComponent({
     enableResultFeedback: {
       type: Boolean,
       default: false
+    },
+    propsCssStyle: {
+      type: Object as PropType<Partial<CSSStyleDeclaration>>,
+      default: (): Partial<CSSStyleDeclaration> => defaultCssStyle
     }
   },
   emits: ["captchaDone", "onClickCloseButton"],
@@ -151,10 +164,9 @@ export default defineComponent({
     const rotateImgDivStyle: Partial<CSSStyleDeclaration> = {};
 
     return {
-      backgroundImageSource: "",
-      sliderImageSource: "",
       rotateImgDivStyle,
-      currentCaptchaId: "",
+      backgroundImageSource: myself.tianaiCaptchaClient.backgroundImage,
+      sliderImageSource: myself.tianaiCaptchaClient.sliderImage,
       isPassed: false,
       actionCount: 0
     };
@@ -241,6 +253,14 @@ export default defineComponent({
         marginRight: myself.footerBoxHeightInPixel / 4 + "px",
         cursor: "pointer"
       };
+    },
+    cssStyle(): Partial<CSSStyleDeclaration> {
+      const myself = this;
+      const theStyle: Partial<CSSStyleDeclaration> = cssMixer(defaultCssStyle, myself.propsCssStyle);
+      theStyle.width = myself.boxWidthInPixel + "px";
+      theStyle.padding = myself.boxPaddingInPixel + "px";
+      theStyle.borderRadius = myself.boxPaddingInPixel + "px";
+      return theStyle;
     }
   },
   watch: {},
@@ -274,13 +294,47 @@ export default defineComponent({
     refreshCaptcha() {
       const myself = this;
       myself.reset();
-      axios.get("/gen?type=ROTATE").then((response) => {
-        const data = response.data;
-        myself.currentCaptchaId = data.id;
-        myself.backgroundImageSource = data.captcha.backgroundImage;
-        myself.sliderImageSource = data.captcha.sliderImage;
-        // console.log(data);
-      });
+      myself.tianaiCaptchaClient.refresh().then(
+        (obj) => {
+          myself.backgroundImageSource = myself.tianaiCaptchaClient.backgroundImage;
+          myself.sliderImageSource = myself.tianaiCaptchaClient.sliderImage;
+        },
+        (reject) => {
+          // 空白 1px 图片
+          const blankImage =
+            "data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==";
+          myself.sliderImageSource = blankImage;
+          myself.backgroundImageSource = blankImage;
+
+          let displayString = "";
+          console.log(reject);
+          if (
+            "request" in reject &&
+            "response" in reject &&
+            "code" in reject &&
+            "data" in reject.response
+          ) {
+            const data = reject.response.data;
+            console.log(data);
+            if ("message" in data) {
+              displayString += "消息：" + data.message + "\n";
+            }
+            if ("code" in data) {
+              displayString += "状态码：" + data.code + "\n";
+            }
+          }
+
+          generate(displayString, {
+            bgColor: "black",
+            textColor: "red",
+            fontFamily: "楷体",
+            maxWidth: 590 / 2,
+            customHeight: 360 / 2
+          }).then((imageData: string) => {
+            myself.backgroundImageSource = imageData;
+          });
+        }
+      );
     },
     valid(trackRecord: TianaiTrackEvent) {
       const myself = this;
@@ -302,17 +356,7 @@ export default defineComponent({
         myself.refreshCaptcha();
         myself.$emit("captchaDone", myself.isPassed);
       };
-
-      axios
-        .post("/check?id=" + myself.currentCaptchaId, data, {
-          headers: {
-            "Content-Type": "application/json"
-          }
-        })
-        .then(
-          (response) => afterAjax(response.data),
-          (reason) => afterAjax(false)
-        );
+      myself.tianaiCaptchaClient.validate(data).then(afterAjax, (reason) => afterAjax(false));
     }
   }
 });

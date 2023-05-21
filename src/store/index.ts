@@ -3,9 +3,12 @@ import { createStore } from "vuex";
 import { getBrowserFirstDefaultFontFamily } from "../components/xfl-common/ts/FontUtils";
 import { fontSizeCalc } from "../model/FontSizeCalculator";
 import { ClientCookieManager } from "../components/xfl-common/ts/ClientCookieManager";
+import { LoginMananger } from "../model/LoginMananger";
 
 const cookieManager = new ClientCookieManager();
 cookieManager.reloadCookie();
+
+const loginManager = new LoginMananger();
 
 const store = createStore({
   state: {
@@ -28,9 +31,11 @@ const store = createStore({
       }
     },
     browserDefaultFontFamily: getBrowserFirstDefaultFontFamily(),
-    diyFontFamilyList: ["楷体", "KaiTi", "华文楷体", "STKaiti", "Microsoft YaHei UI"],
-    isBrowserInitiated: false,
-    cookieManager
+    browserInitiated: false,
+    cookieManager,
+    loginManager,
+    diyDefaultFontFamilyList: ["Microsoft YaHei UI"],
+    diyFontFamilyList: ["楷体", "KaiTi", "华文楷体", "STKaiti"]
   },
   getters: {
     theFontSizeInPixel(state) {
@@ -62,7 +67,7 @@ const store = createStore({
       state.uiCalculation.updateBrowserSelfValue = flag;
     },
     setBrowserInitiatedFlag(state, flag: boolean) {
-      state.isBrowserInitiated = flag;
+      state.browserInitiated = flag;
     },
     setCookie(state, cookie) {
       state.cookieManager.clientCookie = cookie;
@@ -80,13 +85,24 @@ const store = createStore({
 // };
 // windowInAnyType.ssstate = store;
 
-const rootNodeResizeObserver = new ResizeObserver((entries, observer) => {
-  if (store.state.uiCalculation.updateBrowserSelfValue) {
+let updateGlobalUiCalculationDataToken = 0;
+
+const debounceTimer = setInterval(() => {
+  if (store.state.uiCalculation.updateBrowserSelfValue && updateGlobalUiCalculationDataToken > 0) {
     store.commit("updateGlobalUiCalculationData");
+    updateGlobalUiCalculationDataToken >>= 2; // 直接除以 4
   }
+}, 100); // 每 100ms 触发一次，防抖
+
+const rootNodeResizeObserver = new ResizeObserver((entries, observer) => {
+  updateGlobalUiCalculationDataToken += 1;
 });
+
 window.addEventListener("load", (event) => {
   rootNodeResizeObserver.observe(document.documentElement);
+});
+window.addEventListener("close", (event) => {
+  rootNodeResizeObserver.unobserve(document.documentElement);
 });
 
 export default store;

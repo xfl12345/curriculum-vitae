@@ -3,7 +3,7 @@
     <span :style="{ paddingLeft: iconBoxHorizontalPadding, paddingRight: iconBoxHorizontalPadding }"
       >💥</span
     >
-    <a :href="theUrl">
+    <a style="text-decoration: none" :href="theUrl">
       <text-prettier :content="theUrl" style="display: inline" />
     </a>
   </div>

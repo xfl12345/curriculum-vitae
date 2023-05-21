@@ -17,13 +17,16 @@
     "naive-ui": "^2.34.3",
     "quasar": "^2.11.10",
     "resize-observer-vue": "^1.2.0",
+    "text-to-image": "^6.0.0",
     "tinygradient": "^1.1.5",
     "v-clipboard": "^3.0.0-next.1",
     "vue": "^3.2.47",
     "vue-i18n": "^9.2.2",
     "vue-qr": "^4.0.9",
     "vue-router": "^4.1.6",
-    "vuex": "^4.1.0"
+    "vuex": "^4.1.0",
+    "vxe-table": "^4.3.12",
+    "xe-utils": "^3.5.7"
   },
   "devDependencies": {
     "@types/node": "^18.13.0",

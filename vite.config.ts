@@ -38,14 +38,11 @@ export default defineConfig({
         changeOrigin: true
         // rewrite: (path) => path.replace(/^\/backend/, "")
       },
-      "/gen": {
-        target: "http://127.0.0.1:8080",
+      "/captcha": {
+        target: "http://127.0.0.1:8880",
         changeOrigin: true
+        // rewrite: (path) => path.replace(/^\/backend/, "")
       },
-      "/check": {
-        target: "http://127.0.0.1:8080",
-        changeOrigin: true
-      }
     }
   }
 });

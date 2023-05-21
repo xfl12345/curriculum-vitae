@@ -3,10 +3,6 @@ import { CurriculumVitaeData } from "../tsmod/CurriculumVitaeData";
 
 export const secretDataApiBasePath = "/static/secret/";
 
-export function isSignedIn(): boolean {
-  return true;
-}
-
 export function getCurriculumVitaeData(): Promise<Partial<CurriculumVitaeData>> {
   return new Promise<Partial<CurriculumVitaeData>>(
     (resolve: (cvData: Partial<CurriculumVitaeData>) => void, reject: (reason: any) => void) => {
