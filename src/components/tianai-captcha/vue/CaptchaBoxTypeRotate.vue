@@ -13,32 +13,40 @@
     :style="cssStyle"
   >
     <div
-      style="position: relative"
       :style="{ width: backgroundImageWidthInPixel + 'px', height: backgroundImageHeightInPixel + 'px' }"
     >
-      <img
-        ref="rotateBgImg"
-        style="width: 100%; height: 100%; position: absolute"
-        :src="backgroundImageSource"
-        alt
-      />
-      <div
-        style="
-          position: absolute;
-          height: 100%;
-          width: 100%;
-          display: flex;
-          flex-direction: row;
-          justify-content: center;
-        "
-      >
+      <div v-if="!isRequestFailed" style="width: 100%; height: 100%; position: relative">
         <img
-          ref="rotateImage"
-          style="height: 100%; transform: rotate(0deg)"
-          :style="rotateImgDivStyle"
-          :src="sliderImageSource"
-          alt="图片加载失败！可能请求太过频繁。"
+          ref="rotateBgImg"
+          style="width: 100%; height: 100%; position: absolute"
+          :src="backgroundImageSource"
+          alt
         />
+        <div
+          style="
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+          "
+        >
+          <img
+            ref="rotateImage"
+            style="height: 100%; transform: rotate(0deg)"
+            :style="rotateImgDivStyle"
+            :src="sliderImageSource"
+            alt
+          />
+        </div>
+      </div>
+      <div
+        v-if="isRequestFailed"
+        style="width: 100%; height: 100%; white-space: pre-wrap; background-color: black; color: red"
+        :style="{ fontSize: footerBoxHeight }"
+      >
+        {{ requestFailedFeedBack }}
       </div>
     </div>
     <captcha-slider
@@ -90,7 +98,6 @@
 
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
-import { generate } from "text-to-image";
 import refreshIcon from "../../icon-park/refresh.svg";
 import closeIcon from "../../icon-park/close-one.svg";
 import { TianaiTrackEvent } from "../ts/TianaiTrackEvent";
@@ -168,7 +175,9 @@ export default defineComponent({
       backgroundImageSource: myself.tianaiCaptchaClient.backgroundImage,
       sliderImageSource: myself.tianaiCaptchaClient.sliderImage,
       isPassed: false,
-      actionCount: 0
+      actionCount: 0,
+      isRequestFailed: false,
+      requestFailedFeedBack: ""
     };
   },
   computed: {
@@ -294,45 +303,21 @@ export default defineComponent({
     refreshCaptcha() {
       const myself = this;
       myself.reset();
+      myself.isRequestFailed = false;
       myself.tianaiCaptchaClient.refresh().then(
         (obj) => {
           myself.backgroundImageSource = myself.tianaiCaptchaClient.backgroundImage;
           myself.sliderImageSource = myself.tianaiCaptchaClient.sliderImage;
         },
-        (reject) => {
+        (season) => {
           // 空白 1px 图片
           const blankImage =
             "data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==";
           myself.sliderImageSource = blankImage;
           myself.backgroundImageSource = blankImage;
 
-          let displayString = "";
-          console.log(reject);
-          if (
-            "request" in reject &&
-            "response" in reject &&
-            "code" in reject &&
-            "data" in reject.response
-          ) {
-            const data = reject.response.data;
-            console.log(data);
-            if ("message" in data) {
-              displayString += "消息：" + data.message + "\n";
-            }
-            if ("code" in data) {
-              displayString += "状态码：" + data.code + "\n";
-            }
-          }
-
-          generate(displayString, {
-            bgColor: "black",
-            textColor: "red",
-            fontFamily: "楷体",
-            maxWidth: 590 / 2,
-            customHeight: 360 / 2
-          }).then((imageData: string) => {
-            myself.backgroundImageSource = imageData;
-          });
+          myself.isRequestFailed = true;
+          myself.requestFailedFeedBack = "" + season;
         }
       );
     },
@@ -353,10 +338,14 @@ export default defineComponent({
       const afterAjax = (result: boolean) => {
         myself.isPassed = result;
         myself.actionCount += 1;
-        myself.refreshCaptcha();
+        // myself.refreshCaptcha();
         myself.$emit("captchaDone", myself.isPassed);
       };
-      myself.tianaiCaptchaClient.validate(data).then(afterAjax, (reason) => afterAjax(false));
+      myself.tianaiCaptchaClient.validate(data).then(afterAjax, (reason) => {
+        myself.isRequestFailed = true;
+        myself.requestFailedFeedBack = "" + reason;
+        afterAjax(false);
+      });
     }
   }
 });

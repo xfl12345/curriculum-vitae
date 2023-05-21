@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import { ImageCaptchaTrack } from "./ImageCaptchaTrack";
 
 export interface ITianaiCaptchaClient {
@@ -36,27 +36,42 @@ export class TianaiCaptchaClient implements ITianaiCaptchaClient {
     recheckCaptchaIdStatus: "check2"
   };
 
+  options = {
+    getReasonInText: (response: AxiosResponse) => response.statusText
+  };
+
   getCurrentCaptchaId = () => this.currentCaptchaId;
 
   getSucceedValidationIdList = () => Array.from(this.succeedValidationIds.values());
 
   clearSucceedValidationIdList = () => this.succeedValidationIds.clear();
 
+  // eslint-disable-next-line class-methods-use-this
+
   refresh = () => {
     const myself = this;
     return new Promise<AxiosResponse>((resolve, reject) => {
-      axios.get(myself.backendRequestPath.refresh + "?type=" + myself.captchaType).then((response) => {
-        if (response.status === 200) {
-          const data = response.data;
-          myself.currentCaptchaId = data.id;
-          myself.backgroundImage = data.captcha.backgroundImage;
-          myself.sliderImage = data.captcha.sliderImage;
-          resolve(response.data);
-          // console.log(data);
-        } else {
-          reject(response);
+      axios.get(myself.backendRequestPath.refresh + "?type=" + myself.captchaType).then(
+        (response) => {
+          if (response.status === 200) {
+            const data = response.data;
+            myself.currentCaptchaId = data.id;
+            myself.backgroundImage = data.captcha.backgroundImage;
+            myself.sliderImage = data.captcha.sliderImage;
+            resolve(response.data);
+            // console.log(data);
+          } else {
+            reject(myself.options.getReasonInText(response));
+          }
+        },
+        (error: AxiosError) => {
+          reject(
+            typeof error.response !== "undefined"
+              ? myself.options.getReasonInText(error.response)
+              : error.message
+          );
         }
-      }, reject);
+      );
     });
   };
 
@@ -70,13 +85,22 @@ export class TianaiCaptchaClient implements ITianaiCaptchaClient {
             "Content-Type": "application/json"
           }
         })
-        .then((response) => {
-          const isPassed = response.data;
-          if (isPassed) {
-            myself.succeedValidationIds.set(captchaId, captchaId);
+        .then(
+          (response) => {
+            const isPassed = response.data;
+            if (isPassed) {
+              myself.succeedValidationIds.set(captchaId, captchaId);
+            }
+            resolve(isPassed);
+          },
+          (error: AxiosError) => {
+            reject(
+              typeof error.response !== "undefined"
+                ? myself.options.getReasonInText(error.response)
+                : error.message
+            );
           }
-          resolve(isPassed);
-        }, reject);
+        );
     });
   };
 
