@@ -1,5 +1,5 @@
 import axios from "axios";
-import { SaTokenResult } from "./SaTokenResult";
+import { IJsonApiResponseData } from "./JsonApiResponseData";
 
 export class LoginMananger {
   phoneNumber: string = "";
@@ -8,14 +8,22 @@ export class LoginMananger {
     const myself = this;
     myself.phoneNumber = phoneNumber;
 
-    return new Promise<SaTokenResult>((resolve, reject) => {
+    return new Promise<IJsonApiResponseData>((resolve, reject) => {
       axios
-        .post("login", {
-          phoneNumber,
-          verificationCode
-        })
+        .post(
+          "login",
+          {
+            phoneNumber,
+            verificationCode
+          },
+          {
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded"
+            }
+          }
+        )
         .then(
-          (value) => resolve(value.data),
+          (response) => resolve(response.data),
           (reason) => reject(reason)
         );
     });
@@ -26,7 +34,18 @@ export class LoginMananger {
 
     return new Promise<boolean>((resolve, reject) => {
       axios.get("login/status").then(
-        (value) => resolve(value.data),
+        (response) => resolve(response.data),
+        (reason) => reject(reason)
+      );
+    });
+  };
+
+  logout = () => {
+    const myself = this;
+
+    return new Promise<boolean>((resolve, reject) => {
+      axios.post("logout").then(
+        (response) => resolve(response.data),
         (reason) => reject(reason)
       );
     });

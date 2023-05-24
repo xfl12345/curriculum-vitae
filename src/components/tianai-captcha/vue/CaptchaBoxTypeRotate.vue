@@ -86,7 +86,7 @@
         @click="refreshCaptcha"
       />
       <div
-        v-if="enableResultFeedback && actionCount > 0"
+        v-if="enableResultFeedback && showResultFeedback"
         style="vertical-align: inherit; display: inline-block; margin-left: auto"
         :style="{ color: isPassed ? 'darkgreen' : 'red', fontSize: footerBoxHeight }"
       >
@@ -103,7 +103,7 @@ import closeIcon from "../../icon-park/close-one.svg";
 import { TianaiTrackEvent } from "../ts/TianaiTrackEvent";
 import { EnumSizingType } from "../../xfl-common/ts/EnumSizingType";
 import CaptchaSlider from "./CaptchaSlider.vue";
-import { ITianaiCaptchaClient, TianaiCaptchaClient } from "../ts/TianaiCaptchaClient";
+import { ITianaiCaptchaClient, RequestResult, TianaiCaptchaClient } from "../ts/TianaiCaptchaClient";
 import { cssMixer } from "../../xfl-common/ts/CssMixer";
 
 const defaultCssStyle: Partial<CSSStyleDeclaration> = {
@@ -174,6 +174,7 @@ export default defineComponent({
       rotateImgDivStyle,
       backgroundImageSource: myself.tianaiCaptchaClient.backgroundImage,
       sliderImageSource: myself.tianaiCaptchaClient.sliderImage,
+      showResultFeedback: false,
       isPassed: false,
       actionCount: 0,
       isRequestFailed: false,
@@ -290,6 +291,7 @@ export default defineComponent({
   methods: {
     reset() {
       const myself = this;
+      myself.showResultFeedback = false;
       myself.captchaSlider!.resetButton();
       myself.rotateImgDivStyle.transform = "rotate(0deg)";
     },
@@ -309,15 +311,15 @@ export default defineComponent({
           myself.backgroundImageSource = myself.tianaiCaptchaClient.backgroundImage;
           myself.sliderImageSource = myself.tianaiCaptchaClient.sliderImage;
         },
-        (season) => {
+        (error) => {
           // 空白 1px 图片
           const blankImage =
             "data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==";
           myself.sliderImageSource = blankImage;
           myself.backgroundImageSource = blankImage;
 
+          myself.requestFailedFeedBack = myself.tianaiCaptchaClient.getReasonInText(error);
           myself.isRequestFailed = true;
-          myself.requestFailedFeedBack = "" + season;
         }
       );
     },
@@ -335,16 +337,21 @@ export default defineComponent({
         trackList: trackRecord.tracks
       };
 
-      const afterAjax = (result: boolean) => {
-        myself.isPassed = result;
+      const afterAjax = (result: RequestResult) => {
+        myself.isPassed = result.success;
         myself.actionCount += 1;
+        myself.showResultFeedback = true;
         // myself.refreshCaptcha();
-        myself.$emit("captchaDone", myself.isPassed);
+        myself.$emit("captchaDone", result);
       };
-      myself.tianaiCaptchaClient.validate(data).then(afterAjax, (reason) => {
+      myself.tianaiCaptchaClient.validate(data).then(afterAjax, (error) => {
+        myself.requestFailedFeedBack = myself.tianaiCaptchaClient.getReasonInText(error);
         myself.isRequestFailed = true;
-        myself.requestFailedFeedBack = "" + reason;
-        afterAjax(false);
+
+        afterAjax({
+          success: false,
+          payload: typeof error.response !== "undefined" ? error.response.data : null
+        });
       });
     }
   }

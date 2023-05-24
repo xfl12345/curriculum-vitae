@@ -9,7 +9,7 @@ export class CountDownHelper {
 
   currentStatus: string = "";
 
-  start = (callback: Function) => {
+  start = (callback: (eta: number) => void) => {
     const myself = this;
     myself.estimatedTimeOfArrival = myself.timeout;
 

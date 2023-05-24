@@ -34,7 +34,7 @@
     >
       <input
         ref="inputArea"
-        v-model="inputValue"
+        v-model="myInputValue"
         style="
           border: none;
           resize: none;
@@ -55,6 +55,7 @@
         :type="theInputType"
         @focus="onFocusInput"
         @blur="onBlurInput"
+        @keydown.enter="onKeyDownEnter"
       />
     </div>
     <slot name="inputRight" />
@@ -92,7 +93,7 @@ export default defineComponent({
       required: true
     }
   },
-  emits: ["update:theInputValue"],
+  emits: ["update:theInputValue", "onKeyDownEnter"],
   setup() {
     const templateRoot = ref<HTMLDivElement>();
     const inputArea = ref<HTMLInputElement>();
@@ -112,11 +113,19 @@ export default defineComponent({
   },
   computed: {
     inputValue: {
-      get() {
+      get(): string {
         return this.theInputValue;
       },
       set(value: string) {
         this.$emit("update:theInputValue", value);
+      }
+    },
+    myInputValue: {
+      get(): string | number | any {
+        return this.inputValue;
+      },
+      set(value: any) {
+        this.inputValue = value + "";
       }
     },
     borderRadius() {
@@ -141,6 +150,9 @@ export default defineComponent({
     onBlurInput() {
       const myself = this;
       myself.borderColor = myself.originBorderColor;
+    },
+    onKeyDownEnter() {
+      this.$emit("onKeyDownEnter");
     }
   }
 });

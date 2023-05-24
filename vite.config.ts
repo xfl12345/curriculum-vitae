@@ -43,6 +43,16 @@ export default defineConfig({
         changeOrigin: true
         // rewrite: (path) => path.replace(/^\/backend/, "")
       },
+      "/login": {
+        target: "http://127.0.0.1:8880",
+        changeOrigin: true
+        // rewrite: (path) => path.replace(/^\/backend/, "")
+      },
+      "/logout": {
+        target: "http://127.0.0.1:8880",
+        changeOrigin: true
+        // rewrite: (path) => path.replace(/^\/backend/, "")
+      }
     }
   }
 });

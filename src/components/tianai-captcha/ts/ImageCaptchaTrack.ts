@@ -14,4 +14,6 @@ export class ImageCaptchaTrack {
   entSlidingTime?: Date;
 
   trackList?: Step[];
+
+  data?: any;
 }

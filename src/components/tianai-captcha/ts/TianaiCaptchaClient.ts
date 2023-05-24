@@ -1,6 +1,12 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { ImageCaptchaTrack } from "./ImageCaptchaTrack";
 
+export interface RequestResult {
+  success: boolean;
+
+  payload: any;
+}
+
 export interface ITianaiCaptchaClient {
   backgroundImage: string;
 
@@ -10,19 +16,27 @@ export interface ITianaiCaptchaClient {
 
   getCurrentCaptchaId: () => string;
 
-  getSucceedValidationIdList: () => string[];
+  getSucceedVerificationIdList: () => string[];
 
-  clearSucceedValidationIdList: () => void;
+  clearSucceedVerificationIdList: () => void;
 
-  refresh: () => Promise<AxiosResponse>;
+  refresh: () => Promise<RequestResult>;
 
-  validate: (data: ImageCaptchaTrack) => Promise<boolean>;
+  validate: (data: ImageCaptchaTrack) => Promise<RequestResult>;
+
+  recheckCaptchaIdStatus: (captchaId: string) => Promise<boolean>;
+
+  getReasonInText: (error: AxiosError) => string;
+
+  getRequestResult: (response: AxiosResponse) => RequestResult;
+
+  verificationPayloadSupplier: () => Promise<any>;
 }
 
 export class TianaiCaptchaClient implements ITianaiCaptchaClient {
   currentCaptchaId: string = "";
 
-  succeedValidationIds: Map<string, string> = new Map<string, string>();
+  succeedVerificationIds: Map<string, string> = new Map<string, string>();
 
   backgroundImage: string = "";
 
@@ -36,71 +50,48 @@ export class TianaiCaptchaClient implements ITianaiCaptchaClient {
     recheckCaptchaIdStatus: "check2"
   };
 
-  options = {
-    getReasonInText: (response: AxiosResponse) => response.statusText
-  };
-
   getCurrentCaptchaId = () => this.currentCaptchaId;
 
-  getSucceedValidationIdList = () => Array.from(this.succeedValidationIds.values());
+  getSucceedVerificationIdList = () => Array.from(this.succeedVerificationIds.values());
 
-  clearSucceedValidationIdList = () => this.succeedValidationIds.clear();
-
-  // eslint-disable-next-line class-methods-use-this
+  clearSucceedVerificationIdList = () => this.succeedVerificationIds.clear();
 
   refresh = () => {
     const myself = this;
-    return new Promise<AxiosResponse>((resolve, reject) => {
-      axios.get(myself.backendRequestPath.refresh + "?type=" + myself.captchaType).then(
-        (response) => {
-          if (response.status === 200) {
-            const data = response.data;
-            myself.currentCaptchaId = data.id;
-            myself.backgroundImage = data.captcha.backgroundImage;
-            myself.sliderImage = data.captcha.sliderImage;
-            resolve(response.data);
-            // console.log(data);
-          } else {
-            reject(myself.options.getReasonInText(response));
-          }
-        },
-        (error: AxiosError) => {
-          reject(
-            typeof error.response !== "undefined"
-              ? myself.options.getReasonInText(error.response)
-              : error.message
-          );
-        }
-      );
+    return new Promise<RequestResult>((resolve, reject) => {
+      axios.get(myself.backendRequestPath.refresh + "?type=" + myself.captchaType).then((response) => {
+        const data = response.data;
+        myself.currentCaptchaId = data.id;
+        myself.backgroundImage = data.captcha.backgroundImage;
+        myself.sliderImage = data.captcha.sliderImage;
+        resolve({
+          success: true,
+          payload: response.data
+        });
+      }, reject);
     });
   };
 
   validate = (data: ImageCaptchaTrack) => {
     const myself = this;
     const captchaId = myself.currentCaptchaId;
-    return new Promise<boolean>((resolve, reject) => {
-      axios
-        .post(myself.backendRequestPath.validate + "?id=" + captchaId, data, {
-          headers: {
-            "Content-Type": "application/json"
-          }
-        })
-        .then(
-          (response) => {
-            const isPassed = response.data;
-            if (isPassed) {
-              myself.succeedValidationIds.set(captchaId, captchaId);
+    return myself.verificationPayloadSupplier().then((payload) => {
+      data.data = payload;
+      return new Promise<RequestResult>((resolve, reject) => {
+        axios
+          .post(myself.backendRequestPath.validate + "?id=" + captchaId, data, {
+            headers: {
+              "Content-Type": "application/json"
             }
-            resolve(isPassed);
-          },
-          (error: AxiosError) => {
-            reject(
-              typeof error.response !== "undefined"
-                ? myself.options.getReasonInText(error.response)
-                : error.message
-            );
-          }
-        );
+          })
+          .then((response) => {
+            const requestResult: RequestResult = myself.getRequestResult(response);
+            if (requestResult.success) {
+              myself.succeedVerificationIds.set(captchaId, captchaId);
+            }
+            resolve(requestResult);
+          }, reject);
+      });
     });
   };
 
@@ -110,10 +101,30 @@ export class TianaiCaptchaClient implements ITianaiCaptchaClient {
       axios.get(myself.backendRequestPath.recheckCaptchaIdStatus + "?id=" + captchaId).then((response) => {
         const isPassed = response.data;
         if (!isPassed) {
-          myself.succeedValidationIds.delete(captchaId);
+          myself.succeedVerificationIds.delete(captchaId);
         }
         resolve(isPassed);
       }, reject);
+    });
+  };
+
+  // eslint-disable-next-line class-methods-use-this
+  getReasonInText = (error: AxiosError) =>
+    "请求失败。原因未知。代码：" +
+    (typeof error.response !== "undefined" ? error.response.statusText : error.code);
+
+  // eslint-disable-next-line class-methods-use-this
+  getRequestResult = (response: AxiosResponse<any, any>) => {
+    return {
+      success: response.status >= 200 && response.status < 300 && response.data,
+      payload: response.data
+    };
+  };
+
+  // eslint-disable-next-line class-methods-use-this
+  verificationPayloadSupplier = () => {
+    return new Promise<any>((resolve, reject) => {
+      resolve({});
     });
   };
 }

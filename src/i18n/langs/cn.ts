@@ -51,6 +51,7 @@ export const cn = {
     jobPrefer: "求职意向",
     verificationCode: "验证码",
     login: "登录",
+    logout: "注销",
     get: "获取"
   }
 };
