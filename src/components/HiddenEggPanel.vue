@@ -167,18 +167,18 @@ export default defineComponent({
       return this.theFontSizeInPixel + "px";
     },
     theRootScale: {
-      get: () => {
+      get() {
         return this.rootScale;
       },
-      set: (value: string) => {
+      set(value: string) {
         this.$emit("update:rootScale", value);
       }
     },
     theIsPanelOpened: {
-      get: () => {
+      get() {
         return this.isPanelOpened;
       },
-      set: (value: string) => {
+      set(value: string) {
         this.$emit("update:isPanelOpened", value);
       }
     },
