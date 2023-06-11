@@ -70,7 +70,7 @@ export default defineComponent({
     },
     communityUrlList: {
       type: Array as PropType<string[]>,
-      default: () => []
+      default: (): string[] => []
     },
     wechatUrl: {
       type: String,

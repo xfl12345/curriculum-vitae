@@ -110,6 +110,16 @@
       >
         转跳登录界面
       </button>
+      <br />
+      <button
+        style="cursor: pointer; font-size: inherit"
+        :style="{
+          borderRadius: store.getters.theFontSize
+        }"
+        @click="router.push({ name: 'cv' })"
+      >
+        原地刷新
+      </button>
     </div>
   </div>
 </template>
@@ -130,6 +140,7 @@ import { CurriculumVitaeData } from "../tsmod/CurriculumVitaeData";
 import { getCurriculumVitaeData } from "../model/SecretDataApi";
 import { fontSizeCalc } from "../model/FontSizeCalculator";
 import { paperA4Standard } from "../assets/json/common.json";
+import { PartialCssStyleType } from "../components/xfl-common/ts/PartialCssStyleType";
 
 export default defineComponent({
   components: {
@@ -159,8 +170,8 @@ export default defineComponent({
   },
   data() {
     const myself = this;
-    const rootNodeStyle: Partial<CSSStyleDeclaration> = {};
-    const cvBoxParentStyle: Partial<CSSStyleDeclaration> = {};
+    const rootNodeStyle: PartialCssStyleType = {};
+    const cvBoxParentStyle: PartialCssStyleType = {};
     const cvData: Partial<CurriculumVitaeData> = {};
     return {
       rootNodeStyle,
@@ -183,7 +194,7 @@ export default defineComponent({
     theFontSize() {
       return this.theFontSizeInPixel + "px";
     },
-    cvBoxStyle(): Partial<CSSStyleDeclaration> {
+    cvBoxStyle(): PartialCssStyleType {
       const myself = this;
       const standard = {
         width: paperA4Standard.size.widthInMillimetre,
@@ -212,17 +223,13 @@ export default defineComponent({
   },
   beforeMount() {
     const myself = this;
-    if (!myself.store.state.browserInitiated) {
-      myself.jump2InitPage();
-    } else {
-      myself.store.state.loginManager.isAlreadyLogin().then((result: boolean) => {
-        if (!result) {
-          myself.jump2LoginPage(); // 没登录
-        } else if (!myself.isCvDataLoaded) {
-          myself.refreshCvData(); // 没缓存
-        }
-      });
-    }
+    myself.store.state.loginManager.isAlreadyLogin().then((result: boolean) => {
+      if (!result) {
+        myself.jump2LoginPage(); // 没登录
+      } else if (!myself.isCvDataLoaded) {
+        myself.refreshCvData(); // 没缓存
+      }
+    });
   },
   mounted() {
     const myself = this;
@@ -280,7 +287,7 @@ export default defineComponent({
       const myself = this;
 
       let justifyContent = "center";
-      if (widthAndHeight.width < parseInt(myself.cvBoxStyle.width!, 10)) {
+      if (widthAndHeight.width < parseInt(myself.cvBoxStyle.width! as string, 10)) {
         justifyContent = "flex-start";
       }
 

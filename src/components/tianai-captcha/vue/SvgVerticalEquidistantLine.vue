@@ -8,13 +8,14 @@
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
 import { cssMixer } from "../../xfl-common/ts/CssMixer";
+import { PartialCssStyleType } from "../../xfl-common/ts/PartialCssStyleType";
 
 type Point = {
   x: number;
   y: number;
 };
 
-const defaultCssStyle: Partial<CSSStyleDeclaration> = {
+const defaultCssStyle: PartialCssStyleType = {
   fill: "transparent",
   stroke: "#4FC632",
   strokeLinecap: "round"
@@ -36,8 +37,8 @@ export default defineComponent({
       default: 3
     },
     propsCssStyle: {
-      type: Object as PropType<Partial<CSSStyleDeclaration>>,
-      default: (): Partial<CSSStyleDeclaration> => defaultCssStyle
+      type: Object as PropType<PartialCssStyleType>,
+      default: (): PartialCssStyleType => defaultCssStyle
     }
   },
   emits: [],
@@ -68,9 +69,9 @@ export default defineComponent({
       const myself = this;
       return myself.viewBoxHeight + 2;
     },
-    cssStyle(): Partial<CSSStyleDeclaration> {
+    cssStyle(): PartialCssStyleType {
       const myself = this;
-      const theStyle: Partial<CSSStyleDeclaration> = cssMixer(defaultCssStyle, myself.propsCssStyle);
+      const theStyle: PartialCssStyleType = cssMixer(defaultCssStyle, myself.propsCssStyle);
       theStyle.strokeWidth = myself.strokeWidthInPixel + "px";
       theStyle.strokeDashoffset = "0";
       theStyle.strokeDasharray = "" + myself.strokeDasharrayInPixel;

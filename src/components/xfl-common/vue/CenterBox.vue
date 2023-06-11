@@ -14,13 +14,13 @@
     <div
       ref="columnCenterBox"
       style="background-color: transparent; display: flex; flex-direction: column; justify-content: center"
-      :style="{ flexGrow: xGrow, flexBasis: xBasis }"
+      :style="{ flexGrow: xGrow, flexShrink: xShrink, flexBasis: xBasis }"
     >
       <!-- 已竖直方向居中 -->
       <div
         ref="rowCenterBox"
         style="background-color: transparent"
-        :style="{ flexGrow: yGrow, flexBasis: yBasis }"
+        :style="{ flexGrow: yGrow, flexShrink: yShrink, flexBasis: yBasis }"
       >
         <slot>
           <div></div>
@@ -41,7 +41,11 @@ export default defineComponent({
     },
     xBasis: {
       type: String,
-      default: "0"
+      default: "auto"
+    },
+    xShrink: {
+      type: String,
+      default: "1"
     },
     yGrow: {
       type: String,
@@ -49,7 +53,11 @@ export default defineComponent({
     },
     yBasis: {
       type: String,
-      default: "0"
+      default: "auto"
+    },
+    yShrink: {
+      type: String,
+      default: "1"
     }
   },
   setup() {

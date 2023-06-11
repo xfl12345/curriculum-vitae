@@ -14,12 +14,12 @@
             borderRadius: cardHeight,
             height: cardHeight
           }"
-          @click="jumpPage(item.name)"
+          @click="jumpPage(String(item.name))"
         >
           <center-box>
             <div :style="{ lineHeight: theFontSize }">
               <span style="vertical-align: top; white-space: nowrap">{{
-                t("routerName." + item.name)
+                t("routerName." + String(item.name))
               }}</span>
             </div>
           </center-box>

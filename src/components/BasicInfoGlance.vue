@@ -24,17 +24,18 @@
         </div>
       </div>
       <div style="flex: 1">
-        <img style="width: 100%" :src="props.facePhoto" alt="facePhoto" />
+        <img style="width: 100%" :src="basicInformation.facePhoto" alt="facePhoto" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="tsx">
-import { computed, ref } from "vue";
+import { computed, PropType, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { KeyValuePair } from "../tsmod/KeyValuePair";
 import BasicInfoPair from "./BasicInfoPair.vue";
+import { BasicInformation } from "../tsmod/CurriculumVitaeData";
 
 const templateRoot = ref<HTMLDivElement>();
 
@@ -45,12 +46,10 @@ const props = defineProps({
     default: 24
   },
   basicInformation: {
-    type: Object,
-    default: () => {}
-  },
-  facePhoto: {
-    type: String,
-    default: ""
+    type: Object as PropType<BasicInformation>,
+    default: (): BasicInformation => {
+      return {};
+    }
   }
 });
 

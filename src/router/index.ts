@@ -2,8 +2,6 @@ import { createRouter, createWebHashHistory, RouteRecordRaw } from "vue-router";
 import HelloWorld from "../page/HelloWorld.vue";
 import CvRoot from "../page/CvRoot.vue";
 import NotFoundPage from "../page/NotFound.vue";
-import VueResizeObserverTest from "../page/VueResizeObserverTest.vue";
-import ChatGPTWorks from "../page/ChatGPTWorks.vue";
 import LoginPage from "../page/LoginPage.vue";
 import TestFontSupport from "../page/TestFontSupport.vue";
 import FirstTimeLoadingPage from "../page/FirstTimeLoadingPage.vue";

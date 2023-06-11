@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, defineProps } from "vue";
+import { ref } from "vue";
 import CenterBox from "./xfl-common/vue/CenterBox.vue";
 import TextPrettier from "./xfl-common/vue/TextPrettier.vue";
 

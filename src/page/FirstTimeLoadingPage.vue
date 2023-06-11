@@ -320,7 +320,11 @@ export default defineComponent({
       const myself = this;
       myself.store.commit("setBrowserInitiatedFlag", true);
       myself.progress = myself.progressMax;
-      setTimeout(() => myself.router.push("cv"), 4000);
+      setTimeout(() => {
+        const tmpJumpTarget = myself.$route.query.jumpTarget as string | undefined;
+        const jumpTarget: string = typeof tmpJumpTarget === "undefined" ? "cv" : tmpJumpTarget;
+        myself.router.push(jumpTarget);
+      }, 4000);
     },
     onFailed() {
       this.circleProgressBarColorArray = ["#FF0000", "#FF0000"];

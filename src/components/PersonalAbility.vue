@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, defineProps, ref } from "vue";
+import { computed, ref } from "vue";
 import PercentBar from "./xfl-common/vue/PercentBar.vue";
 import TextPrettier from "./xfl-common/vue/TextPrettier.vue";
 import CenterBox from "./xfl-common/vue/CenterBox.vue";

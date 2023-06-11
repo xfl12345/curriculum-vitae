@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import vueJsx from "@vitejs/plugin-vue-jsx";
 import eslintPlugin from "vite-plugin-eslint";
+import legacy from "@vitejs/plugin-legacy";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -11,7 +12,10 @@ export default defineConfig({
     // babel(),
     eslintPlugin({
       cache: false
-    })
+    }),
+    legacy({
+      targets: ['defaults', 'not IE 11'],
+    }),
   ],
   assetsInclude: ["**/*.bmp"],
   resolve: {
@@ -41,17 +45,22 @@ export default defineConfig({
       "/captcha": {
         target: "http://127.0.0.1:8880",
         changeOrigin: true
-        // rewrite: (path) => path.replace(/^\/backend/, "")
       },
       "/login": {
         target: "http://127.0.0.1:8880",
         changeOrigin: true
-        // rewrite: (path) => path.replace(/^\/backend/, "")
       },
       "/logout": {
         target: "http://127.0.0.1:8880",
         changeOrigin: true
-        // rewrite: (path) => path.replace(/^\/backend/, "")
+      },
+      "/sms": {
+        target: "http://127.0.0.1:8880",
+        changeOrigin: true
+      },
+      "/sms/ws-connect": {
+        target: "ws://127.0.0.1:8880",
+        changeOrigin: true
       }
     }
   }

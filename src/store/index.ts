@@ -22,12 +22,18 @@ const store = createStore({
         },
         body: {
           scrollWidth: document.body.scrollWidth,
-          scrollHeight: document.body.scrollHeight
+          scrollHeight: document.body.scrollHeight,
+          clientWidth: document.body.clientWidth,
+          clientHeight: document.body.clientHeight
         }
       },
       window: {
         innerWidth: window.innerWidth,
-        innerHeight: window.innerHeight
+        innerHeight: window.innerHeight,
+        screen: {
+          availWidth: window.screen.availWidth,
+          availHeight: window.screen.availHeight
+        }
       }
     },
     browserDefaultFontFamily: getBrowserFirstDefaultFontFamily(),
@@ -62,6 +68,10 @@ const store = createStore({
       stateWindow.innerHeight = window.innerHeight;
       stateDocument.body.scrollWidth = document.body.scrollWidth;
       stateDocument.body.scrollHeight = document.body.scrollHeight;
+      stateDocument.body.clientWidth = document.body.clientWidth;
+      stateDocument.body.clientHeight = document.body.clientHeight;
+      stateWindow.screen.availWidth = window.screen.availWidth;
+      stateWindow.screen.availHeight = window.screen.availHeight;
     },
     setUpdateBrowserSelfValue(state, flag: boolean) {
       state.uiCalculation.updateBrowserSelfValue = flag;

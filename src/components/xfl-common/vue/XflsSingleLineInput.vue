@@ -9,11 +9,19 @@
       border-style: solid;
       border-width: 1px;
       overflow: hidden;
+      vertical-align: top;
+      padding: 0;
     "
     :style="{ fontSize: theFontSizeInPixel + 'px', borderColor, borderRadius }"
   >
     <div
-      style="background-color: deepskyblue"
+      style="
+        /*box-sizing: border-box;*/
+        background-color: deepskyblue;
+        height: 100%;
+        vertical-align: top;
+        /*outline-style: none;*/
+      "
       :style="{
         width: theTitleBoxWidth,
         padding: '0 ' + borderRadius
@@ -28,35 +36,45 @@
     </div>
     <slot name="inputLeft" />
     <div
-      style="flex-grow: 1; box-sizing: border-box; cursor: text; display: flex"
+      style="flex-grow: 1; flex-shrink: 1; box-sizing: border-box; cursor: text; display: flex"
       :style="{ padding: '0 ' + borderRadius }"
       @click="inputAreaGetFocus"
     >
       <input
         ref="inputArea"
-        v-model="myInputValue"
+        :value="theInputValue"
         style="
+          box-sizing: border-box;
+          width: 0;
           border: none;
           resize: none;
           padding: 0;
           outline: none;
-          vertical-align: middle;
+          vertical-align: top;
           height: 100%;
-          flex-grow: 1;
+          /*width: 100%;*/
           background-color: transparent;
           font-family: inherit;
           /*-webkit-text-fill-color: yellow;*/
           /*color: white;*/
           color: yellow;
+
+          min-width: 1px;
+          flex-grow: 1;
+          flex-shrink: 1;
+          /*display: none;*/
         "
         class="xflsSingleLineInputInternalCss"
         :style="{ fontSize: theFontSizeInPixel + 'px' }"
         :placeholder="placeholder"
         :type="theInputType"
+        @input="popInputValue"
         @focus="onFocusInput"
         @blur="onBlurInput"
         @keydown.enter="onKeyDownEnter"
       />
+      <!--<div style="box-sizing: border-box; height: 100%; width: 100%; vertical-align: top">-->
+      <!--</div>-->
     </div>
     <slot name="inputRight" />
   </div>
@@ -112,24 +130,8 @@ export default defineComponent({
     };
   },
   computed: {
-    inputValue: {
-      get(): string {
-        return this.theInputValue;
-      },
-      set(value: string) {
-        this.$emit("update:theInputValue", value);
-      }
-    },
-    myInputValue: {
-      get(): string | number | any {
-        return this.inputValue;
-      },
-      set(value: any) {
-        this.inputValue = value + "";
-      }
-    },
     borderRadius() {
-      return this.theFontSizeInPixel / 2 + "px";
+      return Math.ceil(this.theFontSizeInPixel / 2) + "px";
     },
     placeholder() {
       const myself = this;
@@ -153,6 +155,9 @@ export default defineComponent({
     },
     onKeyDownEnter() {
       this.$emit("onKeyDownEnter");
+    },
+    popInputValue(event: Event) {
+      this.$emit("update:theInputValue", "" + (event.target as HTMLInputElement)!.value);
     }
   }
 });
@@ -178,7 +183,7 @@ input::-webkit-inner-spin-button {
 input[type="number"] {
   appearance: none;
   -webkit-appearance: none;
-  -moz-appearance: none;
-  /*-moz-appearance: textfield;*/
+  /* -moz-appearance: none; */
+  -moz-appearance: textfield;
 }
 </style>

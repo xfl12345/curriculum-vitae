@@ -20,7 +20,7 @@
           ref="rotateBgImg"
           style="width: 100%; height: 100%; position: absolute"
           :src="backgroundImageSource"
-          alt
+          alt=""
         />
         <div
           style="
@@ -37,7 +37,7 @@
             style="height: 100%; transform: rotate(0deg)"
             :style="rotateImgDivStyle"
             :src="sliderImageSource"
-            alt
+            alt=""
           />
         </div>
       </div>
@@ -105,8 +105,9 @@ import { EnumSizingType } from "../../xfl-common/ts/EnumSizingType";
 import CaptchaSlider from "./CaptchaSlider.vue";
 import { ITianaiCaptchaClient, RequestResult, TianaiCaptchaClient } from "../ts/TianaiCaptchaClient";
 import { cssMixer } from "../../xfl-common/ts/CssMixer";
+import { PartialCssStyleType } from "../../xfl-common/ts/PartialCssStyleType";
 
-const defaultCssStyle: Partial<CSSStyleDeclaration> = {
+const defaultCssStyle: PartialCssStyleType = {
   backgroundColor: "#fff",
   boxShadow: "0 0 11px 0 #999999"
 };
@@ -144,8 +145,8 @@ export default defineComponent({
       default: false
     },
     propsCssStyle: {
-      type: Object as PropType<Partial<CSSStyleDeclaration>>,
-      default: (): Partial<CSSStyleDeclaration> => defaultCssStyle
+      type: Object as PropType<PartialCssStyleType>,
+      default: (): PartialCssStyleType => defaultCssStyle
     }
   },
   emits: ["captchaDone", "onClickCloseButton"],
@@ -168,7 +169,7 @@ export default defineComponent({
   },
   data() {
     const myself = this;
-    const rotateImgDivStyle: Partial<CSSStyleDeclaration> = {};
+    const rotateImgDivStyle: PartialCssStyleType = {};
 
     return {
       rotateImgDivStyle,
@@ -255,7 +256,7 @@ export default defineComponent({
     footerBoxHeight() {
       return this.footerBoxHeightInPixel + "px";
     },
-    footerBoxButtonStyle(): Partial<CSSStyleDeclaration> {
+    footerBoxButtonStyle(): PartialCssStyleType {
       const myself = this;
       return {
         height: myself.footerBoxHeight,
@@ -264,9 +265,9 @@ export default defineComponent({
         cursor: "pointer"
       };
     },
-    cssStyle(): Partial<CSSStyleDeclaration> {
+    cssStyle(): PartialCssStyleType {
       const myself = this;
-      const theStyle: Partial<CSSStyleDeclaration> = cssMixer(defaultCssStyle, myself.propsCssStyle);
+      const theStyle: PartialCssStyleType = cssMixer(defaultCssStyle, myself.propsCssStyle);
       theStyle.width = myself.boxWidthInPixel + "px";
       theStyle.padding = myself.boxPaddingInPixel + "px";
       theStyle.borderRadius = myself.boxPaddingInPixel + "px";
@@ -291,7 +292,12 @@ export default defineComponent({
   methods: {
     reset() {
       const myself = this;
-      myself.showResultFeedback = false;
+      // 空白 1px 图片
+      const blankImage =
+        "data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==";
+      myself.sliderImageSource = blankImage;
+      myself.backgroundImageSource = blankImage;
+
       myself.captchaSlider!.resetButton();
       myself.rotateImgDivStyle.transform = "rotate(0deg)";
     },
@@ -301,6 +307,11 @@ export default defineComponent({
 
       myself.rotateImgDivStyle.transform =
         "rotate(" + moveX / (myself.sliderAvailableOffsetX / 360) + "deg)";
+    },
+    onRefreshButtonClick() {
+      const myself = this;
+      myself.showResultFeedback = false;
+      myself.refreshCaptcha();
     },
     refreshCaptcha() {
       const myself = this;
@@ -312,12 +323,6 @@ export default defineComponent({
           myself.sliderImageSource = myself.tianaiCaptchaClient.sliderImage;
         },
         (error) => {
-          // 空白 1px 图片
-          const blankImage =
-            "data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==";
-          myself.sliderImageSource = blankImage;
-          myself.backgroundImageSource = blankImage;
-
           myself.requestFailedFeedBack = myself.tianaiCaptchaClient.getReasonInText(error);
           myself.isRequestFailed = true;
         }
@@ -341,7 +346,9 @@ export default defineComponent({
         myself.isPassed = result.success;
         myself.actionCount += 1;
         myself.showResultFeedback = true;
-        // myself.refreshCaptcha();
+        if (!result.success) {
+          myself.refreshCaptcha();
+        }
         myself.$emit("captchaDone", result);
       };
       myself.tianaiCaptchaClient.validate(data).then(afterAjax, (error) => {

@@ -1,4 +1,5 @@
 import { SkillDegree } from "./SkillDegree";
+import { ValuePair } from "./ValuePair";
 
 export interface JourneyItem {
   id: number;
@@ -13,8 +14,26 @@ export interface OnlyContentItem {
   content: string;
 }
 
+// export
+
+export interface BasicInformation {
+  name?: ValuePair;
+  phoneNumberSameToWechat?: ValuePair;
+  emailAddress?: ValuePair;
+  birthdayInYearAndMonth?: ValuePair;
+  maritalStatus?: ValuePair;
+  jobPrefer?: ValuePair;
+  nation?: ValuePair;
+  stature?: ValuePair;
+  schooling?: ValuePair;
+  lastInstitute?: ValuePair;
+  nativePlace?: ValuePair;
+  facePhoto?: string;
+  [propName: string]: any;
+}
+
 export class CurriculumVitaeData {
-  basicInformation: object = {};
+  basicInformation: BasicInformation = {};
 
   community: object = {};
 

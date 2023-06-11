@@ -23,8 +23,9 @@
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
 import { cssMixer } from "../../xfl-common/ts/CssMixer";
+import { PartialCssStyleType } from "../../xfl-common/ts/PartialCssStyleType";
 
-const defaultCssStyle: Partial<CSSStyleDeclaration> = {};
+const defaultCssStyle: PartialCssStyleType = {};
 
 export default defineComponent({
   components: {},
@@ -46,8 +47,8 @@ export default defineComponent({
       default: "#03DE00"
     },
     propsCssStyle: {
-      type: Object as PropType<Partial<CSSStyleDeclaration>>,
-      default: (): Partial<CSSStyleDeclaration> => defaultCssStyle
+      type: Object as PropType<PartialCssStyleType>,
+      default: (): PartialCssStyleType => defaultCssStyle
     }
   },
   emits: [],
@@ -90,9 +91,12 @@ export default defineComponent({
       // return "0 0 " + spreadWidth * 1.618 + "px " + spreadWidth + "px #999999 inset";
       return "0 0 " + myself.peerPictureWidthInPixel / 4 + "px " + spreadWidth + "px #999999 inset";
     },
-    cssStyle(): Partial<CSSStyleDeclaration> {
+    cssStyle(): PartialCssStyleType {
       const myself = this;
-      const theStyle: Partial<CSSStyleDeclaration> = cssMixer(defaultCssStyle, myself.propsCssStyle);
+      const theStyle: PartialCssStyleType = cssMixer(
+        defaultCssStyle,
+        myself.propsCssStyle
+      ) as PartialCssStyleType;
 
       theStyle.boxSizing = "border-box";
       theStyle.width = "0";
@@ -102,12 +106,12 @@ export default defineComponent({
         theStyle.boxShadow = myself.defaultShadowStyle;
       }
 
-      return theStyle;
+      return theStyle as PartialCssStyleType;
     },
-    leftTrianglePicture(): Partial<CSSStyleDeclaration> {
+    leftTrianglePicture(): PartialCssStyleType {
       return this.triangleBorderCssStyleGenerator("right");
     },
-    rightTrianglePicture(): Partial<CSSStyleDeclaration> {
+    rightTrianglePicture(): PartialCssStyleType {
       return this.triangleBorderCssStyleGenerator("left");
     }
   },
@@ -123,13 +127,13 @@ export default defineComponent({
   beforeUnmount() {},
   unmounted() {},
   methods: {
-    triangleBorderCssStyleGenerator(direction: string): Partial<CSSStyleDeclaration> {
+    triangleBorderCssStyleGenerator(direction: string): PartialCssStyleType {
       const myself = this;
 
       const defaultStyleString = myself.peerPictureWidth + " solid transparent";
       const fullWidthStyleString = myself.peerPictureWidth + " solid " + myself.color;
       const zeroWidthStyleString = "0 solid " + myself.color;
-      const theStyle: Partial<CSSStyleDeclaration> = {
+      const theStyle: PartialCssStyleType = {
         borderRight: defaultStyleString,
         borderBottom: defaultStyleString,
         borderLeft: defaultStyleString,

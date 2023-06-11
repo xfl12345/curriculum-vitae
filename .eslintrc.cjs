@@ -3,9 +3,18 @@
 module.exports = {
   parser: "vue-eslint-parser",
   parserOptions: {
-    // parser: "@babel/eslint-parser",
-    // parser: "vue-eslint-parser",
-    parser: "@typescript-eslint/parser",
+    // parser: "@typescript-eslint/parser",
+    parser: {
+      // js文件使用espree
+      js: "espree",
+      jsx: "espree",
+      // ts使用@typescript-eslint/parser
+      ts: "@typescript-eslint/parser",
+      tsx: "@typescript-eslint/parser",
+      // 模板中的脚本使用espree
+      "<template>": "espree",
+    },
+    warnOnUnsupportedTypeScriptVersion: false,
     // ecmaVersion: "latest",
     // ecmaVersion: "2018-09",
     ecmaVersion: 2020,
@@ -74,12 +83,12 @@ module.exports = {
     "no-unused-vars": "off",
     "no-bitwise": "off",
     // 'vue/require-default-prop': 'off',
-    "import/prefer-default-export": "off",
     // "max-classes-per-file": [
     //   "error",
     //   { "ignoreExpressions": true, "max": 2 }
     // ],
     "max-classes-per-file": ["error", 4],
+    "import/prefer-default-export": "off",
     "import/no-extraneous-dependencies": [
       "error",
       {

@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, defineProps, ref } from "vue";
+import { computed, ref } from "vue";
 import TextPrettier from "./xfl-common/vue/TextPrettier.vue";
 
 const templateRoot = ref<HTMLDivElement>();

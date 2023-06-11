@@ -44,8 +44,9 @@ import CaptchaSliderButton from "./CaptchaSliderButton.vue";
 import { TianaiTrackEvent } from "../ts/TianaiTrackEvent";
 import { getPoint2DFromMouseEvent, getPoint2DFromTouchEvent, Point2D } from "../ts/Point";
 import { cssMixer } from "../../xfl-common/ts/CssMixer";
+import { PartialCssStyleType } from "../../xfl-common/ts/PartialCssStyleType";
 
-const defaultCssStyle: Partial<CSSStyleDeclaration> = {
+const defaultCssStyle: PartialCssStyleType = {
   color: "#88949d"
 };
 
@@ -69,8 +70,8 @@ export default defineComponent({
       default: "拖动滑块至正确位置"
     },
     propsPlaceholderStyle: {
-      type: Object as PropType<Partial<CSSStyleDeclaration>>,
-      default: (): Partial<CSSStyleDeclaration> => {
+      type: Object as PropType<PartialCssStyleType>,
+      default: (): PartialCssStyleType => {
         return defaultCssStyle;
       }
     },
@@ -123,9 +124,9 @@ export default defineComponent({
 
       return myself.barWidthInPixel - myself.buttonRadiusInPixel * 2;
     },
-    barCssStyle(): Partial<CSSStyleDeclaration> {
+    barCssStyle(): PartialCssStyleType {
       const myself = this;
-      const theStyle: Partial<CSSStyleDeclaration> = {};
+      const theStyle: PartialCssStyleType = {};
       theStyle.width = myself.barWidthInPixel + "px";
       theStyle.height = myself.barHeightInPixel + "px";
       theStyle.borderRadius = theStyle.height;
@@ -147,15 +148,15 @@ export default defineComponent({
       const myself = this;
       return -(myself.buttonDomSizeInPixel / 2 - myself.buttonRadiusInPixel);
     },
-    buttonCssStyle(): Partial<CSSStyleDeclaration> {
+    buttonCssStyle(): PartialCssStyleType {
       const myself = this;
-      const theStyle: Partial<CSSStyleDeclaration> = {};
+      const theStyle: PartialCssStyleType = {};
       theStyle.top = -myself.barHeightInPixel / 2 + "px";
       theStyle.left = myself.buttonLeftOffset + "px";
 
       return theStyle;
     },
-    placeholderStyle(): Partial<CSSStyleDeclaration> {
+    placeholderStyle(): PartialCssStyleType {
       const myself = this;
       return cssMixer(defaultCssStyle, myself.propsPlaceholderStyle);
     }

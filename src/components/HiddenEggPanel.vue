@@ -121,6 +121,7 @@ import { defineComponent, ref } from "vue";
 import { useStore } from "vuex";
 import { NConfigProvider, NGlobalStyle, NSlider, NSpace } from "naive-ui";
 import CenterBox from "./xfl-common/vue/CenterBox.vue";
+import { PartialCssStyleType } from "./xfl-common/ts/PartialCssStyleType";
 
 // noinspection JSSuspiciousNameCombination
 export default defineComponent({
@@ -166,18 +167,18 @@ export default defineComponent({
       return this.theFontSizeInPixel + "px";
     },
     theRootScale: {
-      get() {
+      get: () => {
         return this.rootScale;
       },
-      set(value: string) {
+      set: (value: string) => {
         this.$emit("update:rootScale", value);
       }
     },
     theIsPanelOpened: {
-      get() {
+      get: () => {
         return this.isPanelOpened;
       },
-      set(value: string) {
+      set: (value: string) => {
         this.$emit("update:isPanelOpened", value);
       }
     },
@@ -200,7 +201,7 @@ export default defineComponent({
       const minHeightInPixel = 300;
       const minWidthInPixel = 800;
 
-      const theStyle: Partial<CSSStyleDeclaration> = {
+      const theStyle: PartialCssStyleType = {
         fontSize: myself.theFontSize,
         minWidth: myself.contentBoxMinWidthInPixel + "px"
       };

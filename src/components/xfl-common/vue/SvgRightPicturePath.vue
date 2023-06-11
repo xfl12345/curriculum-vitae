@@ -17,6 +17,7 @@
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
 import { cssMixer } from "../ts/CssMixer";
+import { PartialCssStyleType } from "../ts/PartialCssStyleType";
 
 type Point = {
   x: number;
@@ -27,7 +28,7 @@ interface PointDict {
   [index: string]: Point;
 }
 
-const defaultCssStyle: Partial<CSSStyleDeclaration> = {
+const defaultCssStyle: PartialCssStyleType = {
   fill: "transparent",
   strokeWidth: "2px",
   stroke: "black",
@@ -58,14 +59,14 @@ export default defineComponent({
       default: 100
     },
     propsCssStyle: {
-      type: Object as PropType<Partial<CSSStyleDeclaration>>,
-      default: (): Partial<CSSStyleDeclaration> => defaultCssStyle
+      type: Object as PropType<PartialCssStyleType>,
+      default: (): PartialCssStyleType => defaultCssStyle
     }
   },
   emits: [],
   setup(props, ctx) {
     const templateRoot = ref<HTMLDivElement>();
-    // const cssStyle: Partial<CSSStyleDeclaration> = {};
+    // const cssStyle: PartialCssStyleType = {};
 
     return {
       templateRoot
@@ -106,9 +107,9 @@ export default defineComponent({
         2
       );
     },
-    cssStyle(): Partial<CSSStyleDeclaration> {
+    cssStyle(): PartialCssStyleType {
       const myself = this;
-      const theStyle: Partial<CSSStyleDeclaration> = cssMixer(defaultCssStyle, myself.propsCssStyle);
+      const theStyle: PartialCssStyleType = cssMixer(defaultCssStyle, myself.propsCssStyle);
       theStyle.strokeDashoffset = "" + (myself.isShowPic ? 0 : myself.strokeDasharrayInPixel);
       theStyle.strokeDasharray = "" + myself.strokeDasharrayInPixel;
       return theStyle;
