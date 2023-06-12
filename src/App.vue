@@ -29,10 +29,14 @@ if (!store.state.browserInitiated) {
   let tmp = window.location.hash as string | undefined;
   let ok = false;
   if (typeof tmp !== "undefined" && tmp.length > 2) {
-    tmp = tmp.slice(2, tmp.length);
-    ok = true;
+    let endIndex = tmp.indexOf("?");
+    if (endIndex === -1) {
+      endIndex = tmp.length;
+    }
+    tmp = tmp.slice(2, endIndex);
+    ok = tmp !== "first-time-loading-page" && tmp !== "";
   }
-  const jumpTarget: string = ok ? tmp : "cv";
+  const jumpTarget: string = ok ? (tmp as string) : "cv";
   router.push({ name: "firstTimeLoadingPage", query: { exhibition: "false", jumpTarget } });
 }
 </script>
