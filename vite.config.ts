@@ -14,8 +14,8 @@ export default defineConfig({
       cache: false
     }),
     legacy({
-      targets: ['defaults', 'not IE 11'],
-    }),
+      targets: ["defaults", "not IE 11"]
+    })
   ],
   assetsInclude: ["**/*.bmp"],
   resolve: {
