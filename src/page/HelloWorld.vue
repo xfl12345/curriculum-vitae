@@ -7,7 +7,7 @@ const count = ref(0);
 </script>
 
 <template>
-  <img alt="Vue logo" src="../../public/vue_logo.png" />
+  <img alt="Vue logo" src="/vue_logo.png" />
   <h1>{{ msg }}</h1>
 
   <p>

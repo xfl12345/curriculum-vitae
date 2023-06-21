@@ -1,7 +1,12 @@
 <template>
   <div
     ref="templateRoot"
-    style="background-size: 100% auto; background-repeat: repeat-y; color: white"
+    style="
+      background-size: 100% auto;
+      background-repeat: repeat-y;
+      color: white;
+      background-image: url('/yourname_dusk.jpg');
+    "
     :style="rootStyle"
   >
     <center-box
@@ -128,7 +133,6 @@ import { defineComponent, PropType, ref } from "vue";
 import { useStore } from "vuex";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import yournameDusk from "../assets/pic/yourname_dusk.jpg";
 import CenterBox from "../components/xfl-common/vue/CenterBox.vue";
 import XflsSingleLineInput from "../components/xfl-common/vue/XflsSingleLineInput.vue";
 import CaptchaBoxTypeRotate from "../components/tianai-captcha/vue/CaptchaBoxTypeRotate.vue";
@@ -143,12 +147,6 @@ export default defineComponent({
     CaptchaBoxTypeRotate,
     XflsSingleLineInput,
     CenterBox
-  },
-  props: {
-    bgImgURL: {
-      type: String,
-      default: yournameDusk
-    }
   },
   setup() {
     const templateRoot = ref<HTMLDivElement>();
@@ -222,7 +220,6 @@ export default defineComponent({
         height: myself.theRootHeight + "px",
         // width: uiCalculation.document.body.scrollWidth + "px",
         // height: uiCalculation.document.body.scrollHeight + "px",
-        backgroundImage: `url('${myself.bgImgURL}')`,
         minWidth: myself.theCenterBoxMinWidth + "px",
         fontSize: myself.theFontSize
         // minWidth: myself.theFontSizeInPixel * 26 + "px"
