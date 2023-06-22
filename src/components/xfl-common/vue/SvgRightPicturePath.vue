@@ -9,7 +9,7 @@
       /*transition-duration: 1s;*/
       /*transition-delay: 5s;*/
     "
-    :style="{ ...propsCssStyle, ...cssStyle }"
+    :style="{ ...cssStyle }"
     :d="thePathString"
   />
 </template>
