@@ -67,7 +67,11 @@
             :degree="item.degree"
           />
         </cv-chapter>
-        <cv-chapter :the-font-size-in-pixel="theFontSizeInPixel" :the-title="t('word.xfl_title_blog')">
+        <cv-chapter
+          v-if="'interestingBlog' in cvData"
+          :the-font-size-in-pixel="theFontSizeInPixel"
+          :the-title="t('word.xfl_title_blog')"
+        >
           <div :style="{ fontSize: theFontSize }">
             <ul style="margin: 0" :style="{ padding: '0 ' + theFontSize }">
               <li v-for="item in cvData.interestingBlog" :key="item.id">
@@ -77,6 +81,7 @@
           </div>
         </cv-chapter>
         <cv-chapter
+          v-if="'selfAppraisal' in cvData"
           :the-font-size-in-pixel="theFontSizeInPixel"
           :the-title="t('word.xfl_title_self_appraisal')"
         >
