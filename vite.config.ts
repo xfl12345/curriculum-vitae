@@ -4,6 +4,9 @@ import vueJsx from "@vitejs/plugin-vue-jsx";
 import eslintPlugin from "vite-plugin-eslint";
 import legacy from "@vitejs/plugin-legacy";
 
+const corsHost = "127.0.0.1:8880";
+const corsRootURL = "http://" + corsHost;
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -45,28 +48,28 @@ export default defineConfig({
     host: "::",
     proxy: {
       "/static/secret/": {
-        target: "http://127.0.0.1:8880",
+        target: corsRootURL,
         changeOrigin: true
         // rewrite: (path) => path.replace(/^\/backend/, "")
       },
       "/captcha": {
-        target: "http://127.0.0.1:8880",
+        target: corsRootURL,
         changeOrigin: true
       },
       "/login": {
-        target: "http://127.0.0.1:8880",
+        target: corsRootURL,
         changeOrigin: true
       },
       "/logout": {
-        target: "http://127.0.0.1:8880",
+        target: corsRootURL,
         changeOrigin: true
       },
       "/sms": {
-        target: "http://127.0.0.1:8880",
+        target: corsRootURL,
         changeOrigin: true
       },
       "/sms/ws-connect": {
-        target: "ws://127.0.0.1:8880",
+        target: (corsRootURL.startsWith("https") ? "wss://" : "ws://") + corsHost,
         changeOrigin: true
       }
     }
