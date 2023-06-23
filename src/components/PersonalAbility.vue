@@ -7,7 +7,7 @@
     <div style="width: 0; flex-grow: 618; flex-shrink: 1">
       <div style="height: 100%" :style="{ paddingLeft: theFontSize, paddingRight: theFontSize }">
         <center-box x-grow="1">
-          <percent-bar :the-font-size-in-pixel="theFontSizeInPixel" :the-percent="degree" />
+          <progress-bar :the-font-size-in-pixel="theFontSizeInPixel" :the-percent="degree" />
         </center-box>
       </div>
     </div>
@@ -27,7 +27,7 @@
 
 <script setup lang="tsx">
 import { computed, ref } from "vue";
-import PercentBar from "./xfl-common/vue/PercentBar.vue";
+import ProgressBar from "./xfl-common/vue/ProgressBar.vue";
 import TextPrettier from "./xfl-common/vue/TextPrettier.vue";
 import CenterBox from "./xfl-common/vue/CenterBox.vue";
 
