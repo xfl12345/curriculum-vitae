@@ -7,21 +7,35 @@
       border-width: 2px;
       overflow: hidden;
       vertical-align: middle;
+      background-color: transparent;
+      position: relative;
     "
-    :style="{ borderRadius: theFontSize, borderColor: theBorderColor, height: theFontSize }"
+    :style="{
+      borderRadius: theFontSize,
+      borderColor: theBorderColor,
+      height: theFontSize,
+      clipPath: `inset(0 round ${theFontSizeInPixel}px)`
+    }"
   >
     <div
-      style="height: 200%; margin: 0"
+      style="height: 120%; margin: 0"
       :style="{
         width: thePercent * 100 + '%',
         backgroundColor: theContentColor
       }"
     />
+    <center-box v-if="showPercentNumber" style="position: absolute; top: 0; left: 0; pointer-events: none">
+      <span :style="[{ fontSize: theFontSize }, propsPercentNumberStyle]">{{
+        thePercent * 100 + "%"
+      }}</span>
+    </center-box>
   </div>
 </template>
 
 <script setup lang="tsx">
-import { computed, ref } from "vue";
+import { computed, ref, PropType } from "vue";
+import { PartialCssStyleType } from "../ts/PartialCssStyleType";
+import CenterBox from "./CenterBox.vue";
 
 const props = defineProps({
   theFontSizeInPixel: {
@@ -34,20 +48,26 @@ const props = defineProps({
   },
   theBorderColor: {
     type: String,
-    default: "#F87900"
+    default: "aqua"
   },
-  contentColorFollowBorderColor: {
+  theContentColor: {
+    type: String,
+    default: "aqua"
+  },
+  showPercentNumber: {
     type: Boolean,
-    default: true
+    default: false
+  },
+  propsPercentNumberStyle: {
+    type: Object as PropType<PartialCssStyleType>,
+    default: (): PartialCssStyleType => {
+      return {};
+    }
   }
 });
 
 const theFontSize = computed(() => {
   return props.theFontSizeInPixel + "px";
-});
-
-const theContentColor = computed(() => {
-  return props.contentColorFollowBorderColor ? props.theBorderColor : "skyblue";
 });
 
 const templateRoot = ref<HTMLDivElement>();
