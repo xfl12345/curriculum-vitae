@@ -2,7 +2,7 @@
   <div
     ref="templateRoot"
     style="width: 100%; display: flex; vertical-align: middle"
-    :style="{ marginTop: verticalMargin, marginBottom: verticalMargin }"
+    :style="{ margin: verticalMargin + ' auto' }"
   >
     <div style="width: 0; flex-grow: 618; flex-shrink: 1">
       <div style="height: 100%" :style="{ paddingLeft: theFontSize, paddingRight: theFontSize }">
