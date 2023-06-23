@@ -1,5 +1,6 @@
 <template>
   <progress-bar
+    ref="templateRoot"
     :the-font-size-in-pixel="theFontSizeInPixel"
     :the-percent="thePercent"
     :the-border-color="borderColor"
@@ -30,7 +31,7 @@ const props = defineProps({
     default: "auto"
   },
   progressBarColorArray: {
-    type: Array as PropType<String[]>,
+    type: Array as PropType<string[]>,
     default: () =>
       tinygradient("red", "aqua")
         .hsv(100, "long")
