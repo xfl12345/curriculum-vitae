@@ -311,7 +311,7 @@ export default defineComponent({
       if (reached) {
         setTimeout(() => {
           myself.isShowPercentageBox = !reached;
-        }, 2000);
+        }, 1000);
       } else {
         myself.isShowPercentageBox = !reached;
       }
