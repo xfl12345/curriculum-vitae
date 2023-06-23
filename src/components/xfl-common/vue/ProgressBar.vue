@@ -26,7 +26,7 @@
     />
     <center-box v-if="showPercentNumber" style="position: absolute; top: 0; left: 0; pointer-events: none">
       <span :style="[{ fontSize: theFontSize }, propsPercentNumberStyle]">{{
-        thePercent * 100 + "%"
+        (thePercent * 100).toFixed(percentNumber2Fixed) + "%"
       }}</span>
     </center-box>
   </div>
@@ -63,6 +63,10 @@ const props = defineProps({
     default: (): PartialCssStyleType => {
       return {};
     }
+  },
+  percentNumber2Fixed: {
+    type: Number,
+    default: 0
   }
 });
 
