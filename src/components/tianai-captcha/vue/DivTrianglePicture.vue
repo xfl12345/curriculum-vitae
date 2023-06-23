@@ -83,7 +83,6 @@ export default defineComponent({
     rootBoxStyle(): PartialCssStyleType {
       const myself = this;
       const theStyle: PartialCssStyleType = {};
-      theStyle.clipPath = "inset(0)";
       switch (myself.direction) {
         case "right":
         case "left": {
@@ -97,6 +96,23 @@ export default defineComponent({
           theStyle.height = myself.triangleHeight;
           break;
         }
+        default:
+          break;
+      }
+
+      switch (myself.direction) {
+        case "right":
+          theStyle.clipPath = "polygon(0 0, 100% 50%, 0 100%)";
+          break;
+        case "left":
+          theStyle.clipPath = "polygon(100% 0, 0 50%, 100% 100%)";
+          break;
+        case "top":
+          theStyle.clipPath = "polygon(0 100%, 50% 0, 100% 100%)";
+          break;
+        case "bottom":
+          theStyle.clipPath = "polygon(0 0, 50% 100%, 100% 0)";
+          break;
         default:
           break;
       }
