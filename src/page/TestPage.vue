@@ -15,6 +15,24 @@
     <button @click="startWsTest">开始WS通信</button>
     <span>短信内容：</span><br />
     <div style="border: aqua solid 1px; white-space: pre-wrap">{{ smsContent }}</div>
+    <div style="display: flex; justify-content: space-between">
+      <div-triangle-picture :triangle-height-in-pixel="200" direction="top" />
+      <div-triangle-picture :triangle-height-in-pixel="200" direction="right" />
+      <div-triangle-picture :triangle-height-in-pixel="200" direction="bottom" />
+      <div-triangle-picture :triangle-height-in-pixel="200" direction="left" />
+    </div>
+    <rainbow-progress-bar
+      :the-font-size-in-pixel="100"
+      :the-percent="percent4ProgressBar"
+      :show-percent-number="true"
+      :percent-number2-fixed="1"
+    />
+    <input
+      v-model="percent4ProgressBar"
+      type="number"
+      step="0.001"
+      style="height: 100px; font-size: 100px"
+    />
   </div>
 </template>
 
@@ -23,9 +41,11 @@ import { defineComponent, ref } from "vue";
 import axios, { AxiosResponse } from "axios";
 import ReconnectingWebSocket from "reconnecting-websocket";
 import * as Events from "reconnecting-websocket/events";
+import DivTrianglePicture from "../components/tianai-captcha/vue/DivTrianglePicture.vue";
+import RainbowProgressBar from "../components/xfl-common/vue/RainbowProgressBar.vue";
 
 export default defineComponent({
-  components: {},
+  components: { RainbowProgressBar, DivTrianglePicture },
   props: {},
   emits: [],
   setup(props, ctx) {
@@ -40,7 +60,8 @@ export default defineComponent({
     return {
       theInputValue: "" as string,
       smsContent: "",
-      webSocketClient
+      webSocketClient,
+      percent4ProgressBar: 0.618
     };
   },
   computed: {
