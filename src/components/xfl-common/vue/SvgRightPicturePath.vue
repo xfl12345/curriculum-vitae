@@ -1,17 +1,5 @@
 <template>
-  <path
-    ref="templateRoot"
-    style="
-      /*animation-duration: 10s;*/
-      /*animation-name: filling;*/
-      /*animation-delay: 5s;*/
-      /*animation-timing-function: linear;*/
-      /*transition-duration: 1s;*/
-      /*transition-delay: 5s;*/
-    "
-    :style="{ ...cssStyle }"
-    :d="thePathString"
-  />
+  <path ref="templateRoot" :style="cssStyle" :d="thePathString" />
 </template>
 
 <script lang="tsx">
