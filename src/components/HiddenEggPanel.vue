@@ -87,7 +87,7 @@
                       :step="0.5"
                       :min="0.5"
                       :max="30"
-                      :marks="{ 2.5: '最小值', 8: '最大值' }"
+                      :marks="{ 4.5: '最小值' }"
                     />
                   </n-space>
                 </n-config-provider>

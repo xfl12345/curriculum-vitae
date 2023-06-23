@@ -1,3 +1,3 @@
 export const fontSizeCalc = (scale: number) => {
-  return 5.125 * scale;
+  return 4.5 * scale;
 };

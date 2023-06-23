@@ -146,6 +146,7 @@ import { getCurriculumVitaeData } from "../model/SecretDataApi";
 import { fontSizeCalc } from "../model/FontSizeCalculator";
 import { paperA4Standard } from "../assets/json/common.json";
 import { PartialCssStyleType } from "../components/xfl-common/ts/PartialCssStyleType";
+import { PaperSizeStandard } from "../components/xfl-common/ts/PaperSizeStandard";
 
 export default defineComponent({
   components: {
@@ -164,13 +165,15 @@ export default defineComponent({
 
     const templateRoot = ref<HTMLDivElement>();
     const loadCvDataFailedMessageBox = ref<HTMLDivElement>();
+    const paperSizeStandard: PaperSizeStandard = paperA4Standard.sizeInMillimetre as PaperSizeStandard;
 
     return {
       templateRoot,
       t,
       store,
       router,
-      loadCvDataFailedMessageBox
+      loadCvDataFailedMessageBox,
+      paperSizeStandard
     };
   },
   data() {
@@ -201,10 +204,7 @@ export default defineComponent({
     },
     cvBoxStyle(): PartialCssStyleType {
       const myself = this;
-      const standard = {
-        width: paperA4Standard.size.widthInMillimetre,
-        height: paperA4Standard.size.heightInMillimetre
-      };
+      const standard = this.paperSizeStandard;
 
       const width = standard.width * myself.rootScale + "px";
 
