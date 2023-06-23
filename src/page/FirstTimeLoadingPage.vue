@@ -324,7 +324,7 @@ export default defineComponent({
         const tmpJumpTarget = myself.$route.query.jumpTarget as string | undefined;
         const jumpTarget: string = typeof tmpJumpTarget === "undefined" ? "cv" : tmpJumpTarget;
         myself.router.push(jumpTarget);
-      }, 4000);
+      }, 2300);
     },
     onFailed() {
       this.circleProgressBarColorArray = ["#FF0000", "#FF0000"];
