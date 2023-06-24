@@ -8,12 +8,13 @@
     <div v-if="isCvDataLoaded" style="display: flex; width: 100%; height: 100%" :style="cvBoxParentStyle">
       <div
         ref="cvBox"
-        style="box-sizing: border-box; vertical-align: top; border: 1px dashed aqua"
-        :style="cvBoxStyle"
+        style="box-sizing: border-box; vertical-align: top"
+        :style="[cvBoxStyle, { border: debugCvBoxSize ? '1px dashed aqua' : undefined }]"
       >
         <div
           ref="cvBoxBody"
-          style="box-sizing: border-box; display: inline-block; border: 1px dashed hotpink"
+          style="box-sizing: border-box; display: inline-block"
+          :style="{ border: debugCvBoxSize ? '1px dashed hotpink' : undefined }"
         >
           <cv-chapter
             :the-font-size-in-pixel="theFontSizeInPixel"
@@ -198,6 +199,7 @@ export default defineComponent({
     const cvBoxParentStyle: PartialCssStyleType = {};
     const cvData: Partial<CurriculumVitaeData> = {};
     return {
+      debugCvBoxSize: false,
       rootNodeStyle,
       cvBoxParentStyle,
       isReloadingCvData: false,
@@ -206,17 +208,14 @@ export default defineComponent({
       cvData,
       rootScale: 7,
       cvBoxMounted: false,
-      adjustingFontSizeCoefficient: "",
-      fontSizeCoefficient: 5,
+      adjustingFontSize: "",
+      theFontSizeInPixel: 36,
       loadCvDataFailedMessage: ""
     };
   },
   computed: {
     isCvDataLoaded() {
       return "basicInformation" in this.cvData;
-    },
-    theFontSizeInPixel() {
-      return this.rootScale * this.fontSizeCoefficient;
     },
     theFontSize() {
       return this.theFontSizeInPixel + "px";
@@ -240,7 +239,7 @@ export default defineComponent({
     rootScale(newValue, oldValue) {
       if (newValue !== oldValue) {
         console.log("rootScale: " + newValue);
-        this.adjustFontSizeCoefficient();
+        this.adjustFontSize();
       }
     }
   },
@@ -323,37 +322,64 @@ export default defineComponent({
     },
     onCvBoxMounted() {
       this.cvBoxMounted = true;
-      this.adjustFontSizeCoefficient();
+      this.adjustFontSize();
     },
-    adjustFontSizeCoefficient() {
+    adjustFontSize() {
       const myself = this;
 
-      if (!myself.cvBoxMounted || myself.adjustingFontSizeCoefficient !== "") {
+      if (!myself.cvBoxMounted || myself.adjustingFontSize !== "") {
         return;
       }
       const myThreadId = uuidv1();
-      myself.adjustingFontSizeCoefficient = myThreadId;
-      if (myself.adjustingFontSizeCoefficient !== myThreadId) {
+      myself.adjustingFontSize = myThreadId;
+      if (myself.adjustingFontSize !== myThreadId) {
         return;
       }
 
       console.log("cvBoxHeightInPixel = " + myself.cvBoxHeightInPixel);
-      let minCoefficient = 2;
-      let maxCoefficient = 10;
-      let currentCoefficient = (minCoefficient + maxCoefficient) / 2;
+      console.log("scrollHeight", myself.cvBoxBody.scrollHeight);
+      console.log("current FontSize=" + myself.theFontSize);
+
+      const getMaxFontSize = () =>
+        Math.ceil(
+          myself.cvBoxHeightInPixel / Math.floor(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel)
+        );
+
+      let maxFontSize = getMaxFontSize();
+      let minFontSize = Math.floor((maxFontSize / 4) * 3);
+      // 防止字体过小
+      if (minFontSize < 8) {
+        minFontSize = 8;
+      }
+      const getMiddleFontSize = () => Math.round((minFontSize + maxFontSize) / 2);
+      let currentFontSize = Math.round(
+        myself.cvBoxHeightInPixel / Math.round(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel)
+      );
+      let lastFontSize = -1;
       let done = false;
-      myself.fontSizeCoefficient = currentCoefficient;
+      myself.theFontSizeInPixel = currentFontSize;
       const ptrBook: any = {};
       ptrBook.theFunc = () => {
         if (!done) {
           if (myself.cvBoxBody.scrollHeight > myself.cvBoxHeightInPixel) {
-            maxCoefficient = currentCoefficient;
-            currentCoefficient = (minCoefficient + maxCoefficient) / 2;
-            myself.fontSizeCoefficient = currentCoefficient;
+            maxFontSize = currentFontSize;
+            lastFontSize = currentFontSize;
+            currentFontSize = getMiddleFontSize();
+            myself.theFontSizeInPixel = currentFontSize;
           } else if (myself.cvBoxBody.scrollHeight < myself.cvBoxHeightInPixel) {
-            minCoefficient = currentCoefficient;
-            currentCoefficient = (minCoefficient + maxCoefficient) / 2;
-            myself.fontSizeCoefficient = currentCoefficient;
+            if (
+              Math.abs(
+                Math.ceil(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel) -
+                  Math.ceil(myself.cvBoxHeightInPixel / myself.theFontSizeInPixel)
+              ) > 2
+            ) {
+              maxFontSize = getMaxFontSize();
+            }
+
+            minFontSize = currentFontSize;
+            lastFontSize = currentFontSize;
+            currentFontSize = getMiddleFontSize();
+            myself.theFontSizeInPixel = currentFontSize;
           } else {
             done = true;
             console.log("done!");
@@ -365,10 +391,10 @@ export default defineComponent({
         if (!done) {
           console.log("scrollHeight", myself.cvBoxBody.scrollHeight);
           // 如果实在探不到 盒子拉伸高度 和 限制高度 相等的 系数，那就给个极限退出循环
-          if (
-            maxCoefficient - minCoefficient < 0.015625 &&
-            myself.cvBoxBody.scrollHeight < myself.cvBoxHeightInPixel
-          ) {
+          if (lastFontSize === currentFontSize) {
+            if (myself.cvBoxBody.scrollHeight > myself.cvBoxHeightInPixel) {
+              myself.theFontSizeInPixel -= 1;
+            }
             console.log("Signing done...");
             done = true;
           } else {
@@ -379,14 +405,18 @@ export default defineComponent({
           setTimeout(() => {
             console.log("cvBoxHeightInPixel", myself.cvBoxHeightInPixel);
             console.log("scrollHeight", myself.cvBoxBody.scrollHeight);
-            console.log("Final FontSizeCoefficient=" + myself.fontSizeCoefficient);
-            console.log("Final FontSize=" + myself.theFontSizeInPixel);
+            console.log("Final FontSize=" + myself.theFontSize);
+            console.log(
+              "current maxLine",
+              Math.ceil(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel)
+            );
+            console.log("target maxLine", Math.ceil(myself.cvBoxHeightInPixel / myself.theFontSizeInPixel));
             console.log("Clearing timer...");
             clearInterval(ptrBook.theTimer);
-            myself.adjustingFontSizeCoefficient = "";
+            myself.adjustingFontSize = "";
           }, 100);
         }
-      }, 100);
+      }, 20);
     }
   }
 });
