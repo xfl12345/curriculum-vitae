@@ -1,7 +1,6 @@
 import { createStore } from "vuex";
 // import { ResizeObserver } from "resize-observer";
-import { getBrowserFirstDefaultFontFamily } from "../components/xfl-common/ts/FontUtils";
-import { fontSizeCalc } from "../model/FontSizeCalculator";
+import { getBrowserFirstDefaultFontFamily, getTextSize } from "../components/xfl-common/ts/FontUtils";
 import { ClientCookieManager } from "../components/xfl-common/ts/ClientCookieManager";
 import { LoginMananger } from "../model/LoginMananger";
 
@@ -13,7 +12,8 @@ const loginManager = new LoginMananger();
 const store = createStore({
   state: {
     uiCalculation: {
-      rootScale: 7,
+      rootScale: 8,
+      theGlobalDefaultFontSizeInPixel: Math.ceil(getTextSize("xx-large")),
       updateBrowserSelfValue: true,
       document: {
         documentElement: {
@@ -45,7 +45,7 @@ const store = createStore({
   },
   getters: {
     theFontSizeInPixel(state) {
-      return fontSizeCalc(state.uiCalculation.rootScale);
+      return state.uiCalculation.theGlobalDefaultFontSizeInPixel;
     },
     theFontSize(state, getters) {
       return getters.theFontSizeInPixel + "px";

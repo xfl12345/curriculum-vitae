@@ -166,3 +166,15 @@ export const isSupportedFontFamily = function (
   detector.defaultFontName = defaultFontName;
   return detector.isSupported(fontName);
 };
+
+export const getTextSize = (fontSizeCode: string): number => {
+  const span = document.createElement("span");
+  span.style.visibility = "hidden";
+  span.style.fontSize = fontSizeCode;
+  span.style.display = "inline-block";
+  span.innerText = "正";
+  document.body.appendChild(span);
+  const result = parseFloat(window.getComputedStyle(span)?.width);
+  document.body.removeChild(span);
+  return result;
+};

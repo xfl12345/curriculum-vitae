@@ -141,6 +141,7 @@ import { CountDownHelper } from "../components/xfl-common/ts/CountDownHelper";
 import { RequestResult } from "../components/tianai-captcha/ts/TianaiCaptchaClient";
 import { IGenericJsonApiResponseData, RateLimitedApiResultPayload } from "../model/JsonApiResponseData";
 import { PartialCssStyleType } from "../components/xfl-common/ts/PartialCssStyleType";
+import { getTextSize } from "../components/xfl-common/ts/FontUtils";
 
 export default defineComponent({
   components: {
@@ -255,7 +256,7 @@ export default defineComponent({
   },
   methods: {
     getCenterBoxMinWidth(fontSizeInPixel: number) {
-      return fontSizeInPixel * 22;
+      return fontSizeInPixel * 22; // 保证至少保留 22 个字的宽度
     },
     getTheFontSizeInPixel(): number {
       const myself = this;
@@ -269,7 +270,7 @@ export default defineComponent({
 
       fontSize = Math.floor(fontSize);
       if (fontSize === 0) {
-        fontSize = 14; // 破罐破摔
+        fontSize = Math.round(getTextSize("medium")); // 破罐破摔
       }
 
       return fontSize;

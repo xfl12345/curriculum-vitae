@@ -5,88 +5,98 @@
     style="display: flex; justify-content: flex-start; position: relative"
     :style="rootNodeStyle"
   >
-    <div v-if="isCvDataLoaded" style="display: flex; width: 100%; height: 100%" :style="[cvBoxParentStyle]">
-      <div ref="cvBox" style="box-sizing: border-box" :style="cvBoxStyle">
-        <cv-chapter
-          :the-font-size-in-pixel="theFontSizeInPixel"
-          :the-title="t('word.xfl_title_basic_information')"
+    <div v-if="isCvDataLoaded" style="display: flex; width: 100%; height: 100%" :style="cvBoxParentStyle">
+      <div
+        ref="cvBox"
+        style="box-sizing: border-box; vertical-align: top; border: 1px dashed aqua"
+        :style="cvBoxStyle"
+      >
+        <div
+          ref="cvBoxBody"
+          style="box-sizing: border-box; display: inline-block; border: 1px dashed hotpink"
         >
-          <template #default>
-            <basic-info-glance
+          <cv-chapter
+            :the-font-size-in-pixel="theFontSizeInPixel"
+            :the-title="t('word.xfl_title_basic_information')"
+          >
+            <template #default>
+              <basic-info-glance
+                :the-font-size-in-pixel="theFontSizeInPixel"
+                :basic-information="cvData.basicInformation"
+                :face-photo="cvData.basicInformation.facePhoto"
+              />
+            </template>
+            <template #slogan>
+              <div style="text-align: right">
+                <span style="cursor: pointer" :style="{ fontSize: theFontSize }" @click="openHiddenEggPanel"
+                  >🌼</span
+                >
+              </div>
+            </template>
+          </cv-chapter>
+          <cv-chapter
+            :the-font-size-in-pixel="theFontSizeInPixel"
+            :the-title="t('word.xfl_title_community')"
+            the-slogan="Talk is cheap,show me the code!"
+          >
+            <community-box v-bind="cvData.community" :the-font-size-in-pixel="theFontSizeInPixel" />
+          </cv-chapter>
+          <cv-chapter :the-font-size-in-pixel="theFontSizeInPixel" :the-title="t('word.xfl_title_journey')">
+            <record-item
+              v-for="item in cvData.journey"
+              :key="item.id"
               :the-font-size-in-pixel="theFontSizeInPixel"
-              :basic-information="cvData.basicInformation"
-              :face-photo="cvData.basicInformation.facePhoto"
+              :the-period="item.period"
+              :the-header-center="item.headerCenter"
+              :the-header-right="item.headerRight"
+              :the-body="item.body"
             />
-          </template>
-          <template #slogan>
-            <div style="text-align: right">
-              <span style="cursor: pointer" :style="{ fontSize: theFontSize }" @click="openHiddenEggPanel"
-                >🌼</span
-              >
+          </cv-chapter>
+          <cv-chapter
+            :the-font-size-in-pixel="theFontSizeInPixel"
+            :the-title="t('word.xfl_title_certificate')"
+          >
+            <text-prettier
+              v-for="item in cvData.certificate"
+              :key="item.id"
+              :content="item.content"
+              :style="{ fontSize: theFontSize }"
+            />
+          </cv-chapter>
+          <cv-chapter
+            :the-font-size-in-pixel="theFontSizeInPixel"
+            :the-title="t('word.xfl_title_skill_degree')"
+          >
+            <personal-ability
+              v-for="item in cvData.skillDegree"
+              :key="item.skillName"
+              :the-font-size-in-pixel="theFontSizeInPixel"
+              :the-skill="item.skillName"
+              :degree="item.degree"
+            />
+          </cv-chapter>
+          <cv-chapter
+            v-if="'interestingBlog' in cvData"
+            :the-font-size-in-pixel="theFontSizeInPixel"
+            :the-title="t('word.xfl_title_blog')"
+          >
+            <div :style="{ fontSize: theFontSize }">
+              <ul style="margin: 0" :style="{ padding: '0 ' + theFontSize }">
+                <li v-for="item in cvData.interestingBlog" :key="item.id">
+                  <text-prettier :content="item.content" />
+                </li>
+              </ul>
             </div>
-          </template>
-        </cv-chapter>
-        <cv-chapter
-          :the-font-size-in-pixel="theFontSizeInPixel"
-          :the-title="t('word.xfl_title_community')"
-          the-slogan="Talk is cheap,show me the code!"
-        >
-          <community-box v-bind="cvData.community" :the-font-size-in-pixel="theFontSizeInPixel" />
-        </cv-chapter>
-        <cv-chapter :the-font-size-in-pixel="theFontSizeInPixel" :the-title="t('word.xfl_title_journey')">
-          <record-item
-            v-for="item in cvData.journey"
-            :key="item.id"
+          </cv-chapter>
+          <cv-chapter
+            v-if="'selfAppraisal' in cvData"
             :the-font-size-in-pixel="theFontSizeInPixel"
-            :the-period="item.period"
-            :the-header-center="item.headerCenter"
-            :the-header-right="item.headerRight"
-            :the-body="item.body"
-          />
-        </cv-chapter>
-        <cv-chapter
-          :the-font-size-in-pixel="theFontSizeInPixel"
-          :the-title="t('word.xfl_title_certificate')"
-        >
-          <text-prettier
-            v-for="item in cvData.certificate"
-            :key="item.id"
-            :content="item.content"
-            :style="{ fontSize: theFontSize }"
-          />
-        </cv-chapter>
-        <cv-chapter
-          :the-font-size-in-pixel="theFontSizeInPixel"
-          :the-title="t('word.xfl_title_skill_degree')"
-        >
-          <personal-ability
-            v-for="item in cvData.skillDegree"
-            :key="item.skillName"
-            :the-font-size-in-pixel="theFontSizeInPixel"
-            :the-skill="item.skillName"
-            :degree="item.degree"
-          />
-        </cv-chapter>
-        <cv-chapter
-          v-if="'interestingBlog' in cvData"
-          :the-font-size-in-pixel="theFontSizeInPixel"
-          :the-title="t('word.xfl_title_blog')"
-        >
-          <div :style="{ fontSize: theFontSize }">
-            <ul style="margin: 0" :style="{ padding: '0 ' + theFontSize }">
-              <li v-for="item in cvData.interestingBlog" :key="item.id">
-                <text-prettier :content="item.content" />
-              </li>
-            </ul>
-          </div>
-        </cv-chapter>
-        <cv-chapter
-          v-if="'selfAppraisal' in cvData"
-          :the-font-size-in-pixel="theFontSizeInPixel"
-          :the-title="t('word.xfl_title_self_appraisal')"
-        >
-          <text-prettier :style="{ fontSize: theFontSize }" :content="cvData.selfAppraisal" />
-        </cv-chapter>
+            :the-title="t('word.xfl_title_self_appraisal')"
+          >
+            <text-prettier :style="{ fontSize: theFontSize }" :content="cvData.selfAppraisal" />
+          </cv-chapter>
+          <vue3-mounted-helper @mounted="onCvBoxMounted" />
+        </div>
       </div>
     </div>
     <hidden-egg-panel
@@ -134,22 +144,24 @@ import { defineComponent, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
+import { v1 as uuidv1 } from "uuid";
+import { CurriculumVitaeData } from "../tsmod/CurriculumVitaeData";
+import { getCurriculumVitaeData } from "../model/SecretDataApi";
+import { paperA4Standard } from "../assets/json/common.json";
+import TextPrettier from "../components/xfl-common/vue/TextPrettier.vue";
+import { PaperSizeStandard } from "../components/xfl-common/ts/PaperSizeStandard";
+import { PartialCssStyleType } from "../components/xfl-common/ts/PartialCssStyleType";
 import CvChapter from "../components/CvChapter.vue";
 import RecordItem from "../components/RecordItem.vue";
 import CommunityBox from "../components/CommunityBox.vue";
 import HiddenEggPanel from "../components/HiddenEggPanel.vue";
 import BasicInfoGlance from "../components/BasicInfoGlance.vue";
 import PersonalAbility from "../components/PersonalAbility.vue";
-import TextPrettier from "../components/xfl-common/vue/TextPrettier.vue";
-import { CurriculumVitaeData } from "../tsmod/CurriculumVitaeData";
-import { getCurriculumVitaeData } from "../model/SecretDataApi";
-import { fontSizeCalc } from "../model/FontSizeCalculator";
-import { paperA4Standard } from "../assets/json/common.json";
-import { PartialCssStyleType } from "../components/xfl-common/ts/PartialCssStyleType";
-import { PaperSizeStandard } from "../components/xfl-common/ts/PaperSizeStandard";
+import Vue3MountedHelper from "../components/xfl-common/vue/Vue3MountedHelper.vue";
 
 export default defineComponent({
   components: {
+    Vue3MountedHelper,
     HiddenEggPanel,
     BasicInfoGlance,
     CommunityBox,
@@ -164,6 +176,8 @@ export default defineComponent({
     const router = useRouter();
 
     const templateRoot = ref<HTMLDivElement>();
+    const cvBox = ref<HTMLDivElement>();
+    const cvBoxBody = ref<HTMLDivElement>();
     const loadCvDataFailedMessageBox = ref<HTMLDivElement>();
     const paperSizeStandard: PaperSizeStandard = paperA4Standard.sizeInMillimetre as PaperSizeStandard;
 
@@ -172,6 +186,8 @@ export default defineComponent({
       t,
       store,
       router,
+      cvBox,
+      cvBoxBody,
       loadCvDataFailedMessageBox,
       paperSizeStandard
     };
@@ -189,6 +205,9 @@ export default defineComponent({
       isLoadCvDataFailed: false,
       cvData,
       rootScale: 7,
+      cvBoxMounted: false,
+      adjustingFontSizeCoefficient: "",
+      fontSizeCoefficient: 5,
       loadCvDataFailedMessage: ""
     };
   },
@@ -197,21 +216,23 @@ export default defineComponent({
       return "basicInformation" in this.cvData;
     },
     theFontSizeInPixel() {
-      return fontSizeCalc(this.rootScale);
+      return this.rootScale * this.fontSizeCoefficient;
     },
     theFontSize() {
       return this.theFontSizeInPixel + "px";
     },
+    cvBoxHeightInPixel() {
+      return this.paperSizeStandard.height * this.rootScale;
+    },
     cvBoxStyle(): PartialCssStyleType {
       const myself = this;
-      const standard = this.paperSizeStandard;
-
-      const width = standard.width * myself.rootScale + "px";
+      const width = myself.paperSizeStandard.width * myself.rootScale + "px";
+      const height = myself.cvBoxHeightInPixel + "px";
 
       return {
         minWidth: width,
         width,
-        height: standard.height * myself.rootScale + "px"
+        height
       };
     }
   },
@@ -219,6 +240,7 @@ export default defineComponent({
     rootScale(newValue, oldValue) {
       if (newValue !== oldValue) {
         console.log("rootScale: " + newValue);
+        this.adjustFontSizeCoefficient();
       }
     }
   },
@@ -248,9 +270,6 @@ export default defineComponent({
     },
     jump2LoginPage() {
       this.router.push({ name: "login" });
-    },
-    jump2InitPage() {
-      this.router.push({ name: "firstTimeLoadingPage", query: { exhibition: "false" } });
     },
     jump2IndexPage() {
       this.router.push({ name: "index" });
@@ -301,6 +320,73 @@ export default defineComponent({
     resetRootScale() {
       const myself = this;
       myself.rootScale = myself.store.state.uiCalculation.rootScale;
+    },
+    onCvBoxMounted() {
+      this.cvBoxMounted = true;
+      this.adjustFontSizeCoefficient();
+    },
+    adjustFontSizeCoefficient() {
+      const myself = this;
+
+      if (!myself.cvBoxMounted || myself.adjustingFontSizeCoefficient !== "") {
+        return;
+      }
+      const myThreadId = uuidv1();
+      myself.adjustingFontSizeCoefficient = myThreadId;
+      if (myself.adjustingFontSizeCoefficient !== myThreadId) {
+        return;
+      }
+
+      console.log("cvBoxHeightInPixel = " + myself.cvBoxHeightInPixel);
+      let minCoefficient = 2;
+      let maxCoefficient = 10;
+      let currentCoefficient = (minCoefficient + maxCoefficient) / 2;
+      let done = false;
+      myself.fontSizeCoefficient = currentCoefficient;
+      const ptrBook: any = {};
+      ptrBook.theFunc = () => {
+        if (!done) {
+          if (myself.cvBoxBody.scrollHeight > myself.cvBoxHeightInPixel) {
+            maxCoefficient = currentCoefficient;
+            currentCoefficient = (minCoefficient + maxCoefficient) / 2;
+            myself.fontSizeCoefficient = currentCoefficient;
+          } else if (myself.cvBoxBody.scrollHeight < myself.cvBoxHeightInPixel) {
+            minCoefficient = currentCoefficient;
+            currentCoefficient = (minCoefficient + maxCoefficient) / 2;
+            myself.fontSizeCoefficient = currentCoefficient;
+          } else {
+            done = true;
+            console.log("done!");
+          }
+        }
+      };
+      ptrBook.clearing = false;
+      ptrBook.theTimer = setInterval(() => {
+        if (!done) {
+          console.log("scrollHeight", myself.cvBoxBody.scrollHeight);
+          // 如果实在探不到 盒子拉伸高度 和 限制高度 相等的 系数，那就给个极限退出循环
+          if (
+            maxCoefficient - minCoefficient < 0.015625 &&
+            myself.cvBoxBody.scrollHeight < myself.cvBoxHeightInPixel
+          ) {
+            console.log("Signing done...");
+            done = true;
+          } else {
+            ptrBook.theFunc();
+          }
+        } else if (!ptrBook.clearing) {
+          ptrBook.clearing = true;
+          setTimeout(() => {
+            console.log("cvBoxHeightInPixel", myself.cvBoxHeightInPixel);
+            console.log("scrollHeight", myself.cvBoxBody.scrollHeight);
+            console.log("Final FontSizeCoefficient=" + myself.fontSizeCoefficient);
+            console.log("Final FontSize=" + myself.theFontSizeInPixel);
+            console.log("Clearing timer...");
+            clearInterval(ptrBook.theTimer);
+            myself.adjustingFontSizeCoefficient = "";
+          }, 100);
+        }
+      }, 100);
     }
   }
 });

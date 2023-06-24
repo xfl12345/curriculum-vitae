@@ -194,7 +194,7 @@ export default defineComponent({
       };
     },
     contentBoxMinWidthInPixel() {
-      return this.theFontSizeInPixel * 32;
+      return this.theFontSizeInPixel * 16;
     },
     contentBoxStyle() {
       const myself = this;

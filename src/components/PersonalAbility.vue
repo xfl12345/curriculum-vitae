@@ -53,6 +53,6 @@ const theFontSize = computed(() => {
 });
 
 const verticalMargin = computed(() => {
-  return props.theFontSizeInPixel / 2 + "px";
+  return Math.floor(props.theFontSizeInPixel / 2) + "px";
 });
 </script>
