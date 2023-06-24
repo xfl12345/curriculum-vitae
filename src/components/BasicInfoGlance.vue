@@ -2,23 +2,35 @@
   <div ref="templateRoot">
     <div style="width: 100%; display: flex">
       <div style="flex: 8; display: flex">
-        <div style="flex: 1; display: flex">
-          <div style="flex: 4">
-            <basic-info-pair
-              v-for="item in group1ItemKeyList"
-              :key="item"
-              :key-value-pair="myCache.get(item)"
-              :the-max-font-count="5"
-              :the-font-size-in-pixel="theFontSizeInPixel"
-            />
+        <div v-resize="updateLeftGroupKeyBoxWidth" style="flex: 1; display: flex; flex-direction: column">
+          <div style="flex: 1; display: flex">
+            <div style="flex: 4">
+              <basic-info-pair
+                v-for="item in group1ItemKeyList"
+                ref="leftGroup"
+                :key="item"
+                :key-value-pair="myCache.get(item)"
+                :the-max-font-count="5"
+                :the-font-size-in-pixel="theFontSizeInPixel"
+              />
+            </div>
+            <div style="flex: 4">
+              <basic-info-pair
+                v-for="item in group2ItemKeyList"
+                :key="item"
+                :key-value-pair="myCache.get(item)"
+                :the-max-font-count="5"
+                :the-font-size-in-pixel="theFontSizeInPixel"
+              />
+            </div>
           </div>
-          <div style="flex: 4">
+          <div style="flex: 1; display: flex">
             <basic-info-pair
-              v-for="item in group2ItemKeyList"
-              :key="item"
-              :key-value-pair="myCache.get(item)"
-              :the-max-font-count="5"
+              style="width: 100%"
               :the-font-size-in-pixel="theFontSizeInPixel"
+              :key-value-pair="jobPreferKV"
+              :the-max-font-count="5"
+              :fixed-key-root-box-width="leftGroupKeyBoxWidth + 'px'"
             />
           </div>
         </div>
@@ -31,13 +43,14 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, PropType, ref } from "vue";
+import { computed, PropType, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { KeyValuePair } from "../tsmod/KeyValuePair";
 import BasicInfoPair from "./BasicInfoPair.vue";
-import { BasicInformation } from "../tsmod/CurriculumVitaeData";
+import { BasicInformation, EmptyBasicInformation } from "../tsmod/CurriculumVitaeData";
 
 const templateRoot = ref<HTMLDivElement>();
+const leftGroup = ref<Array<InstanceType<typeof BasicInfoPair>>>();
 
 const { t } = useI18n();
 const props = defineProps({
@@ -47,11 +60,20 @@ const props = defineProps({
   },
   basicInformation: {
     type: Object as PropType<BasicInformation>,
-    default: (): BasicInformation => {
-      return {};
-    }
+    default: (): BasicInformation => new EmptyBasicInformation()
   }
 });
+
+const leftGroupKeyBoxWidth = ref(400);
+
+const updateLeftGroupKeyBoxWidth = () => {
+  console.log("updateLeftGroupKeyBoxWidth", "updating");
+  let result = 400;
+  if (typeof leftGroup.value !== "undefined") {
+    result = leftGroup.value[0].rootBoxOfKey.offsetWidth ?? 400;
+  }
+  leftGroupKeyBoxWidth.value = result;
+};
 
 const getTranslatedString = (key: string) => {
   return t("word." + key);
@@ -67,13 +89,21 @@ const getTheDisplayValue = (key: string) => {
     : props.basicInformation[key].theCopyValue;
 };
 
+const jobPreferKV = computed(() => {
+  const valuePair = props.basicInformation.jobPrefer;
+  return new KeyValuePair(
+    getTranslatedString("jobPrefer"),
+    typeof valuePair.theDisplayValue === "undefined" ? valuePair.theCopyValue : valuePair.theDisplayValue,
+    valuePair.theCopyValue
+  );
+});
+
 const group1ItemKeyList = [
   "name",
   "phoneNumberSameToWechat",
   "emailAddress",
   "birthdayInYearAndMonth",
-  "maritalStatus",
-  "jobPrefer"
+  "maritalStatus"
 ];
 
 const group2ItemKeyList = ["nation", "stature", "schooling", "lastInstitute", "nativePlace"];

@@ -1,10 +1,10 @@
 <template>
   <div
     ref="templateRoot"
-    style="height: 30px; display: flex"
+    style="display: flex"
     :style="{ height: theFontSizeInPixel + 6 + 'px', fontSize: theFontSizeInPixel + 'px' }"
   >
-    <div style="flex-grow: 2; flex-basis: 0; font-weight: bold">
+    <div ref="rootBoxOfKey" style="font-weight: bold" :style="rootBoxStyleOfKey">
       <center-box>
         <div
           style="text-align: justify-all; text-align-last: justify; white-space: nowrap"
@@ -81,6 +81,7 @@ import { Clipboard } from "v-clipboard";
 import { KeyValuePair } from "../tsmod/KeyValuePair";
 import CenterBox from "./xfl-common/vue/CenterBox.vue";
 import TextPrettier from "./xfl-common/vue/TextPrettier.vue";
+import { PartialCssStyleType } from "./xfl-common/ts/PartialCssStyleType";
 
 export default defineComponent({
   components: { TextPrettier, CenterBox, CopyOne },
@@ -98,13 +99,18 @@ export default defineComponent({
     theFontSizeInPixel: {
       type: Number,
       default: 24
+    },
+    fixedKeyRootBoxWidth: {
+      type: String,
+      default: "auto"
     }
   },
   setup(props, ctx) {
     const templateRoot = ref<HTMLDivElement>();
     const valueBox = ref<HTMLDivElement>();
+    const rootBoxOfKey = ref<HTMLDivElement>();
 
-    return { templateRoot, valueBox };
+    return { templateRoot, valueBox, rootBoxOfKey };
   },
   data() {
     return {
@@ -137,6 +143,17 @@ export default defineComponent({
       }
 
       return undefined;
+    },
+    rootBoxStyleOfKey(): PartialCssStyleType {
+      const myself = this;
+      return (
+        myself.fixedKeyRootBoxWidth === "auto"
+          ? {
+              flexGrow: 2,
+              flexBasis: 0
+            }
+          : { width: myself.fixedKeyRootBoxWidth }
+      ) as PartialCssStyleType;
     }
   },
   methods: {

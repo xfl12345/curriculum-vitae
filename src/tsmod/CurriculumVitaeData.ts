@@ -22,18 +22,29 @@ export interface BasicInformation {
   emailAddress?: ValuePair;
   birthdayInYearAndMonth?: ValuePair;
   maritalStatus?: ValuePair;
-  jobPrefer?: ValuePair;
+  jobPrefer: ValuePair;
   nation?: ValuePair;
   stature?: ValuePair;
   schooling?: ValuePair;
   lastInstitute?: ValuePair;
   nativePlace?: ValuePair;
-  facePhoto?: string;
+  facePhoto: string;
   [propName: string]: any;
 }
 
+export class EmptyBasicInformation implements BasicInformation {
+  jobPrefer: {
+    theDisplayValue: "";
+
+    theCopyValue: "";
+  };
+
+  // 空白 1px 图片
+  facePhoto: "data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==";
+}
+
 export class CurriculumVitaeData {
-  basicInformation: BasicInformation = {};
+  basicInformation: BasicInformation = new EmptyBasicInformation();
 
   community: object = {};
 
