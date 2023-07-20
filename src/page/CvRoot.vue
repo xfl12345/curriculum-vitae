@@ -132,7 +132,7 @@
         :style="{
           borderRadius: store.getters.theFontSize
         }"
-        @click="router.push({ name: 'cv' })"
+        @click="refreshCvData"
       >
         原地刷新
       </button>
