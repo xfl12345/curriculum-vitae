@@ -1,8 +1,13 @@
+// noinspection JSConstantReassignment
+
 import { createStore } from "vuex";
+import type { Buildable } from "ts-essentials";
 // import { ResizeObserver } from "resize-observer";
 import { getBrowserFirstDefaultFontFamily, getTextSize } from "../components/xfl-common/ts/FontUtils";
 import { ClientCookieManager } from "../components/xfl-common/ts/ClientCookieManager";
 import { LoginMananger } from "../model/LoginMananger";
+
+const env = import.meta.env ?? ({} as any);
 
 const cookieManager = new ClientCookieManager();
 cookieManager.reloadCookie();
@@ -37,7 +42,10 @@ const store = createStore({
       }
     },
     browserDefaultFontFamily: getBrowserFirstDefaultFontFamily(),
-    browserInitiated: false,
+    browserInitiated:
+      typeof env.VITE_DISABLE_BROWSER_INITIATED === "undefined"
+        ? false
+        : JSON.parse(env.VITE_DISABLE_BROWSER_INITIATED),
     cookieManager,
     loginManager,
     diyDefaultFontFamilyList: ["Microsoft YaHei UI"],
@@ -60,16 +68,16 @@ const store = createStore({
       state.diyFontFamilyList.push(fontName);
     },
     updateGlobalUiCalculationData(state) {
-      const stateDocument = state.uiCalculation.document;
-      const stateWindow = state.uiCalculation.window;
+      const stateDocument: Buildable<Document> = state.uiCalculation.document;
+      const stateWindow: Buildable<Window> = state.uiCalculation.window;
       stateDocument.documentElement.offsetHeight = document.documentElement.offsetHeight;
       stateDocument.documentElement.offsetWidth = document.documentElement.offsetWidth;
-      stateWindow.innerWidth = window.innerWidth;
-      stateWindow.innerHeight = window.innerHeight;
       stateDocument.body.scrollWidth = document.body.scrollWidth;
       stateDocument.body.scrollHeight = document.body.scrollHeight;
       stateDocument.body.clientWidth = document.body.clientWidth;
       stateDocument.body.clientHeight = document.body.clientHeight;
+      stateWindow.innerWidth = window.innerWidth;
+      stateWindow.innerHeight = window.innerHeight;
       stateWindow.screen.availWidth = window.screen.availWidth;
       stateWindow.screen.availHeight = window.screen.availHeight;
     },
