@@ -106,37 +106,13 @@
       @jump2-index-page="jump2IndexPage"
       @reset-root-scale="resetRootScale"
     />
-    <div
+    <load-cv-data-failed-message-box
       v-if="isLoadCvDataFailed"
-      :style="{
-        fontSize: store.getters.theFontSize
-      }"
-    >
-      <div>浏览器加载数据失败，原因如下：</div>
-      <div ref="loadCvDataFailedMessageBox" style="border: hotpink dashed 1px; display: inline-block">
-        {{ loadCvDataFailedMessage }}
-      </div>
-      <br />
-      <button
-        style="cursor: pointer; font-size: inherit"
-        :style="{
-          borderRadius: store.getters.theFontSize
-        }"
-        @click="jump2LoginPage"
-      >
-        转跳登录界面
-      </button>
-      <br />
-      <button
-        style="cursor: pointer; font-size: inherit"
-        :style="{
-          borderRadius: store.getters.theFontSize
-        }"
-        @click="refreshCvData"
-      >
-        原地刷新
-      </button>
-    </div>
+      :the-font-size-in-pixel="store.getters.theFontSize"
+      :message="loadCvDataFailedMessage"
+      @jump2-login-page="jump2LoginPage"
+      @refresh-cv-data="refreshCvData"
+    />
   </div>
 </template>
 
@@ -159,9 +135,11 @@ import HiddenEggPanel from "../components/HiddenEggPanel.vue";
 import BasicInfoGlance from "../components/BasicInfoGlance.vue";
 import PersonalAbility from "../components/PersonalAbility.vue";
 import Vue3MountedHelper from "../components/xfl-common/vue/Vue3MountedHelper.vue";
+import LoadCvDataFailedMessageBox from "../components/LoadCvDataFailedMessageBox.vue";
 
 export default defineComponent({
   components: {
+    LoadCvDataFailedMessageBox,
     Vue3MountedHelper,
     HiddenEggPanel,
     BasicInfoGlance,
