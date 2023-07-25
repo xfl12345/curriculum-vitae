@@ -48,7 +48,7 @@ export class CurriculumVitaeData {
 
   community: object = {};
 
-  skillDegree: SkillDegree[] = [];
+  skillDegree?: SkillDegree[] = [];
 
   journey: JourneyItem[] = [];
 

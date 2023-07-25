@@ -65,6 +65,7 @@
             />
           </cv-chapter>
           <cv-chapter
+            v-if="'skillDegree' in cvData"
             :the-font-size-in-pixel="theFontSizeInPixel"
             :the-title="t('word.xfl_title_skill_degree')"
           >
