@@ -315,9 +315,12 @@ export default defineComponent({
         return;
       }
 
-      console.log("cvBoxHeightInPixel = " + myself.cvBoxHeightInPixel);
+      console.log("cvBoxHeightInPixel" + myself.cvBoxHeightInPixel);
       console.log("scrollHeight", myself.cvBoxBody.scrollHeight);
-      console.log("current FontSize=" + myself.theFontSize);
+      console.log("current FontSize" + myself.theFontSize);
+
+      const cvBoxWidthInPixel = myself.paperSizeStandard.width * myself.rootScale;
+      console.log("cvBoxWidthInPixel", cvBoxWidthInPixel);
 
       const getMaxFontSize = () =>
         Math.ceil(
@@ -335,39 +338,67 @@ export default defineComponent({
         myself.cvBoxHeightInPixel / Math.round(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel)
       );
       let lastFontSize = -1;
-      let done = false;
       myself.theFontSizeInPixel = currentFontSize;
-      const ptrBook: any = {};
-      ptrBook.theFunc = () => {
-        if (!done) {
-          if (myself.cvBoxBody.scrollHeight > myself.cvBoxHeightInPixel) {
-            maxFontSize = currentFontSize;
-            lastFontSize = currentFontSize;
-            currentFontSize = getMiddleFontSize();
-            myself.theFontSizeInPixel = currentFontSize;
-          } else if (myself.cvBoxBody.scrollHeight < myself.cvBoxHeightInPixel) {
-            if (
-              Math.abs(
-                Math.ceil(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel) -
-                  Math.ceil(myself.cvBoxHeightInPixel / myself.theFontSizeInPixel)
-              ) > 2
-            ) {
-              maxFontSize = getMaxFontSize();
-            }
-
-            minFontSize = currentFontSize;
-            lastFontSize = currentFontSize;
-            currentFontSize = getMiddleFontSize();
-            myself.theFontSizeInPixel = currentFontSize;
-          } else {
-            done = true;
-            console.log("done!");
-          }
+      const ptrBook: any = {
+        vertical: {
+          done: false,
+          adjustFunc: () => {}
+        },
+        horizontal: {
+          done: true,
+          adjustFunc: () => {}
         }
       };
-      ptrBook.clearing = false;
+      ptrBook.vertical.adjustFunc = () => {
+        if (myself.cvBoxBody.scrollHeight > myself.cvBoxHeightInPixel) {
+          maxFontSize = currentFontSize;
+          lastFontSize = currentFontSize;
+          currentFontSize = getMiddleFontSize();
+          myself.theFontSizeInPixel = currentFontSize;
+        } else if (myself.cvBoxBody.scrollHeight < myself.cvBoxHeightInPixel) {
+          const gap = Math.abs(
+            Math.ceil(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel) -
+              Math.ceil(myself.cvBoxHeightInPixel / myself.theFontSizeInPixel)
+          );
+          if (gap > 2) {
+            maxFontSize = getMaxFontSize();
+          }
+
+          minFontSize = currentFontSize;
+          lastFontSize = currentFontSize;
+          currentFontSize = getMiddleFontSize();
+          myself.theFontSizeInPixel = currentFontSize;
+        } else {
+          ptrBook.vertical.done = true;
+          console.log("Vertical adjustment done!");
+        }
+      };
+      ptrBook.horizontal.adjustFunc = () => {
+        if (myself.cvBoxBody.scrollWidth > cvBoxWidthInPixel) {
+          maxFontSize = currentFontSize;
+          lastFontSize = currentFontSize;
+          currentFontSize = getMiddleFontSize();
+          myself.theFontSizeInPixel = currentFontSize;
+        } else if (myself.cvBoxBody.scrollWidth < cvBoxWidthInPixel) {
+          const gap = Math.abs(
+            Math.ceil(myself.cvBoxBody.scrollWidth / myself.theFontSizeInPixel) -
+              Math.ceil(cvBoxWidthInPixel / myself.theFontSizeInPixel)
+          );
+          if (gap > 2) {
+            maxFontSize = getMaxFontSize();
+          }
+
+          minFontSize = currentFontSize;
+          lastFontSize = currentFontSize;
+          currentFontSize = getMiddleFontSize();
+          myself.theFontSizeInPixel = currentFontSize;
+        } else {
+          ptrBook.horizontal.done = true;
+          console.log("Horizontal adjustment done!");
+        }
+      };
       ptrBook.theTimer = setInterval(() => {
-        if (!done) {
+        if (!ptrBook.vertical.done) {
           console.log("scrollHeight", myself.cvBoxBody.scrollHeight);
           // 如果实在探不到 盒子拉伸高度 和 限制高度 相等的 系数，那就给个极限退出循环
           if (lastFontSize === currentFontSize) {
@@ -375,12 +406,27 @@ export default defineComponent({
               myself.theFontSizeInPixel -= 1;
             }
             console.log("Signing done...");
-            done = true;
+            ptrBook.vertical.done = true;
           } else {
-            ptrBook.theFunc();
+            ptrBook.vertical.adjustFunc();
           }
-        } else if (!ptrBook.clearing) {
-          ptrBook.clearing = true;
+
+          if (ptrBook.vertical.done && myself.cvBoxBody.scrollWidth > cvBoxWidthInPixel) {
+            ptrBook.horizontal.done = false;
+          }
+        } else if (!ptrBook.horizontal.done) {
+          console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
+          // 如果实在探不到 盒子拉伸高度 和 限制高度 相等的 系数，那就给个极限退出循环
+          if (lastFontSize === currentFontSize) {
+            if (myself.cvBoxBody.scrollWidth > cvBoxWidthInPixel) {
+              myself.theFontSizeInPixel -= 1;
+            }
+            console.log("Signing done...");
+            ptrBook.horizontal.done = true;
+          } else {
+            ptrBook.horizontal.adjustFunc();
+          }
+        } else {
           setTimeout(() => {
             console.log("cvBoxHeightInPixel", myself.cvBoxHeightInPixel);
             console.log("scrollHeight", myself.cvBoxBody.scrollHeight);
