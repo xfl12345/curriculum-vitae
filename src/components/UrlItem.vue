@@ -1,13 +1,7 @@
 <template>
   <div
     ref="templateRoot"
-    style="
-      display: block;
-      box-sizing: border-box;
-      white-space: nowrap;
-      vertical-align: top;
-      border: hotpink dashed 1px;
-    "
+    style="display: block; box-sizing: border-box; white-space: nowrap; vertical-align: top"
     :style="[propsCssStyle, rootHeightStyle, { fontSize: theFontSize }]"
   >
     <span
