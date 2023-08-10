@@ -123,20 +123,21 @@ import { useI18n } from "vue-i18n";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 import { v1 as uuidv1 } from "uuid";
-import { CurriculumVitaeData } from "../tsmod/CurriculumVitaeData";
-import { getCurriculumVitaeData } from "../model/SecretDataApi";
-import { paperA4Standard } from "../assets/json/common.json";
-import TextPrettier from "../components/xfl-common/vue/TextPrettier.vue";
-import { PaperSizeStandard } from "../components/xfl-common/ts/PaperSizeStandard";
-import { PartialCssStyleType } from "../components/xfl-common/ts/PartialCssStyleType";
-import CvChapter from "../components/CvChapter.vue";
-import RecordItem from "../components/RecordItem.vue";
-import CommunityBox from "../components/CommunityBox.vue";
-import HiddenEggPanel from "../components/HiddenEggPanel.vue";
-import BasicInfoGlance from "../components/BasicInfoGlance.vue";
-import PersonalAbility from "../components/PersonalAbility.vue";
-import Vue3MountedHelper from "../components/xfl-common/vue/Vue3MountedHelper.vue";
-import LoadCvDataFailedMessageBox from "../components/LoadCvDataFailedMessageBox.vue";
+import { paperA4Standard } from "@/assets/json/common.json";
+import TextPrettier from "@/components/xfl-common/vue/TextPrettier.vue";
+import { TripleItemLog } from "@/components/xfl-common/ts/TripleItemLog";
+import { PaperSizeStandard } from "@/components/xfl-common/ts/PaperSizeStandard";
+import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { CurriculumVitaeData } from "@/tsmod/CurriculumVitaeData";
+import { getCurriculumVitaeData } from "@/model/SecretDataApi";
+import CvChapter from "@/components/CvChapter.vue";
+import RecordItem from "@/components/RecordItem.vue";
+import CommunityBox from "@/components/CommunityBox.vue";
+import HiddenEggPanel from "@/components/HiddenEggPanel.vue";
+import BasicInfoGlance from "@/components/BasicInfoGlance.vue";
+import PersonalAbility from "@/components/PersonalAbility.vue";
+import Vue3MountedHelper from "@/components/xfl-common/vue/Vue3MountedHelper.vue";
+import LoadCvDataFailedMessageBox from "@/components/LoadCvDataFailedMessageBox.vue";
 
 export default defineComponent({
   components: {
@@ -315,71 +316,43 @@ export default defineComponent({
         return;
       }
 
-      console.log("cvBoxHeightInPixel" + myself.cvBoxHeightInPixel);
-      console.log("scrollHeight", myself.cvBoxBody.scrollHeight);
-      console.log("current FontSize" + myself.theFontSize);
-
       const cvBoxWidthInPixel = myself.paperSizeStandard.width * myself.rootScale;
       console.log("cvBoxWidthInPixel", cvBoxWidthInPixel);
+      console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
+      console.log("current FontSize" + myself.theFontSize);
 
-      const getMaxFontSize = () =>
-        Math.ceil(
-          myself.cvBoxHeightInPixel / Math.floor(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel)
-        );
+      const fontSizeLog = new TripleItemLog<number>();
+      const getMaxFontSize = () => cvBoxWidthInPixel / 4;
 
       let maxFontSize = getMaxFontSize();
-      let minFontSize = Math.floor((maxFontSize / 4) * 3);
-      // 防止字体过小
-      if (minFontSize < 8) {
-        minFontSize = 8;
-      }
+      let minFontSize = 8;
       const getMiddleFontSize = () => Math.round((minFontSize + maxFontSize) / 2);
       let currentFontSize = Math.round(
-        myself.cvBoxHeightInPixel / Math.round(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel)
+        cvBoxWidthInPixel / Math.round(myself.cvBoxBody.scrollWidth / myself.theFontSizeInPixel)
       );
-      let lastFontSize = -1;
       myself.theFontSizeInPixel = currentFontSize;
+      fontSizeLog.push(currentFontSize);
       const ptrBook: any = {
         vertical: {
           done: false,
           adjustFunc: () => {}
         },
         horizontal: {
-          done: true,
+          done: false,
           adjustFunc: () => {}
         }
       };
-      ptrBook.vertical.adjustFunc = () => {
-        if (myself.cvBoxBody.scrollHeight > myself.cvBoxHeightInPixel) {
-          maxFontSize = currentFontSize;
-          lastFontSize = currentFontSize;
-          currentFontSize = getMiddleFontSize();
-          myself.theFontSizeInPixel = currentFontSize;
-        } else if (myself.cvBoxBody.scrollHeight < myself.cvBoxHeightInPixel) {
-          const gap = Math.abs(
-            Math.ceil(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel) -
-              Math.ceil(myself.cvBoxHeightInPixel / myself.theFontSizeInPixel)
-          );
-          if (gap > 2) {
-            maxFontSize = getMaxFontSize();
-          }
 
-          minFontSize = currentFontSize;
-          lastFontSize = currentFontSize;
-          currentFontSize = getMiddleFontSize();
-          myself.theFontSizeInPixel = currentFontSize;
-        } else {
-          ptrBook.vertical.done = true;
-          console.log("Vertical adjustment done!");
-        }
-      };
+      console.log("minFontSize", minFontSize);
+      console.log("maxFontSize", maxFontSize);
+
       ptrBook.horizontal.adjustFunc = () => {
         if (myself.cvBoxBody.scrollWidth > cvBoxWidthInPixel) {
           maxFontSize = currentFontSize;
-          lastFontSize = currentFontSize;
           currentFontSize = getMiddleFontSize();
           myself.theFontSizeInPixel = currentFontSize;
-        } else if (myself.cvBoxBody.scrollWidth < cvBoxWidthInPixel) {
+          fontSizeLog.push(currentFontSize);
+        } else if (myself.cvBoxBody.scrollWidth <= cvBoxWidthInPixel) {
           const gap = Math.abs(
             Math.ceil(myself.cvBoxBody.scrollWidth / myself.theFontSizeInPixel) -
               Math.ceil(cvBoxWidthInPixel / myself.theFontSizeInPixel)
@@ -389,35 +362,19 @@ export default defineComponent({
           }
 
           minFontSize = currentFontSize;
-          lastFontSize = currentFontSize;
           currentFontSize = getMiddleFontSize();
           myself.theFontSizeInPixel = currentFontSize;
+          fontSizeLog.push(currentFontSize);
         } else {
           ptrBook.horizontal.done = true;
           console.log("Horizontal adjustment done!");
         }
       };
       ptrBook.theTimer = setInterval(() => {
-        if (!ptrBook.vertical.done) {
-          console.log("scrollHeight", myself.cvBoxBody.scrollHeight);
-          // 如果实在探不到 盒子拉伸高度 和 限制高度 相等的 系数，那就给个极限退出循环
-          if (lastFontSize === currentFontSize) {
-            if (myself.cvBoxBody.scrollHeight > myself.cvBoxHeightInPixel) {
-              myself.theFontSizeInPixel -= 1;
-            }
-            console.log("Signing done...");
-            ptrBook.vertical.done = true;
-          } else {
-            ptrBook.vertical.adjustFunc();
-          }
-
-          if (ptrBook.vertical.done && myself.cvBoxBody.scrollWidth > cvBoxWidthInPixel) {
-            ptrBook.horizontal.done = false;
-          }
-        } else if (!ptrBook.horizontal.done) {
+        if (!ptrBook.horizontal.done) {
           console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
-          // 如果实在探不到 盒子拉伸高度 和 限制高度 相等的 系数，那就给个极限退出循环
-          if (lastFontSize === currentFontSize) {
+          // 如果实在探不到 盒子拉伸宽度 和 限制宽度 相等的 系数，那就给个极限退出循环
+          if (fontSizeLog.getSize() > 2 && fontSizeLog.getFirst() === fontSizeLog.getLast()) {
             if (myself.cvBoxBody.scrollWidth > cvBoxWidthInPixel) {
               myself.theFontSizeInPixel -= 1;
             }
@@ -428,9 +385,9 @@ export default defineComponent({
           }
         } else {
           setTimeout(() => {
-            console.log("cvBoxHeightInPixel", myself.cvBoxHeightInPixel);
-            console.log("scrollHeight", myself.cvBoxBody.scrollHeight);
-            console.log("Final FontSize=" + myself.theFontSize);
+            console.log("cvBoxWidthInPixel", cvBoxWidthInPixel);
+            console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
+            console.log("Final FontSize", myself.theFontSize);
             console.log(
               "current maxLine",
               Math.ceil(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel)
