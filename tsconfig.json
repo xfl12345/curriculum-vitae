@@ -12,7 +12,11 @@
     "strictNullChecks": false,
     "lib": ["DOM", "ESNext", "ES2021", "ES2016", "ES5"],
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": [
     "src/**/*.ts",
