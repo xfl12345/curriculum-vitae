@@ -4,7 +4,11 @@
     style="display: flex; justify-content: space-between; white-space: nowrap; vertical-align: middle"
     :style="{ fontSize: theFontSize }"
   >
-    <div ref="qrCodeLeftBox" v-resize:[!isQrCodeLeftBoxUiLoaded]="qrCodeLeftBoxResize">
+    <div
+      ref="qrCodeLeftBox"
+      v-resize:[!isQrCodeLeftBoxUiLoaded]="qrCodeLeftBoxResize"
+      style="display: inline-block"
+    >
       <url-item
         v-for="item in communityUrlList"
         :key="item"
@@ -12,37 +16,49 @@
         :the-url="item"
       />
     </div>
-    <div v-if="isQrCodeRightBoxUiCanLoad && qrCodeRightBoxHeight !== 0">
+    <div v-if="isQrCodeRightBoxUiCanLoad && qrCodeRightBoxHeightInPixel !== 0">
       <vue-qr
         ref="qrCodeWeChat"
         color-light="#89D961"
         color-dark="#76269E"
-        style="display: inline-block; vertical-align: top; cursor: pointer"
-        :size="qrCodeRightBoxHeight"
+        style="display: inline-block; vertical-align: top; cursor: pointer; overflow: hidden"
+        :style="{ width: qrCodeRightBoxHeight, height: qrCodeRightBoxHeight }"
+        :size="qrCodeRightBoxHeightInPixel"
         :margin="0"
         :text="wechatUrl"
         :logo-src="weChatHeadPhoto"
         @click="openUrl(wechatUrl)"
       />
-      <div style="display: inline-block" :style="{ height: qrCodeRightBoxHeight + 'px' }">
-        <div style="height: 100%; display: flex; flex-direction: column; justify-content: space-between">
-          <div>
+      <div style="display: inline-block" :style="{ height: qrCodeRightBoxHeight }">
+        <div
+          style="height: 100%; display: flex; flex-direction: column; justify-content: space-around"
+          :style="{ lineHeight: fingerEmojiFontSize }"
+        >
+          <div style="display: inline-block; padding: 0; vertical-align: bottom">
             <span :style="{ fontSize: fingerEmojiFontSize }">👈</span>
-            <text-prettier style="display: inline-block; vertical-align: bottom" content="扫我加微信😉" />
+            <text-prettier
+              style="display: inline-block; vertical-align: inherit"
+              :style="{ fontSize: funnyWelcomeBoxFontSize, lineHeight: funnyWelcomeBoxFontSize }"
+              content="扫我加微信😉"
+            />
           </div>
-          <div>
-            <text-prettier style="display: inline-block; vertical-align: bottom" content="扫我拿简历源码" />
+          <div style="display: inline-block; padding: 0; vertical-align: bottom">
+            <text-prettier
+              style="display: inline-block; vertical-align: inherit"
+              :style="{ fontSize: funnyWelcomeBoxFontSize, lineHeight: funnyWelcomeBoxFontSize }"
+              content="扫我拿简历源码"
+            />
             <span :style="{ fontSize: fingerEmojiFontSize }">👉</span>
           </div>
-          <div></div>
         </div>
       </div>
       <vue-qr
         ref="qrCodeCurriculumVitaeSourceCode"
         color-light="orange"
         color-dark="#0057ff"
-        style="display: inline-block; vertical-align: top; cursor: pointer"
-        :size="qrCodeRightBoxHeight"
+        style="display: inline-block; vertical-align: top; cursor: pointer; overflow: hidden"
+        :style="{ width: qrCodeRightBoxHeight, height: qrCodeRightBoxHeight }"
+        :size="qrCodeRightBoxHeightInPixel"
         :margin="0"
         :text="curriculumVitaeSourceCodeUrl"
         @click="openUrl(curriculumVitaeSourceCodeUrl)"
@@ -103,21 +119,31 @@ export default defineComponent({
     return {
       isQrCodeRightBoxUiCanLoad: false,
       isQrCodeLeftBoxUiLoaded: false,
-      qrCodeLeftBoxHeight: 0,
+      qrCodeLeftBoxHeightInPixel: 0,
       qrCodeRightBoxTimeOut
     };
   },
   computed: {
-    qrCodeRightBoxHeight() {
+    qrCodeRightBoxHeightInPixel() {
       const myself = this;
-      // console.log("resizeQrCodeRightBoxHeight", myself.qrCodeLeftBoxHeight);
-      return myself.qrCodeLeftBoxHeight;
+      // console.log("resizeQrCodeRightBoxHeight", myself.qrCodeLeftBoxHeightInPixel);
+      return myself.qrCodeLeftBoxHeightInPixel;
+    },
+    qrCodeRightBoxHeight() {
+      return this.qrCodeRightBoxHeightInPixel + "px";
     },
     theFontSize() {
       return this.theFontSizeInPixel + "px";
     },
+    fingerEmojiFontSizeInPixel() {
+      return Math.ceil((this.qrCodeRightBoxHeightInPixel * 3) / 8);
+    },
     fingerEmojiFontSize() {
-      return this.theFontSizeInPixel * 1.8 + "px";
+      return this.fingerEmojiFontSizeInPixel + "px";
+      // return this.qrCodeRightBoxHeightInPixel / 5 + "px";
+    },
+    funnyWelcomeBoxFontSize() {
+      return Math.ceil(this.fingerEmojiFontSizeInPixel * 0.6) + "px";
     }
   },
   watch: {
@@ -129,8 +155,8 @@ export default defineComponent({
   },
   mounted() {
     const myself = this;
+    myself.qrCodeLeftBoxHeightInPixel = this.qrCodeLeftBox!.offsetHeight;
     myself.isQrCodeLeftBoxUiLoaded = true;
-    myself.qrCodeLeftBoxHeight = this.qrCodeLeftBox!.offsetHeight;
   },
   methods: {
     openUrl(url: string) {
@@ -139,13 +165,8 @@ export default defineComponent({
     qrCodeLeftBoxResize(widthAndHeight: any) {
       const myself = this;
       myself.isQrCodeRightBoxUiCanLoad = false;
-      myself.qrCodeLeftBoxHeight = widthAndHeight.height;
+      myself.qrCodeLeftBoxHeightInPixel = widthAndHeight.height;
       myself.isQrCodeRightBoxUiCanLoad = true;
-      // clearTimeout(myself.qrCodeRightBoxTimeOut);
-      // myself.qrCodeRightBoxTimeOut = setTimeout(() => {
-      //   if (!myself.isQrCodeRightBoxUiCanLoad) {
-      //   }
-      // }, 1000);
     }
   }
 });
