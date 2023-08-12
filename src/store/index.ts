@@ -3,9 +3,9 @@
 import { createStore } from "vuex";
 import type { Buildable } from "ts-essentials";
 // import { ResizeObserver } from "resize-observer";
-import { getBrowserFirstDefaultFontFamily, getTextSize } from "../components/xfl-common/ts/FontUtils";
-import { ClientCookieManager } from "../components/xfl-common/ts/ClientCookieManager";
-import { LoginMananger } from "../model/LoginMananger";
+import { getBrowserFirstDefaultFontFamily, getTextSize } from "@/components/xfl-common/ts/FontUtils";
+import { ClientCookieManager } from "@/components/xfl-common/ts/ClientCookieManager";
+import { LoginMananger } from "@/model/LoginMananger";
 
 const env = import.meta.env ?? ({} as any);
 

@@ -132,10 +132,10 @@ import { defineComponent, ref } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 import tinygradient from "tinygradient";
-import CircleProgressBar from "../components/xfl-common/vue/CircleProgressBar.vue";
-import CenterBox from "../components/xfl-common/vue/CenterBox.vue";
-import SvgRightPicturePath from "../components/xfl-common/vue/SvgRightPicturePath.vue";
-import { applyNewFont2GlobalDom, SupportedFontFamilyDetector } from "../components/xfl-common/ts/FontUtils";
+import CircleProgressBar from "@/components/xfl-common/vue/CircleProgressBar.vue";
+import CenterBox from "@/components/xfl-common/vue/CenterBox.vue";
+import SvgRightPicturePath from "@/components/xfl-common/vue/SvgRightPicturePath.vue";
+import { applyNewFont2GlobalDom, SupportedFontFamilyDetector } from "@/components/xfl-common/ts/FontUtils";
 
 export default defineComponent({
   components: { SvgRightPicturePath, CenterBox, CircleProgressBar },

@@ -1,5 +1,5 @@
-import { SkillDegree } from "./SkillDegree";
-import { ValuePair } from "./ValuePair";
+import { SkillDegree } from "@/tsmod/SkillDegree";
+import { ValuePair } from "@/tsmod/ValuePair";
 
 export interface JourneyItem {
   id: number;

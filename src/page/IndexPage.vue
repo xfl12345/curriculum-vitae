@@ -34,9 +34,9 @@ import { defineComponent, ref } from "vue";
 import { useStore } from "vuex";
 import { useI18n } from "vue-i18n";
 import { RouteRecord, useRouter } from "vue-router";
-import { isUndefinedOrNull } from "../components/xfl-common/ts/IsUndefinedOrNull";
-import { isDefinedAndNotNull } from "../components/xfl-common/ts/IsDefinedAndNotNull";
-import CenterBox from "../components/xfl-common/vue/CenterBox.vue";
+import { isUndefinedOrNull } from "@/components/xfl-common/ts/IsUndefinedOrNull";
+import { isDefinedAndNotNull } from "@/components/xfl-common/ts/IsDefinedAndNotNull";
+import CenterBox from "@/components/xfl-common/vue/CenterBox.vue";
 
 export default defineComponent({
   components: { CenterBox },

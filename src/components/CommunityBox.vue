@@ -70,8 +70,8 @@
 <script lang="tsx">
 import { computed, defineComponent, PropType, ref } from "vue";
 import VueQr from "vue-qr/src/packages/vue-qr.vue";
-import TextPrettier from "./xfl-common/vue/TextPrettier.vue";
-import UrlItem from "./UrlItem.vue";
+import TextPrettier from "@/components/xfl-common/vue/TextPrettier.vue";
+import UrlItem from "@/components/UrlItem.vue";
 
 export default defineComponent({
   components: {

@@ -78,10 +78,10 @@
 import { defineComponent, ref } from "vue";
 import { CopyOne } from "@icon-park/vue-next";
 import { Clipboard } from "v-clipboard";
-import { KeyValuePair } from "../tsmod/KeyValuePair";
-import CenterBox from "./xfl-common/vue/CenterBox.vue";
-import TextPrettier from "./xfl-common/vue/TextPrettier.vue";
-import { PartialCssStyleType } from "./xfl-common/ts/PartialCssStyleType";
+import { KeyValuePair } from "@/tsmod/KeyValuePair";
+import CenterBox from "@/components/xfl-common/vue/CenterBox.vue";
+import TextPrettier from "@/components/xfl-common/vue/TextPrettier.vue";
+import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
 
 export default defineComponent({
   components: { TextPrettier, CenterBox, CopyOne },

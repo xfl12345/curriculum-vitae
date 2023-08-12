@@ -34,8 +34,8 @@
 
 <script setup lang="tsx">
 import { ref } from "vue";
-import CenterBox from "./xfl-common/vue/CenterBox.vue";
-import TextPrettier from "./xfl-common/vue/TextPrettier.vue";
+import CenterBox from "@/components/xfl-common/vue/CenterBox.vue";
+import TextPrettier from "@/components/xfl-common/vue/TextPrettier.vue";
 
 defineProps({
   theFontSizeInPixel: {

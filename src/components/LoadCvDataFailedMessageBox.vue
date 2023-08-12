@@ -25,7 +25,7 @@
 
 <script setup lang="tsx">
 import { computed } from "vue";
-import { getTextSize } from "./xfl-common/ts/FontUtils";
+import { getTextSize } from "@/components/xfl-common/ts/FontUtils";
 
 const props = defineProps({
   theFontSizeInPixel: {

@@ -41,8 +41,8 @@ import { defineComponent, ref } from "vue";
 import axios, { AxiosResponse } from "axios";
 import ReconnectingWebSocket from "reconnecting-websocket";
 import * as Events from "reconnecting-websocket/events";
-import DivTrianglePicture from "../components/tianai-captcha/vue/DivTrianglePicture.vue";
-import RainbowProgressBar from "../components/xfl-common/vue/RainbowProgressBar.vue";
+import DivTrianglePicture from "@/components/tianai-captcha/vue/DivTrianglePicture.vue";
+import RainbowProgressBar from "@/components/xfl-common/vue/RainbowProgressBar.vue";
 
 export default defineComponent({
   components: { RainbowProgressBar, DivTrianglePicture },

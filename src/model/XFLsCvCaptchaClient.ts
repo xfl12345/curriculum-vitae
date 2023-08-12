@@ -1,4 +1,4 @@
-import { TianaiCaptchaClient } from "../components/tianai-captcha/ts/TianaiCaptchaClient";
+import { TianaiCaptchaClient } from "@/components/tianai-captcha/ts/TianaiCaptchaClient";
 
 export class XFLsCvCaptchaClient extends TianaiCaptchaClient {
   constructor() {

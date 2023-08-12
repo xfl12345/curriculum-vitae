@@ -1,5 +1,5 @@
 import axios, { AxiosError } from "axios";
-import { CurriculumVitaeData } from "../tsmod/CurriculumVitaeData";
+import { CurriculumVitaeData } from "@/tsmod/CurriculumVitaeData";
 
 export const secretDataApiBasePath = "/static/secret/";
 

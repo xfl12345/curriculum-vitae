@@ -40,11 +40,11 @@
 
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
-import CaptchaSliderButton from "./CaptchaSliderButton.vue";
+import { cssMixer } from "@/components/xfl-common/ts/CssMixer";
+import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
 import { TianaiTrackEvent } from "../ts/TianaiTrackEvent";
 import { getPoint2DFromMouseEvent, getPoint2DFromTouchEvent, Point2D } from "../ts/Point";
-import { cssMixer } from "../../xfl-common/ts/CssMixer";
-import { PartialCssStyleType } from "../../xfl-common/ts/PartialCssStyleType";
+import CaptchaSliderButton from "./CaptchaSliderButton.vue";
 
 const defaultCssStyle: PartialCssStyleType = {
   color: "#88949d"

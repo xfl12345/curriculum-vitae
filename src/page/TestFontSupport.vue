@@ -53,7 +53,7 @@
 
 <script lang="tsx">
 import { defineComponent, ref, h } from "vue";
-import { parseFontFamilyAndGetTheFirstOne } from "../components/xfl-common/ts/CssFontParser";
+import { parseFontFamilyAndGetTheFirstOne } from "@/components/xfl-common/ts/CssFontParser";
 
 // source code URL
 // https://www.cnblogs.com/gaidalou/p/8479452.html

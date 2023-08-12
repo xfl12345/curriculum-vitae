@@ -10,8 +10,8 @@
 
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
+import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
 import { EnumDirection } from "../ts/Direction";
-import { PartialCssStyleType } from "../../xfl-common/ts/PartialCssStyleType";
 
 export default defineComponent({
   components: {},

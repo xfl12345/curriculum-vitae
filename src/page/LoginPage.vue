@@ -133,15 +133,15 @@ import { defineComponent, PropType, ref } from "vue";
 import { useStore } from "vuex";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import CenterBox from "../components/xfl-common/vue/CenterBox.vue";
-import XflsSingleLineInput from "../components/xfl-common/vue/XflsSingleLineInput.vue";
-import CaptchaBoxTypeRotate from "../components/tianai-captcha/vue/CaptchaBoxTypeRotate.vue";
-import { XFLsCvCaptchaClient } from "../model/XFLsCvCaptchaClient";
-import { CountDownHelper } from "../components/xfl-common/ts/CountDownHelper";
-import { RequestResult } from "../components/tianai-captcha/ts/TianaiCaptchaClient";
-import { IGenericJsonApiResponseData, RateLimitedApiResultPayload } from "../model/JsonApiResponseData";
-import { PartialCssStyleType } from "../components/xfl-common/ts/PartialCssStyleType";
-import { getTextSize } from "../components/xfl-common/ts/FontUtils";
+import CenterBox from "@/components/xfl-common/vue/CenterBox.vue";
+import XflsSingleLineInput from "@/components/xfl-common/vue/XflsSingleLineInput.vue";
+import CaptchaBoxTypeRotate from "@/components/tianai-captcha/vue/CaptchaBoxTypeRotate.vue";
+import { XFLsCvCaptchaClient } from "@/model/XFLsCvCaptchaClient";
+import { CountDownHelper } from "@/components/xfl-common/ts/CountDownHelper";
+import { RequestResult } from "@/components/tianai-captcha/ts/TianaiCaptchaClient";
+import { IGenericJsonApiResponseData, RateLimitedApiResultPayload } from "@/model/JsonApiResponseData";
+import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { getTextSize } from "@/components/xfl-common/ts/FontUtils";
 
 export default defineComponent({
   components: {

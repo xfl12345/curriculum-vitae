@@ -27,9 +27,9 @@
 
 <script setup lang="tsx">
 import { computed, ref } from "vue";
-import TextPrettier from "./xfl-common/vue/TextPrettier.vue";
-import CenterBox from "./xfl-common/vue/CenterBox.vue";
-import RainbowProgressBar from "./xfl-common/vue/RainbowProgressBar.vue";
+import TextPrettier from "@/components/xfl-common/vue/TextPrettier.vue";
+import CenterBox from "@/components/xfl-common/vue/CenterBox.vue";
+import RainbowProgressBar from "@/components/xfl-common/vue/RainbowProgressBar.vue";
 
 const templateRoot = ref<HTMLDivElement>();
 

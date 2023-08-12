@@ -22,8 +22,8 @@
 
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
-import { cssMixer } from "../../xfl-common/ts/CssMixer";
-import { PartialCssStyleType } from "../../xfl-common/ts/PartialCssStyleType";
+import { cssMixer } from "@/components/xfl-common/ts/CssMixer";
+import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
 
 const defaultCssStyle: PartialCssStyleType = {};
 

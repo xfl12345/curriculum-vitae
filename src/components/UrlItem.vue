@@ -35,7 +35,7 @@
 <script setup lang="tsx">
 import { computed, onMounted, PropType, ref } from "vue";
 import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
-import TextPrettier from "./xfl-common/vue/TextPrettier.vue";
+import TextPrettier from "@/components/xfl-common/vue/TextPrettier.vue";
 
 const templateRoot = ref<HTMLDivElement>();
 

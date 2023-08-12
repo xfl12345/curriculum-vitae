@@ -1,4 +1,4 @@
-import { ValuePair } from "./ValuePair";
+import { ValuePair } from "@/tsmod/ValuePair";
 
 export class KeyValuePair extends ValuePair {
   theKey: string;

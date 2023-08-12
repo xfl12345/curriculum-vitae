@@ -98,14 +98,14 @@
 
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
-import refreshIcon from "../../icon-park/refresh.svg";
-import closeIcon from "../../icon-park/close-one.svg";
+import refreshIcon from "@/components/icon-park/refresh.svg";
+import closeIcon from "@/components/icon-park/close-one.svg";
+import { EnumSizingType } from "@/components/xfl-common/ts/EnumSizingType";
+import { cssMixer } from "@/components/xfl-common/ts/CssMixer";
+import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
 import { TianaiTrackEvent } from "../ts/TianaiTrackEvent";
-import { EnumSizingType } from "../../xfl-common/ts/EnumSizingType";
-import CaptchaSlider from "./CaptchaSlider.vue";
 import { ITianaiCaptchaClient, RequestResult, TianaiCaptchaClient } from "../ts/TianaiCaptchaClient";
-import { cssMixer } from "../../xfl-common/ts/CssMixer";
-import { PartialCssStyleType } from "../../xfl-common/ts/PartialCssStyleType";
+import CaptchaSlider from "./CaptchaSlider.vue";
 
 const defaultCssStyle: PartialCssStyleType = {
   backgroundColor: "#fff",

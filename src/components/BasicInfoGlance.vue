@@ -43,11 +43,11 @@
 </template>
 
 <script setup lang="tsx">
-import { computed, PropType, reactive, ref } from "vue";
+import { computed, PropType, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { KeyValuePair } from "../tsmod/KeyValuePair";
-import BasicInfoPair from "./BasicInfoPair.vue";
-import { BasicInformation, EmptyBasicInformation } from "../tsmod/CurriculumVitaeData";
+import { KeyValuePair } from "@/tsmod/KeyValuePair";
+import { BasicInformation, EmptyBasicInformation } from "@/tsmod/CurriculumVitaeData";
+import BasicInfoPair from "@/components/BasicInfoPair.vue";
 
 const templateRoot = ref<HTMLDivElement>();
 const leftGroup = ref<Array<InstanceType<typeof BasicInfoPair>>>();

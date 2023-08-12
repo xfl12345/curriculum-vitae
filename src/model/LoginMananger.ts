@@ -1,5 +1,5 @@
 import axios from "axios";
-import { IJsonApiResponseData } from "./JsonApiResponseData";
+import { IJsonApiResponseData } from "@/model/JsonApiResponseData";
 
 export class LoginMananger {
   phoneNumber: string = "";

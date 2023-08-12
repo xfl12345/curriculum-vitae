@@ -120,8 +120,8 @@
 import { defineComponent, ref } from "vue";
 import { useStore } from "vuex";
 import { NConfigProvider, NGlobalStyle, NSlider, NSpace } from "naive-ui";
-import CenterBox from "./xfl-common/vue/CenterBox.vue";
-import { PartialCssStyleType } from "./xfl-common/ts/PartialCssStyleType";
+import CenterBox from "@/components/xfl-common/vue/CenterBox.vue";
+import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
 
 // noinspection JSSuspiciousNameCombination
 export default defineComponent({

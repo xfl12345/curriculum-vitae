@@ -65,12 +65,12 @@
 
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
+import { cssMixer } from "@/components/xfl-common/ts/CssMixer";
+import CenterBox from "@/components/xfl-common/vue/CenterBox.vue";
+import { EnumSizingType } from "@/components/xfl-common/ts/EnumSizingType";
+import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
 import DivVerticalEquidistantLine from "./DivVerticalEquidistantLine.vue";
 import DivSliderPicture from "./DivSliderPicture.vue";
-import { cssMixer } from "../../xfl-common/ts/CssMixer";
-import CenterBox from "../../xfl-common/vue/CenterBox.vue";
-import { EnumSizingType } from "../../xfl-common/ts/EnumSizingType";
-import { PartialCssStyleType } from "../../xfl-common/ts/PartialCssStyleType";
 
 const defaultCssStyle: PartialCssStyleType = {
   backgroundColor: "white"
