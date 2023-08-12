@@ -30,7 +30,7 @@ export const cn = {
     loading: "加载中",
     minimum: "最小值",
     maximum: "最大值",
-    xfl_title_basic_information: "基础信息",
+    xfl_title_basic_information: "基本信息",
     xfl_title_community: "交个朋友",
     xfl_title_journey: "履历",
     xfl_title_certificate: "技能证书",
