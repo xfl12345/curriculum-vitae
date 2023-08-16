@@ -323,16 +323,17 @@ export default defineComponent({
         return;
       }
 
-      const cvBoxWidthInPixel = myself.paperSizeStandard.width * myself.rootScale;
-      console.log("cvBoxWidthInPixel", cvBoxWidthInPixel);
-      console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
-      console.log("current FontSize" + myself.theFontSize);
-
       const fontSizeLog = new TripleItemLog<number>();
+      const cvBoxWidthInPixel = myself.paperSizeStandard.width * myself.rootScale;
       const getMaxFontSize = () => cvBoxWidthInPixel / 4;
-
       let maxFontSize = getMaxFontSize();
       let minFontSize = 8;
+      console.log("cvBoxWidthInPixel", cvBoxWidthInPixel);
+      console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
+      console.log("Current FontSize", myself.theFontSize);
+      console.log("minFontSize", minFontSize);
+      console.log("maxFontSize", maxFontSize);
+
       const getMiddleFontSize = () => Math.round((minFontSize + maxFontSize) / 2);
       let currentFontSize = Math.round(
         cvBoxWidthInPixel / Math.round(myself.cvBoxBody.scrollWidth / myself.theFontSizeInPixel)
@@ -350,9 +351,6 @@ export default defineComponent({
         },
         onDomRefreshed: () => {}
       };
-
-      console.log("minFontSize", minFontSize);
-      console.log("maxFontSize", maxFontSize);
 
       ptrBook.horizontal.adjustFunc = () => {
         const scrollWidth = myself.cvBoxBody.scrollWidth;
