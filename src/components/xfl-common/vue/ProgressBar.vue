@@ -34,7 +34,7 @@
 
 <script setup lang="tsx">
 import { computed, ref, PropType } from "vue";
-import { PartialCssStyleType } from "../ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "../ts/VuePartialCssProperties";
 import CenterBox from "./CenterBox.vue";
 
 const props = defineProps({
@@ -59,8 +59,8 @@ const props = defineProps({
     default: false
   },
   propsPercentNumberStyle: {
-    type: Object as PropType<PartialCssStyleType>,
-    default: (): PartialCssStyleType => {
+    type: Object as PropType<VuePartialCssProperties>,
+    default: (): VuePartialCssProperties => {
       return {};
     }
   },

@@ -15,7 +15,7 @@
 import { computed, PropType, ref } from "vue";
 import tinygradient from "tinygradient";
 import ProgressBar from "./ProgressBar.vue";
-import { PartialCssStyleType } from "../ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "../ts/VuePartialCssProperties";
 
 const props = defineProps({
   theFontSizeInPixel: {
@@ -42,8 +42,8 @@ const props = defineProps({
     default: false
   },
   propsPercentNumberStyle: {
-    type: Object as PropType<PartialCssStyleType>,
-    default: (): PartialCssStyleType => {
+    type: Object as PropType<VuePartialCssProperties>,
+    default: (): VuePartialCssProperties => {
       return {};
     }
   },

@@ -121,7 +121,7 @@ import { defineComponent, ref } from "vue";
 import { useStore } from "vuex";
 import { NConfigProvider, NGlobalStyle, NSlider, NSpace } from "naive-ui";
 import CenterBox from "@/components/xfl-common/vue/CenterBox.vue";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 
 // noinspection JSSuspiciousNameCombination
 export default defineComponent({
@@ -201,7 +201,7 @@ export default defineComponent({
       const minHeightInPixel = 300;
       const minWidthInPixel = 800;
 
-      const theStyle: PartialCssStyleType = {
+      const theStyle: VuePartialCssProperties = {
         fontSize: myself.theFontSize,
         minWidth: myself.contentBoxMinWidthInPixel + "px"
       };

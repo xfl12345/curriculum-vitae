@@ -81,7 +81,7 @@ import { Clipboard } from "v-clipboard";
 import { KeyValuePair } from "@/tsmod/KeyValuePair";
 import CenterBox from "@/components/xfl-common/vue/CenterBox.vue";
 import TextPrettier from "@/components/xfl-common/vue/TextPrettier.vue";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 
 export default defineComponent({
   components: { TextPrettier, CenterBox, CopyOne },
@@ -144,7 +144,7 @@ export default defineComponent({
 
       return undefined;
     },
-    rootBoxStyleOfKey(): PartialCssStyleType {
+    rootBoxStyleOfKey(): VuePartialCssProperties {
       const myself = this;
       return (
         myself.fixedKeyRootBoxWidth === "auto"
@@ -153,7 +153,7 @@ export default defineComponent({
               flexBasis: 0
             }
           : { width: myself.fixedKeyRootBoxWidth }
-      ) as PartialCssStyleType;
+      ) as VuePartialCssProperties;
     }
   },
   methods: {

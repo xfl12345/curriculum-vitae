@@ -23,9 +23,9 @@
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
 import { cssMixer } from "@/components/xfl-common/ts/CssMixer";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 
-const defaultCssStyle: PartialCssStyleType = {};
+const defaultCssStyle: VuePartialCssProperties = {};
 
 export default defineComponent({
   components: {},
@@ -47,8 +47,8 @@ export default defineComponent({
       default: "#03DE00"
     },
     propsCssStyle: {
-      type: Object as PropType<PartialCssStyleType>,
-      default: (): PartialCssStyleType => defaultCssStyle
+      type: Object as PropType<VuePartialCssProperties>,
+      default: (): VuePartialCssProperties => defaultCssStyle
     }
   },
   emits: [],
@@ -91,12 +91,12 @@ export default defineComponent({
       // return "0 0 " + spreadWidth * 1.618 + "px " + spreadWidth + "px #999999 inset";
       return "0 0 " + myself.peerPictureWidthInPixel / 4 + "px " + spreadWidth + "px #999999 inset";
     },
-    cssStyle(): PartialCssStyleType {
+    cssStyle(): VuePartialCssProperties {
       const myself = this;
-      const theStyle: PartialCssStyleType = cssMixer(
+      const theStyle: VuePartialCssProperties = cssMixer(
         defaultCssStyle,
         myself.propsCssStyle
-      ) as PartialCssStyleType;
+      ) as VuePartialCssProperties;
 
       theStyle.boxSizing = "border-box";
       theStyle.width = "0";
@@ -106,12 +106,12 @@ export default defineComponent({
         theStyle.boxShadow = myself.defaultShadowStyle;
       }
 
-      return theStyle as PartialCssStyleType;
+      return theStyle as VuePartialCssProperties;
     },
-    leftTrianglePicture(): PartialCssStyleType {
+    leftTrianglePicture(): VuePartialCssProperties {
       return this.triangleBorderCssStyleGenerator("right");
     },
-    rightTrianglePicture(): PartialCssStyleType {
+    rightTrianglePicture(): VuePartialCssProperties {
       return this.triangleBorderCssStyleGenerator("left");
     }
   },
@@ -127,13 +127,13 @@ export default defineComponent({
   beforeUnmount() {},
   unmounted() {},
   methods: {
-    triangleBorderCssStyleGenerator(direction: string): PartialCssStyleType {
+    triangleBorderCssStyleGenerator(direction: string): VuePartialCssProperties {
       const myself = this;
 
       const defaultStyleString = myself.peerPictureWidth + " solid transparent";
       const fullWidthStyleString = myself.peerPictureWidth + " solid " + myself.color;
       const zeroWidthStyleString = "0 solid " + myself.color;
-      const theStyle: PartialCssStyleType = {
+      const theStyle: VuePartialCssProperties = {
         borderRight: defaultStyleString,
         borderBottom: defaultStyleString,
         borderLeft: defaultStyleString,

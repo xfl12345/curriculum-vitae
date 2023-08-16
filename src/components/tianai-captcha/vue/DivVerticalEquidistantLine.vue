@@ -16,9 +16,9 @@
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
 import { cssMixer } from "@/components/xfl-common/ts/CssMixer";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 
-const defaultCssStyle: PartialCssStyleType = {
+const defaultCssStyle: VuePartialCssProperties = {
   // backgroundColor: "#4FC632"
   backgroundColor: "#03DE00"
   // backgroundColor: "lawngreen"
@@ -53,8 +53,8 @@ export default defineComponent({
       default: true
     },
     propsCssStyle: {
-      type: Object as PropType<PartialCssStyleType>,
-      default: (): PartialCssStyleType => defaultCssStyle
+      type: Object as PropType<VuePartialCssProperties>,
+      default: (): VuePartialCssProperties => defaultCssStyle
     }
   },
   emits: [],
@@ -96,9 +96,9 @@ export default defineComponent({
       // return "0 0 " + spreadWidth * 1.618 + "px " + spreadWidth + "px #999999 inset";
       return "0 0 " + myself.pictureWidthInPixel / 4 + "px " + spreadWidth + "px #999999 inset";
     },
-    cssStyle(): PartialCssStyleType {
+    cssStyle(): VuePartialCssProperties {
       const myself = this;
-      const theStyle: PartialCssStyleType = cssMixer(defaultCssStyle, myself.propsCssStyle);
+      const theStyle: VuePartialCssProperties = cssMixer(defaultCssStyle, myself.propsCssStyle);
       if (myself.useDefaultShadowStyle) {
         theStyle.boxShadow = myself.defaultShadowStyle;
       }

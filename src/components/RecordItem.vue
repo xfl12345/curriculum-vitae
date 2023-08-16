@@ -11,7 +11,7 @@
 
 <script setup lang="tsx">
 import { computed, ref } from "vue";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 import TextPrettier from "@/components/xfl-common/vue/TextPrettier.vue";
 
 const templateRoot = ref<HTMLDivElement>();
@@ -40,7 +40,7 @@ const props = defineProps({
 });
 
 const theFontSize = computed(() => props.theFontSizeInPixel + "px");
-const headerBoxCommonStyle = computed((): PartialCssStyleType => {
+const headerBoxCommonStyle = computed((): VuePartialCssProperties => {
   return {
     margin: "0 " + theFontSize.value,
     whiteSpace: "nowrap"

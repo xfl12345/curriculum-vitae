@@ -79,7 +79,7 @@
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
 import { EnumSizingType } from "../ts/EnumSizingType";
-import { PartialCssStyleType } from "../ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "../ts/VuePartialCssProperties";
 
 // source code URL=https://github.com/mkolsv/vue3-m-circle-progress-bar/blob/main/src/CircleProgressBar.vue
 // 学习：https://www.cnblogs.com/daisygogogo/p/11044353.html
@@ -238,7 +238,7 @@ export default defineComponent({
       }
       return stroke;
     },
-    fillingCircleStyles(): PartialCssStyleType {
+    fillingCircleStyles(): VuePartialCssProperties {
       const myself = this;
       return {
         transitionDuration: myself.transitionDurationInSeconds + "s",

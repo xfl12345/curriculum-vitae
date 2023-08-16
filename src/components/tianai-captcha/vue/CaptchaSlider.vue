@@ -41,12 +41,12 @@
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
 import { cssMixer } from "@/components/xfl-common/ts/CssMixer";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 import { TianaiTrackEvent } from "../ts/TianaiTrackEvent";
 import { getPoint2DFromMouseEvent, getPoint2DFromTouchEvent, Point2D } from "../ts/Point";
 import CaptchaSliderButton from "./CaptchaSliderButton.vue";
 
-const defaultCssStyle: PartialCssStyleType = {
+const defaultCssStyle: VuePartialCssProperties = {
   color: "#88949d"
 };
 
@@ -70,8 +70,8 @@ export default defineComponent({
       default: "拖动滑块至正确位置"
     },
     propsPlaceholderStyle: {
-      type: Object as PropType<PartialCssStyleType>,
-      default: (): PartialCssStyleType => {
+      type: Object as PropType<VuePartialCssProperties>,
+      default: (): VuePartialCssProperties => {
         return defaultCssStyle;
       }
     },
@@ -124,9 +124,9 @@ export default defineComponent({
 
       return myself.barWidthInPixel - myself.buttonRadiusInPixel * 2;
     },
-    barCssStyle(): PartialCssStyleType {
+    barCssStyle(): VuePartialCssProperties {
       const myself = this;
-      const theStyle: PartialCssStyleType = {};
+      const theStyle: VuePartialCssProperties = {};
       theStyle.width = myself.barWidthInPixel + "px";
       theStyle.height = myself.barHeightInPixel + "px";
       theStyle.borderRadius = theStyle.height;
@@ -148,15 +148,15 @@ export default defineComponent({
       const myself = this;
       return -(myself.buttonDomSizeInPixel / 2 - myself.buttonRadiusInPixel);
     },
-    buttonCssStyle(): PartialCssStyleType {
+    buttonCssStyle(): VuePartialCssProperties {
       const myself = this;
-      const theStyle: PartialCssStyleType = {};
+      const theStyle: VuePartialCssProperties = {};
       theStyle.top = -myself.barHeightInPixel / 2 + "px";
       theStyle.left = myself.buttonLeftOffset + "px";
 
       return theStyle;
     },
-    placeholderStyle(): PartialCssStyleType {
+    placeholderStyle(): VuePartialCssProperties {
       const myself = this;
       return cssMixer(defaultCssStyle, myself.propsPlaceholderStyle);
     }

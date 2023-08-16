@@ -12,9 +12,9 @@
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
 import { cssMixer } from "../ts/CssMixer";
-import { PartialCssStyleType } from "../ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "../ts/VuePartialCssProperties";
 
-const defaultCssStyle: PartialCssStyleType = {
+const defaultCssStyle: VuePartialCssProperties = {
   backgroundColor: "blue"
 };
 
@@ -38,8 +38,8 @@ export default defineComponent({
       default: ""
     },
     propsCssStyle4CheckBox: {
-      type: Object as PropType<PartialCssStyleType>,
-      default: (): PartialCssStyleType => defaultCssStyle
+      type: Object as PropType<VuePartialCssProperties>,
+      default: (): VuePartialCssProperties => defaultCssStyle
     }
   },
   emits: [],
@@ -59,11 +59,11 @@ export default defineComponent({
     theFontSize(): string {
       return this.theFontSizeInPixel + "px";
     },
-    theCheckBoxStyle(): PartialCssStyleType {
+    theCheckBoxStyle(): VuePartialCssProperties {
       const myself = this;
       return cssMixer(defaultCssStyle, myself.propsCssStyle4CheckBox);
     },
-    theCheckBoxIconStyle(): PartialCssStyleType {
+    theCheckBoxIconStyle(): VuePartialCssProperties {
       const myself = this;
       return {
         // backgroundImage:

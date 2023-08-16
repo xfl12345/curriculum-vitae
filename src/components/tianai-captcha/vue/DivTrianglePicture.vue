@@ -10,7 +10,7 @@
 
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 import { EnumDirection } from "../ts/Direction";
 
 export default defineComponent({
@@ -80,9 +80,9 @@ export default defineComponent({
     triangleHeight() {
       return this.triangleHeightInPixel + "px";
     },
-    rootBoxStyle(): PartialCssStyleType {
+    rootBoxStyle(): VuePartialCssProperties {
       const myself = this;
-      const theStyle: PartialCssStyleType = {};
+      const theStyle: VuePartialCssProperties = {};
       switch (myself.direction) {
         case "right":
         case "left": {
@@ -119,9 +119,9 @@ export default defineComponent({
 
       return theStyle;
     },
-    rotateBoxStyle(): PartialCssStyleType {
+    rotateBoxStyle(): VuePartialCssProperties {
       const myself = this;
-      const theStyle: PartialCssStyleType = {};
+      const theStyle: VuePartialCssProperties = {};
       theStyle.width = myself.rotateBoxSize;
       theStyle.height = myself.rotateBoxSize;
       theStyle.boxShadow = myself.rotateBoxShadow + " inset";
@@ -160,9 +160,9 @@ export default defineComponent({
 
       return theStyle;
     },
-    triangleBaseBorderHelperBoxStyle(): PartialCssStyleType {
+    triangleBaseBorderHelperBoxStyle(): VuePartialCssProperties {
       const myself = this;
-      const theStyle: PartialCssStyleType = {};
+      const theStyle: VuePartialCssProperties = {};
       theStyle.boxShadow = myself.rotateBoxShadow;
       theStyle.borderRadius = Math.ceil(7 * 0.414 * myself.boxShadowBlur) + "px";
       const longEdge = myself.triangleHeightInPixel * 2 + "px";

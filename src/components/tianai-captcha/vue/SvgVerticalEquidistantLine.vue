@@ -8,14 +8,14 @@
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
 import { cssMixer } from "@/components/xfl-common/ts/CssMixer";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 
 type Point = {
   x: number;
   y: number;
 };
 
-const defaultCssStyle: PartialCssStyleType = {
+const defaultCssStyle: VuePartialCssProperties = {
   fill: "transparent",
   stroke: "#4FC632",
   strokeLinecap: "round"
@@ -37,8 +37,8 @@ export default defineComponent({
       default: 3
     },
     propsCssStyle: {
-      type: Object as PropType<PartialCssStyleType>,
-      default: (): PartialCssStyleType => defaultCssStyle
+      type: Object as PropType<VuePartialCssProperties>,
+      default: (): VuePartialCssProperties => defaultCssStyle
     }
   },
   emits: [],
@@ -69,9 +69,9 @@ export default defineComponent({
       const myself = this;
       return myself.viewBoxHeight + 2;
     },
-    cssStyle(): PartialCssStyleType {
+    cssStyle(): VuePartialCssProperties {
       const myself = this;
-      const theStyle: PartialCssStyleType = cssMixer(defaultCssStyle, myself.propsCssStyle);
+      const theStyle: VuePartialCssProperties = cssMixer(defaultCssStyle, myself.propsCssStyle);
       theStyle.strokeWidth = myself.strokeWidthInPixel + "px";
       theStyle.strokeDashoffset = "0";
       theStyle.strokeDasharray = "" + myself.strokeDasharrayInPixel;

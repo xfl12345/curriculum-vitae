@@ -5,7 +5,7 @@
 <script lang="tsx">
 import { defineComponent, PropType, ref } from "vue";
 import { cssMixer } from "../ts/CssMixer";
-import { PartialCssStyleType } from "../ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "../ts/VuePartialCssProperties";
 
 type Point = {
   x: number;
@@ -16,7 +16,7 @@ interface PointDict {
   [index: string]: Point;
 }
 
-const defaultCssStyle: PartialCssStyleType = {
+const defaultCssStyle: VuePartialCssProperties = {
   fill: "transparent",
   strokeWidth: "2px",
   stroke: "black",
@@ -47,8 +47,8 @@ export default defineComponent({
       default: 100
     },
     propsCssStyle: {
-      type: Object as PropType<PartialCssStyleType>,
-      default: (): PartialCssStyleType => defaultCssStyle
+      type: Object as PropType<VuePartialCssProperties>,
+      default: (): VuePartialCssProperties => defaultCssStyle
     }
   },
   emits: [],
@@ -95,9 +95,9 @@ export default defineComponent({
         2
       );
     },
-    cssStyle(): PartialCssStyleType {
+    cssStyle(): VuePartialCssProperties {
       const myself = this;
-      const theStyle: PartialCssStyleType = cssMixer(defaultCssStyle, myself.propsCssStyle);
+      const theStyle: VuePartialCssProperties = cssMixer(defaultCssStyle, myself.propsCssStyle);
       theStyle.strokeDashoffset = "" + (myself.isShowPic ? 0 : myself.strokeDasharrayInPixel);
       theStyle.strokeDasharray = "" + myself.strokeDasharrayInPixel;
       return theStyle;

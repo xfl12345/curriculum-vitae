@@ -134,7 +134,7 @@ import { paperA4Standard } from "@/assets/json/common.json";
 import TextPrettier from "@/components/xfl-common/vue/TextPrettier.vue";
 import { TripleItemLog } from "@/components/xfl-common/ts/TripleItemLog";
 import { PaperSizeStandard } from "@/components/xfl-common/ts/PaperSizeStandard";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 import { CurriculumVitaeData } from "@/tsmod/CurriculumVitaeData";
 import { getCurriculumVitaeData } from "@/model/SecretDataApi";
 import CvChapter from "@/components/CvChapter.vue";
@@ -182,8 +182,8 @@ export default defineComponent({
   },
   data() {
     const myself = this;
-    const rootNodeStyle: PartialCssStyleType = {};
-    const cvBoxParentStyle: PartialCssStyleType = {};
+    const rootNodeStyle: VuePartialCssProperties = {};
+    const cvBoxParentStyle: VuePartialCssProperties = {};
     const cvData: Partial<CurriculumVitaeData> = {};
     return {
       debugCvBoxSize: false,
@@ -210,7 +210,7 @@ export default defineComponent({
     cvBoxHeightInPixel() {
       return this.paperSizeStandard.height * this.rootScale;
     },
-    cvBoxStyle(): PartialCssStyleType {
+    cvBoxStyle(): VuePartialCssProperties {
       const myself = this;
       const width = myself.paperSizeStandard.width * myself.rootScale + "px";
       const height = myself.cvBoxHeightInPixel + "px";

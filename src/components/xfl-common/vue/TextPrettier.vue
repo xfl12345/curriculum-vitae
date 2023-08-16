@@ -2,7 +2,7 @@
 import type { VNodeProps, PropType, VNode } from "vue";
 import { defineComponent, h } from "vue";
 import isChinese from "is-chinese";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 
 export default defineComponent({
   // name: "TextPrettier",
@@ -12,8 +12,8 @@ export default defineComponent({
       default: ""
     },
     propsCssStyle: {
-      type: Object as PropType<PartialCssStyleType>,
-      default: (): PartialCssStyleType => {
+      type: Object as PropType<VuePartialCssProperties>,
+      default: (): VuePartialCssProperties => {
         return {
           fontSize: "inherit"
         };

@@ -102,12 +102,12 @@ import refreshIcon from "@/components/icon-park/refresh.svg";
 import closeIcon from "@/components/icon-park/close-one.svg";
 import { EnumSizingType } from "@/components/xfl-common/ts/EnumSizingType";
 import { cssMixer } from "@/components/xfl-common/ts/CssMixer";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 import { TianaiTrackEvent } from "../ts/TianaiTrackEvent";
 import { ITianaiCaptchaClient, RequestResult, TianaiCaptchaClient } from "../ts/TianaiCaptchaClient";
 import CaptchaSlider from "./CaptchaSlider.vue";
 
-const defaultCssStyle: PartialCssStyleType = {
+const defaultCssStyle: VuePartialCssProperties = {
   backgroundColor: "#fff",
   boxShadow: "0 0 11px 0 #999999"
 };
@@ -145,8 +145,8 @@ export default defineComponent({
       default: false
     },
     propsCssStyle: {
-      type: Object as PropType<PartialCssStyleType>,
-      default: (): PartialCssStyleType => defaultCssStyle
+      type: Object as PropType<VuePartialCssProperties>,
+      default: (): VuePartialCssProperties => defaultCssStyle
     }
   },
   emits: ["captchaDone", "onClickCloseButton"],
@@ -169,7 +169,7 @@ export default defineComponent({
   },
   data() {
     const myself = this;
-    const rotateImgDivStyle: PartialCssStyleType = {};
+    const rotateImgDivStyle: VuePartialCssProperties = {};
 
     return {
       rotateImgDivStyle,
@@ -256,7 +256,7 @@ export default defineComponent({
     footerBoxHeight() {
       return this.footerBoxHeightInPixel + "px";
     },
-    footerBoxButtonStyle(): PartialCssStyleType {
+    footerBoxButtonStyle(): VuePartialCssProperties {
       const myself = this;
       return {
         height: myself.footerBoxHeight,
@@ -265,9 +265,9 @@ export default defineComponent({
         cursor: "pointer"
       };
     },
-    cssStyle(): PartialCssStyleType {
+    cssStyle(): VuePartialCssProperties {
       const myself = this;
-      const theStyle: PartialCssStyleType = cssMixer(defaultCssStyle, myself.propsCssStyle);
+      const theStyle: VuePartialCssProperties = cssMixer(defaultCssStyle, myself.propsCssStyle);
       theStyle.width = myself.boxWidthInPixel + "px";
       theStyle.padding = myself.boxPaddingInPixel + "px";
       theStyle.borderRadius = myself.boxPaddingInPixel + "px";

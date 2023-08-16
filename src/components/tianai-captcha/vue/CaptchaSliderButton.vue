@@ -68,11 +68,11 @@ import { defineComponent, PropType, ref } from "vue";
 import { cssMixer } from "@/components/xfl-common/ts/CssMixer";
 import CenterBox from "@/components/xfl-common/vue/CenterBox.vue";
 import { EnumSizingType } from "@/components/xfl-common/ts/EnumSizingType";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 import DivVerticalEquidistantLine from "./DivVerticalEquidistantLine.vue";
 import DivSliderPicture from "./DivSliderPicture.vue";
 
-const defaultCssStyle: PartialCssStyleType = {
+const defaultCssStyle: VuePartialCssProperties = {
   backgroundColor: "white"
 };
 
@@ -113,8 +113,8 @@ export default defineComponent({
       default: "#03DE00"
     },
     propsCssStyle: {
-      type: Object as PropType<PartialCssStyleType>,
-      default: (): PartialCssStyleType => defaultCssStyle
+      type: Object as PropType<VuePartialCssProperties>,
+      default: (): VuePartialCssProperties => defaultCssStyle
     },
     touchMovePreventDefault: {
       type: Boolean,
@@ -203,9 +203,9 @@ export default defineComponent({
     shadowStyle() {
       return "0 0 " + this.boxShadowSpreadWidthInPixel + "px 0 #999999";
     },
-    cssStyle(): PartialCssStyleType {
+    cssStyle(): VuePartialCssProperties {
       const myself = this;
-      const theStyle: PartialCssStyleType = cssMixer(defaultCssStyle, myself.propsCssStyle);
+      const theStyle: VuePartialCssProperties = cssMixer(defaultCssStyle, myself.propsCssStyle);
       if (myself.enableShadow) {
         theStyle.boxShadow = myself.shadowStyle;
       }

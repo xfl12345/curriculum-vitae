@@ -140,7 +140,7 @@ import { XFLsCvCaptchaClient } from "@/model/XFLsCvCaptchaClient";
 import { CountDownHelper } from "@/components/xfl-common/ts/CountDownHelper";
 import { RequestResult } from "@/components/tianai-captcha/ts/TianaiCaptchaClient";
 import { IGenericJsonApiResponseData, RateLimitedApiResultPayload } from "@/model/JsonApiResponseData";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 import { getTextSize } from "@/components/xfl-common/ts/FontUtils";
 
 export default defineComponent({
@@ -211,7 +211,7 @@ export default defineComponent({
     isInSmsCoolDown() {
       return this.smsCoolDownTimeLeft > 0;
     },
-    rootStyle(): PartialCssStyleType {
+    rootStyle(): VuePartialCssProperties {
       const myself = this;
       const uiCalculation = myself.store.state.uiCalculation;
       return {

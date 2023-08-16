@@ -34,7 +34,7 @@
 
 <script setup lang="tsx">
 import { computed, onMounted, PropType, ref } from "vue";
-import { PartialCssStyleType } from "@/components/xfl-common/ts/PartialCssStyleType";
+import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 import TextPrettier from "@/components/xfl-common/vue/TextPrettier.vue";
 
 const templateRoot = ref<HTMLDivElement>();
@@ -53,8 +53,8 @@ const props = defineProps({
     default: false
   },
   propsCssStyle: {
-    type: Object as PropType<PartialCssStyleType>,
-    default: (): PartialCssStyleType => {
+    type: Object as PropType<VuePartialCssProperties>,
+    default: (): VuePartialCssProperties => {
       return {};
     }
   }
@@ -72,6 +72,6 @@ const rootHeightStyle = computed(() => {
           lineHeight: theFontSize.value
         }
       : {}
-  ) as PartialCssStyleType;
+  ) as VuePartialCssProperties;
 });
 </script>
