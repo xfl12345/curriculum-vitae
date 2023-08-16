@@ -74,8 +74,4 @@ const rootHeightStyle = computed(() => {
       : {}
   ) as PartialCssStyleType;
 });
-
-onMounted(() => {
-  console.log(JSON.stringify(rootHeightStyle.value));
-});
 </script>
