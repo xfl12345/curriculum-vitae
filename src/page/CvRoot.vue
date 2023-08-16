@@ -401,7 +401,7 @@ export default defineComponent({
           myself.adjustingFontSize = "";
         }
       };
-      ptrBook.onDomRefreshed();
+      myself.$nextTick(ptrBook.onDomRefreshed);
     }
   }
 });
