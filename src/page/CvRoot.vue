@@ -16,6 +16,7 @@
           style="box-sizing: border-box; display: inline-block"
           :style="{ border: debugCvBoxSize ? '1px dashed hotpink' : undefined }"
         >
+          <!--基本信息-->
           <cv-chapter
             :the-font-size-in-pixel="theFontSizeInPixel"
             :the-title="t('word.xfl_title_basic_information')"
@@ -35,6 +36,7 @@
               </div>
             </template>
           </cv-chapter>
+          <!--交个朋友-->
           <cv-chapter
             :the-font-size-in-pixel="theFontSizeInPixel"
             :the-title="t('word.xfl_title_community')"
@@ -42,6 +44,7 @@
           >
             <community-box v-bind="cvData.community" :the-font-size-in-pixel="theFontSizeInPixel" />
           </cv-chapter>
+          <!--履历-->
           <cv-chapter :the-font-size-in-pixel="theFontSizeInPixel" :the-title="t('word.xfl_title_journey')">
             <record-item
               v-for="item in cvData.journey"
@@ -53,6 +56,7 @@
               :the-body="item.body"
             />
           </cv-chapter>
+          <!--技能证书-->
           <cv-chapter
             :the-font-size-in-pixel="theFontSizeInPixel"
             :the-title="t('word.xfl_title_certificate')"
@@ -64,6 +68,7 @@
               :style="{ fontSize: theFontSize }"
             />
           </cv-chapter>
+          <!--技能水平-->
           <cv-chapter
             v-if="'skillDegree' in cvData"
             :the-font-size-in-pixel="theFontSizeInPixel"
@@ -77,6 +82,7 @@
               :degree="item.degree"
             />
           </cv-chapter>
+          <!--折腾碎念-->
           <cv-chapter
             v-if="'interestingBlog' in cvData"
             :the-font-size-in-pixel="theFontSizeInPixel"
@@ -90,6 +96,7 @@
               </ul>
             </div>
           </cv-chapter>
+          <!--自我评价-->
           <cv-chapter
             v-if="'selfAppraisal' in cvData"
             :the-font-size-in-pixel="theFontSizeInPixel"
