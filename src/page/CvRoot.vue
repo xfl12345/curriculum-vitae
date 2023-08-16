@@ -347,7 +347,8 @@ export default defineComponent({
         horizontal: {
           done: false,
           adjustFunc: () => {}
-        }
+        },
+        onDomRefreshed: () => {}
       };
 
       console.log("minFontSize", minFontSize);
@@ -377,7 +378,7 @@ export default defineComponent({
           console.log("Horizontal adjustment done!");
         }
       };
-      ptrBook.theTimer = setInterval(() => {
+      ptrBook.onDomRefreshed = () => {
         if (!ptrBook.horizontal.done) {
           console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
           // 如果实在探不到 盒子拉伸宽度 和 限制宽度 相等的 系数，那就给个极限退出循环
@@ -387,12 +388,14 @@ export default defineComponent({
             }
             console.log("Signing done...");
             ptrBook.horizontal.done = true;
+            ptrBook.onDomRefreshed();
           } else {
             ptrBook.horizontal.adjustFunc();
+            myself.$nextTick(() => setTimeout(ptrBook.onDomRefreshed, 4));
           }
         } else {
-          clearInterval(ptrBook.theTimer);
-          console.log("Timer cleared.");
+          ptrBook.onDomRefreshed = () => {};
+          console.log("adjustFontSize done.");
           setTimeout(() => {
             console.log("cvBoxWidthInPixel", cvBoxWidthInPixel);
             console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
@@ -403,9 +406,10 @@ export default defineComponent({
             );
             console.log("target maxLine", Math.ceil(myself.cvBoxHeightInPixel / myself.theFontSizeInPixel));
             myself.adjustingFontSize = "";
-          }, 100);
+          }, 20);
         }
-      }, 20);
+      };
+      ptrBook.onDomRefreshed();
     }
   }
 });
