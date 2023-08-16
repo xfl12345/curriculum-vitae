@@ -391,6 +391,8 @@ export default defineComponent({
             ptrBook.horizontal.adjustFunc();
           }
         } else {
+          clearInterval(ptrBook.theTimer);
+          console.log("Timer cleared.");
           setTimeout(() => {
             console.log("cvBoxWidthInPixel", cvBoxWidthInPixel);
             console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
@@ -400,8 +402,6 @@ export default defineComponent({
               Math.ceil(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel)
             );
             console.log("target maxLine", Math.ceil(myself.cvBoxHeightInPixel / myself.theFontSizeInPixel));
-            console.log("Clearing timer...");
-            clearInterval(ptrBook.theTimer);
             myself.adjustingFontSize = "";
           }, 100);
         }
