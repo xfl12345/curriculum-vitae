@@ -396,17 +396,15 @@ export default defineComponent({
         } else {
           ptrBook.onDomRefreshed = () => {};
           console.log("adjustFontSize done.");
-          setTimeout(() => {
-            console.log("cvBoxWidthInPixel", cvBoxWidthInPixel);
-            console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
-            console.log("Final FontSize", myself.theFontSize);
-            console.log(
-              "current maxLine",
-              Math.ceil(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel)
-            );
-            console.log("target maxLine", Math.ceil(myself.cvBoxHeightInPixel / myself.theFontSizeInPixel));
-            myself.adjustingFontSize = "";
-          }, 20);
+          console.log("cvBoxWidthInPixel", cvBoxWidthInPixel);
+          console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
+          console.log("Final FontSize", myself.theFontSize);
+          console.log(
+            "current maxLine",
+            Math.ceil(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel)
+          );
+          console.log("target maxLine", Math.ceil(myself.cvBoxHeightInPixel / myself.theFontSizeInPixel));
+          myself.adjustingFontSize = "";
         }
       };
       ptrBook.onDomRefreshed();
