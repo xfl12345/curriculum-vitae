@@ -64,17 +64,6 @@ const props = defineProps({
   }
 });
 
-const leftGroupKeyBoxWidth = ref(400);
-
-const updateLeftGroupKeyBoxWidth = () => {
-  console.log("updateLeftGroupKeyBoxWidth", "updating");
-  let result = 400;
-  if (typeof leftGroup.value !== "undefined") {
-    result = leftGroup.value[0].rootBoxOfKey.offsetWidth ?? 400;
-  }
-  leftGroupKeyBoxWidth.value = result;
-};
-
 const getTranslatedString = (key: string) => {
   return t("word." + key);
 };
@@ -87,6 +76,17 @@ const getTheDisplayValue = (key: string) => {
   return "theDisplayValue" in props.basicInformation[key]
     ? props.basicInformation[key].theDisplayValue
     : props.basicInformation[key].theCopyValue;
+};
+
+const leftGroupKeyBoxWidth = ref(400);
+leftGroupKeyBoxWidth.value = getTranslatedString("jobPrefer").length * props.theFontSizeInPixel;
+const updateLeftGroupKeyBoxWidth = () => {
+  let result = 400;
+  if (typeof leftGroup.value !== "undefined") {
+    result = leftGroup.value[0].rootBoxOfKey.offsetWidth ?? 400;
+  }
+  // console.log("updateLeftGroupKeyBoxWidth", result);
+  leftGroupKeyBoxWidth.value = result;
 };
 
 const jobPreferKV = computed(() => {
