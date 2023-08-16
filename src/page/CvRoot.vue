@@ -355,14 +355,24 @@ export default defineComponent({
       console.log("maxFontSize", maxFontSize);
 
       ptrBook.horizontal.adjustFunc = () => {
-        if (myself.cvBoxBody.scrollWidth > cvBoxWidthInPixel) {
+        const scrollWidth = myself.cvBoxBody.scrollWidth;
+        console.log("scrollWidth", scrollWidth);
+        if (fontSizeLog.getSize() > 2 && fontSizeLog.getFirst() === fontSizeLog.getLast()) {
+          // 如果超出宽度了，字体大小还是要扣回去滴！
+          if (myself.cvBoxBody.scrollWidth > cvBoxWidthInPixel) {
+            myself.theFontSizeInPixel -= 1;
+          }
+
+          ptrBook.horizontal.done = true;
+          console.log("Horizontal adjustment done!");
+        } else if (scrollWidth > cvBoxWidthInPixel) {
           maxFontSize = currentFontSize;
           currentFontSize = getMiddleFontSize();
           myself.theFontSizeInPixel = currentFontSize;
           fontSizeLog.push(currentFontSize);
-        } else if (myself.cvBoxBody.scrollWidth <= cvBoxWidthInPixel) {
+        } else if (scrollWidth <= cvBoxWidthInPixel) {
           const gap = Math.abs(
-            Math.ceil(myself.cvBoxBody.scrollWidth / myself.theFontSizeInPixel) -
+            Math.ceil(scrollWidth / myself.theFontSizeInPixel) -
               Math.ceil(cvBoxWidthInPixel / myself.theFontSizeInPixel)
           );
           if (gap > 2) {
@@ -373,26 +383,12 @@ export default defineComponent({
           currentFontSize = getMiddleFontSize();
           myself.theFontSizeInPixel = currentFontSize;
           fontSizeLog.push(currentFontSize);
-        } else {
-          ptrBook.horizontal.done = true;
-          console.log("Horizontal adjustment done!");
         }
       };
       ptrBook.onDomRefreshed = () => {
         if (!ptrBook.horizontal.done) {
-          console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
-          // 如果实在探不到 盒子拉伸宽度 和 限制宽度 相等的 系数，那就给个极限退出循环
-          if (fontSizeLog.getSize() > 2 && fontSizeLog.getFirst() === fontSizeLog.getLast()) {
-            if (myself.cvBoxBody.scrollWidth > cvBoxWidthInPixel) {
-              myself.theFontSizeInPixel -= 1;
-            }
-            console.log("Signing done...");
-            ptrBook.horizontal.done = true;
-            ptrBook.onDomRefreshed();
-          } else {
-            ptrBook.horizontal.adjustFunc();
-            myself.$nextTick(() => setTimeout(ptrBook.onDomRefreshed, 4));
-          }
+          ptrBook.horizontal.adjustFunc();
+          myself.$nextTick(() => setTimeout(ptrBook.onDomRefreshed, 4));
         } else {
           ptrBook.onDomRefreshed = () => {};
           console.log("adjustFontSize done.");
