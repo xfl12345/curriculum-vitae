@@ -5,7 +5,7 @@
     :style="[propsCssStyle, rootHeightStyle, { fontSize: theFontSize }]"
   >
     <span
-      style="display: inline-block; vertical-align: middle"
+      style="vertical-align: middle"
       :style="{
         padding: '0 ' + iconBoxHorizontalPadding,
         // lineHeight: theFontSize,
@@ -18,11 +18,9 @@
       :href="theUrl"
     >
       <text-prettier
-        style="display: inline-block; box-sizing: border-box; line-height: inherit; font-size: inherit"
+        style="line-height: inherit; font-size: inherit"
         :content="theUrl"
         :props-css-style="{
-          display: 'inline-block',
-          boxSizing: 'border-box',
           verticalAlign: 'inherit',
           lineHeight: 'inherit',
           fontSize: 'inherit'

@@ -23,7 +23,7 @@ export default defineComponent({
   setup(props, ctx) {},
   data() {
     return {
-      myValueBox: h("div")
+      myValueBox: h("span")
     };
   },
   computed: {
@@ -67,16 +67,7 @@ export default defineComponent({
       }
     },
     recreateTheValueBoxVnode() {
-      // const rootNode = <div style={{ display: "inline-block" }} />;
-      const rootNode = h(
-        "div",
-        {
-          style: { display: "inline-block" }
-        },
-        this.generateChildrenVnode()
-      );
-
-      return h("div", this.generateChildrenVnode());
+      return h("span", this.generateChildrenVnode());
     },
     generateChildrenVnode() {
       const myself = this;

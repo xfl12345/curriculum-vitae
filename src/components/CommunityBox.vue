@@ -37,14 +37,14 @@
           <div style="display: inline-block; padding: 0; vertical-align: bottom">
             <span :style="{ fontSize: fingerEmojiFontSize }">👈</span>
             <text-prettier
-              style="display: inline-block; vertical-align: inherit"
+              style="vertical-align: inherit"
               :style="{ fontSize: funnyWelcomeBoxFontSize, lineHeight: funnyWelcomeBoxFontSize }"
               content="扫我加微信😉"
             />
           </div>
           <div style="display: inline-block; padding: 0; vertical-align: bottom">
             <text-prettier
-              style="display: inline-block; vertical-align: inherit"
+              style="vertical-align: inherit"
               :style="{ fontSize: funnyWelcomeBoxFontSize, lineHeight: funnyWelcomeBoxFontSize }"
               content="扫我拿简历源码"
             />
