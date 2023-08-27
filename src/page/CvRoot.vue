@@ -38,6 +38,7 @@
           </cv-chapter>
           <!--交个朋友-->
           <cv-chapter
+            v-if="'community' in cvData"
             :the-font-size-in-pixel="theFontSizeInPixel"
             :the-title="t('word.xfl_title_community')"
             the-slogan="Talk is cheap,show me the code!"
@@ -45,7 +46,11 @@
             <community-box v-bind="cvData.community" :the-font-size-in-pixel="theFontSizeInPixel" />
           </cv-chapter>
           <!--履历-->
-          <cv-chapter :the-font-size-in-pixel="theFontSizeInPixel" :the-title="t('word.xfl_title_journey')">
+          <cv-chapter
+            v-if="'journey' in cvData"
+            :the-font-size-in-pixel="theFontSizeInPixel"
+            :the-title="t('word.xfl_title_journey')"
+          >
             <record-item
               v-for="item in cvData.journey"
               :key="item.id"
@@ -58,6 +63,7 @@
           </cv-chapter>
           <!--技能证书-->
           <cv-chapter
+            v-if="'certificate' in cvData"
             :the-font-size-in-pixel="theFontSizeInPixel"
             :the-title="t('word.xfl_title_certificate')"
           >
@@ -335,9 +341,11 @@ export default defineComponent({
       console.log("maxFontSize", maxFontSize);
 
       const getMiddleFontSize = () => Math.round((minFontSize + maxFontSize) / 2);
-      let currentFontSize = Math.round(
-        cvBoxWidthInPixel / Math.round(myself.cvBoxBody.scrollWidth / myself.theFontSizeInPixel)
-      );
+      // let currentFontSize = Math.round(
+      //   cvBoxWidthInPixel / Math.round(myself.cvBoxBody.scrollWidth / myself.theFontSizeInPixel)
+      // );
+      let currentFontSize = Math.round(myself.cvBoxBody.scrollWidth / 37);
+      console.log("Init FontSize", currentFontSize);
       myself.theFontSizeInPixel = currentFontSize;
       fontSizeLog.push(currentFontSize);
       const ptrBook: any = {
@@ -347,6 +355,7 @@ export default defineComponent({
         },
         horizontal: {
           done: false,
+          delta: 1,
           adjustFunc: () => {}
         },
         onDomRefreshed: () => {}
@@ -366,6 +375,7 @@ export default defineComponent({
         } else if (scrollWidth > cvBoxWidthInPixel) {
           maxFontSize = currentFontSize;
           currentFontSize = getMiddleFontSize();
+          console.log("Adjust FontSize", currentFontSize);
           myself.theFontSizeInPixel = currentFontSize;
           fontSizeLog.push(currentFontSize);
         } else if (scrollWidth <= cvBoxWidthInPixel) {
@@ -379,6 +389,7 @@ export default defineComponent({
 
           minFontSize = currentFontSize;
           currentFontSize = getMiddleFontSize();
+          console.log("Adjust FontSize", currentFontSize);
           myself.theFontSizeInPixel = currentFontSize;
           fontSizeLog.push(currentFontSize);
         }
