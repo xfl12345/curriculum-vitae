@@ -43,14 +43,24 @@ export class EmptyBasicInformation implements BasicInformation {
   facePhoto: "data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==";
 }
 
+export interface ProjectExperienceItem {
+  id: number;
+  period: string;
+  name: string;
+  technologyStack: string;
+  body?: string;
+}
+
 export class CurriculumVitaeData {
   basicInformation: BasicInformation = new EmptyBasicInformation();
 
   community: object = {};
 
-  skillDegree?: SkillDegree[] = [];
+  skillDegree: SkillDegree[] = [];
 
   journey: JourneyItem[] = [];
+
+  projectExperience: ProjectExperienceItem[] = [];
 
   certificate: OnlyContentItem[] = [];
 

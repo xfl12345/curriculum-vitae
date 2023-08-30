@@ -1,0 +1,140 @@
+{
+  "basicInformation": {
+    "name": {
+      "theCopyValue": "张三"
+    },
+    "phoneNumberSameToWechat": {
+      "theCopyValue": "+86114",
+      "theDisplayValue": "+86 114"
+    },
+    "emailAddress": {
+      "theCopyValue": "example@qq.com"
+    },
+    "birthdayInYearAndMonth": {
+      "theCopyValue": "6666.01"
+    },
+    "maritalStatus": {
+      "theCopyValue": "未婚"
+    },
+    "nation": {
+      "theCopyValue": "X族"
+    },
+    "stature": {
+      "theCopyValue": "200cm"
+    },
+    "schooling": {
+      "theCopyValue": "大专"
+    },
+    "lastInstitute": {
+      "theCopyValue": "XX学院"
+    },
+    "nativePlace": {
+      "theCopyValue": "XX省YY市ZZ县"
+    },
+    "jobPrefer": {
+      "theCopyValue": "风水八卦、房屋补漏"
+    },
+    "facePhoto": "mock/assets/pic/vue.svg"
+  },
+  "community": {
+    "communityUrlList": [
+      "https://github.com/example",
+      "https://gitlab.com/example",
+      "https://gitee.com/example",
+      "https://blog.csdn.net/example"
+    ],
+    "weChatHeadPhoto": "mock/assets/pic/vue.svg",
+    "wechatUrl": "https://weixin.qq.com/r/y0TI0LDENu1JrfSz9xHZ",
+    "curriculumVitaeSourceCodeUrl": "https://github.com/xfl12345/curriculum-vitae-stack"
+  },
+  "skillDegree": [
+    {
+      "skillName": "C",
+      "degree": 0.98
+    },
+    {
+      "skillName": "Java",
+      "degree": 0.9
+    },
+    {
+      "skillName": "HTML/JavaScript(ES6)/CSS/SQL",
+      "degree": 0.7
+    },
+    {
+      "skillName": "Linux shell(bash)",
+      "degree": 0.65
+    },
+    {
+      "skillName": "C#",
+      "degree": 0.6
+    },
+    {
+      "skillName": "Intel Assembly (AT&T style)",
+      "degree": 0.5
+    },
+    {
+      "skillName": "Python/C++",
+      "degree": 0.25
+    },
+    {
+      "skillName": "SpringBoot 3.X/Bee ORM 2.X",
+      "degree": 0.7
+    },
+    {
+      "skillName": "TypeScript 4.X/Vue 3.X",
+      "degree": 0.7
+    },
+    {
+      "skillName": "折腾",
+      "degree": 1
+    }
+  ],
+  "journey": [
+    {
+      "id": 1,
+      "period": "20XX.09-20XX.06",
+      "headerCenter": "XX大学",
+      "headerRight": "软件工程",
+      "body": "主修课程：C 语言程序设计、巴拉巴拉"
+    },
+    {
+      "id": 2,
+      "period": "20XX.XX-20XX.XX",
+      "headerCenter": "XX比赛",
+      "headerRight": "XX角色",
+      "body": "巴拉巴拉"
+    }
+  ],
+  "projectExperience": [
+    {
+      "id": 1,
+      "period": "20XX.XX-20XX.XX",
+      "name": "俄罗斯方块",
+      "technologyStack": "技术栈：C#, WPF",
+      "body": "巴拉巴拉"
+    },
+    {
+      "id": 2,
+      "period": "20XX.XX-20XX.XX",
+      "name": "XX商城",
+      "technologyStack": "技术栈：SpringCloud, Vue3",
+      "body": "巴拉巴拉"
+    }
+  ],
+  "certificate": [
+    {
+      "id": 1,
+      "content": "大学英语四级（CET-4），良好的听说读写能力"
+    }
+  ],
+  "interestingBlog": [
+    {
+      "id": 1,
+      "content": "巴拉巴拉"
+    },
+    {
+      "id": 2,
+      "content": "巴拉巴拉x2"
+    }
+  ]
+}

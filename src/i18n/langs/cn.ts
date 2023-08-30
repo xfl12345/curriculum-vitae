@@ -33,6 +33,7 @@ export const cn = {
     xfl_title_basic_information: "基本信息",
     xfl_title_community: "交个朋友",
     xfl_title_journey: "履历",
+    xfl_title_projectExperience: "项目经历",
     xfl_title_certificate: "技能证书",
     xfl_title_skill_degree: "技能水平",
     xfl_title_blog: "折腾碎念",

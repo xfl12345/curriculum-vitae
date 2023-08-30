@@ -92,7 +92,11 @@ module.exports = {
     "import/no-extraneous-dependencies": [
       "error",
       {
-        devDependencies: ["vite.config.ts"]
+        devDependencies: [
+          "vite.config.ts",
+          "mock/**/*.mock.ts",
+          "**/*.test.tsx"
+        ]
       }
     ]
   }

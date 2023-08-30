@@ -61,6 +61,22 @@
               :the-body="item.body"
             />
           </cv-chapter>
+          <!--项目经历-->
+          <cv-chapter
+            v-if="'projectExperience' in cvData"
+            :the-font-size-in-pixel="theFontSizeInPixel"
+            :the-title="t('word.xfl_title_projectExperience')"
+          >
+            <project-experience-item
+              v-for="item in cvData.projectExperience"
+              :key="item.id"
+              :the-font-size-in-pixel="theFontSizeInPixel"
+              :the-period="item.period"
+              :the-name="item.name"
+              :the-technology-stack="item.technologyStack"
+              :the-body="item.body"
+            />
+          </cv-chapter>
           <!--技能证书-->
           <cv-chapter
             v-if="'certificate' in cvData"
@@ -151,9 +167,11 @@ import BasicInfoGlance from "@/components/BasicInfoGlance.vue";
 import PersonalAbility from "@/components/PersonalAbility.vue";
 import Vue3MountedHelper from "@/components/xfl-common/vue/Vue3MountedHelper.vue";
 import LoadCvDataFailedMessageBox from "@/components/LoadCvDataFailedMessageBox.vue";
+import ProjectExperienceItem from "@/components/ProjectExperienceItem.vue";
 
 export default defineComponent({
   components: {
+    ProjectExperienceItem,
     LoadCvDataFailedMessageBox,
     Vue3MountedHelper,
     HiddenEggPanel,
