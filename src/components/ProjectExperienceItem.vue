@@ -5,10 +5,10 @@
       <text-prettier :style="headerBoxCommonStyle" :content="theName" />
     </div>
     <div style="width: 100%">
-      <text-prettier style="width: 100%" :content="theTechnologyStack" />
+      <text-prettier :content="theTechnologyStack" />
     </div>
     <div style="width: 100%">
-      <text-prettier style="width: 100%" :content="theBody" />
+      <text-prettier :content="theBody" />
     </div>
   </div>
 </template>
