@@ -97,11 +97,8 @@
             :the-title="t('word.xfl_title_skill_degree')"
           >
             <personal-ability
-              v-for="item in cvData.skillDegree"
-              :key="item.skillName"
               :the-font-size-in-pixel="theFontSizeInPixel"
-              :the-skill="item.skillName"
-              :degree="item.degree"
+              :skill-degree-list="cvData.skillDegree"
             />
           </cv-chapter>
           <!--折腾碎念-->

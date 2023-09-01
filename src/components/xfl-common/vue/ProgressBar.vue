@@ -6,7 +6,6 @@
       border-style: solid;
       border-width: 2px;
       overflow: hidden;
-      vertical-align: middle;
       background-color: transparent;
       position: relative;
     "
