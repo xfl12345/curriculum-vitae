@@ -8,7 +8,6 @@ import { ClientCookieManager } from "@/components/xfl-common/ts/ClientCookieMana
 import { LoginMananger } from "@/model/LoginMananger";
 
 const env = import.meta.env ?? ({} as any);
-
 const cookieManager = new ClientCookieManager();
 cookieManager.reloadCookie();
 
@@ -16,6 +15,7 @@ const loginManager = new LoginMananger();
 
 const store = createStore({
   state: {
+    isDevelopmentMode: env.DEV ?? false,
     uiCalculation: {
       rootScale: 8,
       theGlobalDefaultFontSizeInPixel: Math.ceil(getTextSize("xx-large")),

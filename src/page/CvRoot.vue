@@ -191,6 +191,7 @@ export default defineComponent({
     const paperSizeStandard: PaperSizeStandard = paperA4Standard.sizeInMillimetre as PaperSizeStandard;
 
     return {
+      debugCvBoxSize: store.state.isDevelopmentMode,
       templateRoot,
       t,
       store,
@@ -207,7 +208,6 @@ export default defineComponent({
     const cvBoxParentStyle: VuePartialCssProperties = {};
     const cvData: Partial<CurriculumVitaeData> = {};
     return {
-      debugCvBoxSize: false,
       rootNodeStyle,
       cvBoxParentStyle,
       isReloadingCvData: false,
