@@ -43,6 +43,7 @@ const store = createStore({
     },
     browserDefaultFontFamily: getBrowserFirstDefaultFontFamily(),
     browserInitiated: JSON.parse(env.VITE_DISABLE_BROWSER_INITIATED ?? "false"),
+    // browserInitiated: false,
     cookieManager,
     loginManager,
     diyDefaultFontFamilyList: ["Microsoft YaHei UI"],
