@@ -17,8 +17,8 @@ export default [
     body: () => createReadStream("mock/assets/json/xflsCurriculumVitaeData.json")
   }),
   defineMock({
-    url: "/font/FZKTK.TTF",
+    url: "/static/font/FZKTK.TTF",
     type: "FZKTK.TTF",
-    body: () => createReadStream("public/font/FZKTK.TTF")
+    body: () => createReadStream("public/static/font/FZKTK.TTF")
   })
 ];

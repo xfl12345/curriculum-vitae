@@ -268,7 +268,7 @@ export default defineComponent({
             myself.fontDetection.isNeedToLoadExtraFont = true;
             const fontName = "FangZhengKaiTi";
 
-            applyNewFont2GlobalDom(fontName, "url(font/FZKTK.TTF)").then((result) => {
+            applyNewFont2GlobalDom(fontName, "url(static/font/FZKTK.TTF)").then((result) => {
               myself.fontDetection.loadFontMessage = "下载成功，并已应用。正在检测能否渲染。";
               // console.log(result);
               myself.store.commit("addFontFamily", fontName);
