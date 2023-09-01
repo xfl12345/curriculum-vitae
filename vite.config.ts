@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 
-import type { UserConfig, UserConfigExport } from "vite";
+import type { ServerOptions, UserConfig, UserConfigExport } from "vite";
 import { defineConfig, loadEnv } from "vite";
 import vue from "@vitejs/plugin-vue";
 import legacy from "@vitejs/plugin-legacy";
@@ -11,14 +11,6 @@ import axios from "axios";
 
 export default ({ mode }) => {
   const env = loadEnv(mode, process.cwd());
-
-  const corsHttpScheme = JSON.parse(env.VITE_CORS_ENABLE_HTTPS ?? "false") ? "https" : "http";
-  const corsWebSocketScheme = JSON.parse(env.VITE_CORS_ENABLE_WSS ?? "false") ? "wss" : "ws";
-
-  const corsHost = env.VITE_CORS_HOST ?? "127.0.0.1:8880";
-  const corsRootURL = corsHttpScheme + "://" + corsHost;
-
-  console.log("corsHost", corsHost);
 
   return new Promise<UserConfigExport>((resolve2, reject) => {
     // https://vitejs.dev/config/
@@ -52,8 +44,23 @@ export default ({ mode }) => {
           }
         }
       },
-      base: "./",
-      server: {
+      base: "./"
+    } as UserConfig;
+
+    // 先判断一下是否处于开发模式，再决定是否启用 server
+    if (mode === "development") {
+      const remoteServerHttpScheme = JSON.parse(env.VITE_REMOTE_SERVER_ENABLE_HTTPS ?? "false")
+        ? "https"
+        : "http";
+      const remoteServerWebSocketScheme = JSON.parse(env.VITE_REMOTE_SERVER_ENABLE_WSS ?? "false")
+        ? "wss"
+        : "ws";
+
+      const remoteServerHost = env.VITE_SERVER_REMOTE_HOST ?? "127.0.0.1:8880";
+      const remoteServerRootURL = remoteServerHttpScheme + "://" + remoteServerHost;
+
+      console.log("remoteServerRootURL", remoteServerRootURL);
+      myViteConfig.server = {
         // hmr: {
         //   overlay: false
         // },
@@ -64,46 +71,48 @@ export default ({ mode }) => {
         host: "::",
         proxy: {
           "/static/secret/": {
-            target: corsRootURL,
+            target: remoteServerRootURL,
             changeOrigin: true
             // rewrite: (path) => path.replace(/^\/backend/, "")
           },
           "/captcha": {
-            target: corsRootURL,
+            target: remoteServerRootURL,
             changeOrigin: true
           },
           "/login": {
-            target: corsRootURL,
+            target: remoteServerRootURL,
             changeOrigin: true
           },
           "/logout": {
-            target: corsRootURL,
+            target: remoteServerRootURL,
             changeOrigin: true
           },
           "/sms": {
-            target: corsRootURL,
+            target: remoteServerRootURL,
             changeOrigin: true
           },
           "/sms/ws-connect": {
-            target: corsWebSocketScheme + "://" + corsHost,
+            target: remoteServerWebSocketScheme + "://" + remoteServerHost,
             changeOrigin: true
           }
         }
-      }
-    } as UserConfig;
+      } as Partial<ServerOptions>;
 
-    // 验证在线 CORS 是否可用
-    axios.get(corsRootURL + "/login/status").then(
-      (response) => {
-        console.log("CORS request succeed!");
-        resolve2(defineConfig(myViteConfig as UserConfigExport));
-      },
-      (reason) => {
-        console.log("CORS request failed! Use mock instead.");
-        // 当连接不可用的时候，使用 mock
-        myViteConfig.plugins.push(mockDevServerPlugin());
-        resolve2(defineConfig(myViteConfig as UserConfigExport));
-      }
-    );
+      // 验证 远程API 是否可用
+      axios.get(remoteServerRootURL + "/login/status").then(
+        (response) => {
+          console.log("Remote server API request succeed!");
+          resolve2(defineConfig(myViteConfig as UserConfigExport));
+        },
+        (reason) => {
+          console.log("Remote server API request failed! Use mock instead.");
+          // 当 远程API 不可用的时候，使用 mock
+          myViteConfig.plugins.push(mockDevServerPlugin());
+          resolve2(defineConfig(myViteConfig as UserConfigExport));
+        }
+      );
+    } else {
+      resolve2(myViteConfig);
+    }
   });
 };
