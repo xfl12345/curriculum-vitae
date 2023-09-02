@@ -1,5 +1,10 @@
 <template>
-  <div ref="templateRoot" :style="{ fontSize: theFontSize }">
+  <card-view
+    ref="templateRoot"
+    :the-font-size-in-pixel="theFontSizeInPixel"
+    the-background-color="greenyellow"
+    :style="{ fontSize: theFontSize }"
+  >
     <div style="width: 100%; display: flex; box-sizing: border-box; justify-content: space-between">
       <text-prettier :style="headerBoxCommonStyle" :content="thePeriod" />
       <text-prettier :style="headerBoxCommonStyle" :content="theName" />
@@ -10,13 +15,14 @@
     <div style="width: 100%">
       <text-prettier :content="theBody" />
     </div>
-  </div>
+  </card-view>
 </template>
 
 <script setup lang="tsx">
 import { computed, ref } from "vue";
 import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 import TextPrettier from "@/components/xfl-common/vue/TextPrettier.vue";
+import CardView from "@/components/CardView.vue";
 
 const templateRoot = ref<HTMLDivElement>();
 
