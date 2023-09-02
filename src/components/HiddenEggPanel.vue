@@ -51,6 +51,15 @@
                   :style="{
                     borderRadius: theFontSize
                   }"
+                  @click="$emit('refreshCvData')"
+                >
+                  刷新简历数据
+                </button>
+                <button
+                  style="cursor: pointer; font-size: inherit"
+                  :style="{
+                    borderRadius: theFontSize
+                  }"
                   @click="$emit('jump2IndexPage')"
                 >
                   前往导航页面
@@ -142,7 +151,7 @@ export default defineComponent({
       required: true
     }
   },
-  emits: ["update:rootScale", "update:isPanelOpened", "jump2IndexPage", "resetRootScale"],
+  emits: ["update:rootScale", "update:isPanelOpened", "jump2IndexPage", "resetRootScale", "refreshCvData"],
   setup(props, ctx) {
     const store = useStore();
     const templateRoot = ref<HTMLDivElement>();

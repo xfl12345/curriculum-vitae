@@ -132,6 +132,7 @@
       v-model:root-scale="rootScale"
       @jump2-index-page="jump2IndexPage"
       @reset-root-scale="resetRootScale"
+      @refresh-cv-data="refreshCvData"
     />
     <load-cv-data-failed-message-box
       v-if="isLoadCvDataFailed"
