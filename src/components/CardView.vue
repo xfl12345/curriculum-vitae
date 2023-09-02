@@ -3,8 +3,8 @@
     <div
       :style="{
         /* box-shadow: x-shadow y-shadow blur spread color inset; */
-        backgroundColor,
-        border: backgroundColor + ' solid 1px',
+        backgroundColor: theBackgroundColor,
+        border: theBackgroundColor + ' solid 1px',
         borderRadius: quarterOfFontSize,
         boxShadow: oneEighthOfFontSize + ' ' + oneEighthOfFontSize + ' ' + oneEighthOfFontSize + ' 0 gray'
       }"
@@ -25,7 +25,7 @@ const props = defineProps({
     type: Number,
     default: 24
   },
-  backgroundColor: {
+  theBackgroundColor: {
     type: String,
     default: "rgb(173, 216, 230)"
   }

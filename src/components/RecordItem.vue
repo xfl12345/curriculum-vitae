@@ -1,8 +1,9 @@
 <template>
+  <!--the-background-color="rgb(173, 216, 230)"  paleturquoise lightsalmon darksalmon -->
   <card-view
     ref="templateRoot"
     :the-font-size-in-pixel="theFontSizeInPixel"
-    background-color="rgb(173, 216, 230)"
+    the-background-color="paleturquoise"
     :style="{ fontSize: theFontSize }"
   >
     <div style="width: 100%; display: flex; box-sizing: border-box; justify-content: space-between">
