@@ -17,6 +17,7 @@
           :dom-square-box-width="circleProgressBarWidthInPixel"
           :stroke-width-in-pixel="circleProgressBarStrokeWidthInPixel"
           :color-filled="circleProgressBarColorArray"
+          :transition-duration-in-seconds="0.3"
           @reached="onOneHundredReached"
         >
           <div style="height: 100%; width: 100%">
@@ -258,11 +259,9 @@ export default defineComponent({
       let i = 0;
 
       const ptr = {} as any;
-      ptr.timer = setInterval(() => {
+      ptr.func = () => {};
+      ptr.func = () => {
         if (i >= fontList.length) {
-          // console.log(supportFontStatus);
-          clearInterval(ptr.timer);
-
           if (Object.values(supportFontStatus).filter((value) => value).length === 0) {
             myself.fontDetection.loadFontMessage = "由于所有字体均不支持，正在下载额外字体";
             myself.fontDetection.isNeedToLoadExtraFont = true;
@@ -294,9 +293,25 @@ export default defineComponent({
         const isSupport = detector.isSupported(fontName);
         currentItem.isSupport = isSupport;
         supportFontStatus[fontList[i]] = isSupport;
-        myself.progress += progressUnit;
-        i += 1;
-      }, 600);
+
+        // 加百分比的小循环
+        const targetProgress = myself.progress + progressUnit;
+        const ptr2 = {} as any;
+        ptr2.func = () => {};
+        ptr2.func = () => {
+          if (myself.progress < targetProgress) {
+            myself.progress += 1;
+            setTimeout(ptr2.func, 20);
+          } else {
+            // 加完进入下一回合
+            i += 1;
+            ptr.func();
+          }
+        };
+        ptr2.func();
+      };
+
+      ptr.func();
     }, 500);
   },
   beforeUpdate() {},
@@ -323,7 +338,7 @@ export default defineComponent({
       setTimeout(() => {
         const tmpJumpTarget = myself.$route.query.jumpTarget as string | undefined;
         const jumpTarget: string = typeof tmpJumpTarget === "undefined" ? "cv" : tmpJumpTarget;
-        myself.router.push(jumpTarget);
+        // myself.router.push(jumpTarget);
       }, 2300);
     },
     onFailed() {
