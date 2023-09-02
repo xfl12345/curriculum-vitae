@@ -338,7 +338,7 @@ export default defineComponent({
       setTimeout(() => {
         const tmpJumpTarget = myself.$route.query.jumpTarget as string | undefined;
         const jumpTarget: string = typeof tmpJumpTarget === "undefined" ? "cv" : tmpJumpTarget;
-        // myself.router.push(jumpTarget);
+        myself.router.push(jumpTarget);
       }, 2300);
     },
     onFailed() {
