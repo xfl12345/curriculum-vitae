@@ -2,10 +2,10 @@
   <div
     ref="templateRoot"
     v-resize="cvBoxResize"
-    style="display: flex; justify-content: flex-start; position: relative"
+    style="display: flex; position: relative"
     :style="rootNodeStyle"
   >
-    <div v-if="isCvDataLoaded" style="display: flex; width: 100%; height: 100%" :style="cvBoxParentStyle">
+    <div v-if="isCvDataLoaded" style="display: flex" :style="cvBoxParentStyle">
       <div
         ref="cvBox"
         style="box-sizing: border-box; vertical-align: top"
@@ -206,16 +206,20 @@ export default defineComponent({
   data() {
     const myself = this;
     const rootNodeStyle: VuePartialCssProperties = {};
-    const cvBoxParentStyle: VuePartialCssProperties = {};
     const cvData: Partial<CurriculumVitaeData> = {};
+    const rootScale = 7;
+    const widthAndHeight = {
+      width: 800,
+      height: 600
+    };
     return {
       rootNodeStyle,
-      cvBoxParentStyle,
       isReloadingCvData: false,
       isHiddenEggPanelOpened: false,
       isLoadCvDataFailed: false,
       cvData,
       rootScale: 7,
+      widthAndHeight,
       cvBoxMounted: false,
       adjustingFontSize: "",
       theFontSizeInPixel: 36,
@@ -229,12 +233,31 @@ export default defineComponent({
     theFontSize() {
       return this.theFontSizeInPixel + "px";
     },
+    cvBoxWidthInPixel() {
+      return this.paperSizeStandard.width * this.rootScale;
+    },
     cvBoxHeightInPixel() {
       return this.paperSizeStandard.height * this.rootScale;
     },
+    cvBoxParentStyle() {
+      const myself = this;
+      const theStyle = {} as VuePartialCssProperties;
+      if (
+        myself.cvBoxWidthInPixel < myself.store.state.uiCalculation.window.innerWidth &&
+        myself.adjustingFontSize === ""
+      ) {
+        theStyle.justifyContent = "center";
+        theStyle.width = "100%";
+        theStyle.height = "100%";
+      } else {
+        theStyle.justifyContent = "flex-start";
+      }
+
+      return theStyle;
+    },
     cvBoxStyle(): VuePartialCssProperties {
       const myself = this;
-      const width = myself.paperSizeStandard.width * myself.rootScale + "px";
+      const width = myself.cvBoxWidthInPixel + "px";
       const height = myself.cvBoxHeightInPixel + "px";
 
       return {
@@ -258,6 +281,8 @@ export default defineComponent({
   },
   beforeMount() {
     const myself = this;
+    myself.widthAndHeight.width = myself.cvBoxWidthInPixel;
+    myself.widthAndHeight.height = myself.cvBoxHeightInPixel;
     myself.store.state.loginManager.isAlreadyLogin().then((result: boolean) => {
       if (!result) {
         myself.jump2LoginPage(); // 没登录
@@ -317,13 +342,8 @@ export default defineComponent({
     },
     cvBoxResize(widthAndHeight: any) {
       const myself = this;
-
-      let justifyContent = "center";
-      if (widthAndHeight.width < parseInt(myself.cvBoxStyle.width! as string, 10)) {
-        justifyContent = "flex-start";
-      }
-
-      myself.cvBoxParentStyle.justifyContent = justifyContent;
+      myself.widthAndHeight.width = widthAndHeight.width;
+      myself.widthAndHeight.height = widthAndHeight.height;
     },
     resetRootScale() {
       const myself = this;
@@ -346,10 +366,9 @@ export default defineComponent({
       }
 
       const fontSizeLog = new TripleItemLog<number>();
-      const cvBoxWidthInPixel = myself.paperSizeStandard.width * myself.rootScale;
-      const getMaxFontSize = () => cvBoxWidthInPixel / 4;
-      let maxFontSize = getMaxFontSize();
-      let minFontSize = 8;
+      let cvBoxWidthInPixel = myself.cvBoxWidthInPixel;
+      let maxFontSize = Math.floor(cvBoxWidthInPixel / 16);
+      let minFontSize = 1;
       console.log("cvBoxWidthInPixel", cvBoxWidthInPixel);
       console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
       console.log("Current FontSize", myself.theFontSize);
@@ -360,7 +379,7 @@ export default defineComponent({
       // let currentFontSize = Math.round(
       //   cvBoxWidthInPixel / Math.round(myself.cvBoxBody.scrollWidth / myself.theFontSizeInPixel)
       // );
-      let currentFontSize = Math.round(myself.cvBoxBody.scrollWidth / 37);
+      let currentFontSize = getMiddleFontSize();
       console.log("Init FontSize", currentFontSize);
       myself.theFontSizeInPixel = currentFontSize;
       fontSizeLog.push(currentFontSize);
@@ -378,6 +397,7 @@ export default defineComponent({
       };
 
       ptrBook.horizontal.adjustFunc = () => {
+        cvBoxWidthInPixel = myself.cvBoxWidthInPixel;
         const scrollWidth = myself.cvBoxBody.scrollWidth;
         console.log("scrollWidth", scrollWidth);
         if (fontSizeLog.getSize() > 2 && fontSizeLog.getFirst() === fontSizeLog.getLast()) {
@@ -389,9 +409,10 @@ export default defineComponent({
           ptrBook.horizontal.done = true;
           console.log("Horizontal adjustment done!");
         } else if (scrollWidth > cvBoxWidthInPixel) {
+          // minFontSize = currentFontSize / 2;
           maxFontSize = currentFontSize;
           currentFontSize = getMiddleFontSize();
-          console.log("Adjust FontSize", currentFontSize);
+          console.log("Too big...Adjust FontSize to", currentFontSize);
           myself.theFontSizeInPixel = currentFontSize;
           fontSizeLog.push(currentFontSize);
         } else if (scrollWidth <= cvBoxWidthInPixel) {
@@ -400,12 +421,12 @@ export default defineComponent({
               Math.ceil(cvBoxWidthInPixel / myself.theFontSizeInPixel)
           );
           if (gap > 2) {
-            maxFontSize = getMaxFontSize();
+            maxFontSize += 4;
           }
 
           minFontSize = currentFontSize;
           currentFontSize = getMiddleFontSize();
-          console.log("Adjust FontSize", currentFontSize);
+          console.log("Too small..Adjust FontSize to", currentFontSize);
           myself.theFontSizeInPixel = currentFontSize;
           fontSizeLog.push(currentFontSize);
         }
@@ -428,7 +449,9 @@ export default defineComponent({
           myself.adjustingFontSize = "";
         }
       };
-      myself.$nextTick(ptrBook.onDomRefreshed);
+      setTimeout(() => {
+        myself.$nextTick(ptrBook.onDomRefreshed);
+      }, 100);
     }
   }
 });
