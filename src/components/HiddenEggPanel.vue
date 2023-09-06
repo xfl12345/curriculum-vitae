@@ -28,7 +28,7 @@
           position: absolute;
           top: 2px;
           left: 2px;
-          width: 50vw;
+          width: 90vw;
           background-color: rgba(0, 0, 0, 0.8);
           border: 1px dashed hotpink;
           color: white;
