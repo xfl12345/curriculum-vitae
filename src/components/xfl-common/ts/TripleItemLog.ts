@@ -23,9 +23,13 @@ export class TripleItemLog<T> {
 
   getFirst = () => (this.arr.length > 0 ? this.arr[0] : null);
 
-  getMiddle = () => (this.arr.length === 2 ? this.arr[1] : null);
+  getMiddle = () => (this.arr.length >= 2 ? this.arr[1] : null);
 
   getLast = () => (this.arr.length > 0 ? this.arr[this.arr.length - 1] : null);
 
   getSize = () => this.arr.length;
+
+  clear = () => {
+    this.arr = [];
+  };
 }

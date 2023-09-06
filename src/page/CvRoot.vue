@@ -166,6 +166,7 @@ import PersonalAbility from "@/components/PersonalAbility.vue";
 import Vue3MountedHelper from "@/components/xfl-common/vue/Vue3MountedHelper.vue";
 import LoadCvDataFailedMessageBox from "@/components/LoadCvDataFailedMessageBox.vue";
 import ProjectExperienceItem from "@/components/ProjectExperienceItem.vue";
+import { CvPageFontSizeHelper } from "@/model/CvPageFontSizeHelper";
 
 export default defineComponent({
   components: {
@@ -212,6 +213,7 @@ export default defineComponent({
       width: 800,
       height: 600
     };
+    const cvPageFontSizeHelper: CvPageFontSizeHelper = null;
     return {
       rootNodeStyle,
       isReloadingCvData: false,
@@ -223,6 +225,8 @@ export default defineComponent({
       cvBoxMounted: false,
       adjustingFontSize: "",
       theFontSizeInPixel: 36,
+      adjustFontSizeRequestQueueLength: 0,
+      cvPageFontSizeHelper,
       loadCvDataFailedMessage: ""
     };
   },
@@ -278,6 +282,27 @@ export default defineComponent({
   created() {
     const myself = this;
     myself.rootScale = myself.store.state.uiCalculation.rootScale;
+
+    myself.cvPageFontSizeHelper = new CvPageFontSizeHelper(myself, {
+      getCvBoxHeightInPixel: () => myself.cvBoxHeightInPixel,
+      getCvBoxWidthInPixel: () => myself.cvBoxWidthInPixel,
+      getScrollWidth: () => myself.cvBoxBody.scrollWidth,
+      getScrollHeight: () => myself.cvBoxBody.scrollHeight,
+      getFontSize: () => myself.theFontSizeInPixel,
+      setFontSize: (fontSize: number) => {
+        myself.theFontSizeInPixel = fontSize;
+      },
+      isNeedRestart: () => myself.adjustFontSizeRequestQueueLength > 0,
+      restartedCallback() {
+        myself.adjustFontSizeRequestQueueLength = 0;
+      },
+      setNextDomRefreshedCallback(func: () => {}) {
+        myself.$nextTick(func);
+      },
+      onFinishedCallback() {
+        myself.adjustingFontSize = "";
+      }
+    });
   },
   beforeMount() {
     const myself = this;
@@ -356,6 +381,7 @@ export default defineComponent({
     adjustFontSize() {
       const myself = this;
 
+      myself.adjustFontSizeRequestQueueLength += 1;
       if (!myself.cvBoxMounted || myself.adjustingFontSize !== "") {
         return;
       }
@@ -365,93 +391,7 @@ export default defineComponent({
         return;
       }
 
-      const fontSizeLog = new TripleItemLog<number>();
-      let cvBoxWidthInPixel = myself.cvBoxWidthInPixel;
-      let maxFontSize = Math.floor(cvBoxWidthInPixel / 16);
-      let minFontSize = 1;
-      console.log("cvBoxWidthInPixel", cvBoxWidthInPixel);
-      console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
-      console.log("Current FontSize", myself.theFontSize);
-      console.log("minFontSize", minFontSize);
-      console.log("maxFontSize", maxFontSize);
-
-      const getMiddleFontSize = () => Math.round((minFontSize + maxFontSize) / 2);
-      // let currentFontSize = Math.round(
-      //   cvBoxWidthInPixel / Math.round(myself.cvBoxBody.scrollWidth / myself.theFontSizeInPixel)
-      // );
-      let currentFontSize = getMiddleFontSize();
-      console.log("Init FontSize", currentFontSize);
-      myself.theFontSizeInPixel = currentFontSize;
-      fontSizeLog.push(currentFontSize);
-      const ptrBook: any = {
-        vertical: {
-          done: false,
-          adjustFunc: () => {}
-        },
-        horizontal: {
-          done: false,
-          delta: 1,
-          adjustFunc: () => {}
-        },
-        onDomRefreshed: () => {}
-      };
-
-      ptrBook.horizontal.adjustFunc = () => {
-        cvBoxWidthInPixel = myself.cvBoxWidthInPixel;
-        const scrollWidth = myself.cvBoxBody.scrollWidth;
-        console.log("scrollWidth", scrollWidth);
-        if (fontSizeLog.getSize() > 2 && fontSizeLog.getFirst() === fontSizeLog.getLast()) {
-          // 如果超出宽度了，字体大小还是要扣回去滴！
-          if (myself.cvBoxBody.scrollWidth > cvBoxWidthInPixel) {
-            myself.theFontSizeInPixel -= 1;
-          }
-
-          ptrBook.horizontal.done = true;
-          console.log("Horizontal adjustment done!");
-        } else if (scrollWidth > cvBoxWidthInPixel) {
-          // minFontSize = currentFontSize / 2;
-          maxFontSize = currentFontSize;
-          currentFontSize = getMiddleFontSize();
-          console.log("Too big...Adjust FontSize to", currentFontSize);
-          myself.theFontSizeInPixel = currentFontSize;
-          fontSizeLog.push(currentFontSize);
-        } else if (scrollWidth <= cvBoxWidthInPixel) {
-          const gap = Math.abs(
-            Math.ceil(scrollWidth / myself.theFontSizeInPixel) -
-              Math.ceil(cvBoxWidthInPixel / myself.theFontSizeInPixel)
-          );
-          if (gap > 2) {
-            maxFontSize += 4;
-          }
-
-          minFontSize = currentFontSize;
-          currentFontSize = getMiddleFontSize();
-          console.log("Too small..Adjust FontSize to", currentFontSize);
-          myself.theFontSizeInPixel = currentFontSize;
-          fontSizeLog.push(currentFontSize);
-        }
-      };
-      ptrBook.onDomRefreshed = () => {
-        if (!ptrBook.horizontal.done) {
-          ptrBook.horizontal.adjustFunc();
-          myself.$nextTick(() => setTimeout(ptrBook.onDomRefreshed, 4));
-        } else {
-          ptrBook.onDomRefreshed = () => {};
-          console.log("adjustFontSize done.");
-          console.log("cvBoxWidthInPixel", cvBoxWidthInPixel);
-          console.log("scrollWidth", myself.cvBoxBody.scrollWidth);
-          console.log("Final FontSize", myself.theFontSize);
-          console.log(
-            "current maxLine",
-            Math.ceil(myself.cvBoxBody.scrollHeight / myself.theFontSizeInPixel)
-          );
-          console.log("target maxLine", Math.ceil(myself.cvBoxHeightInPixel / myself.theFontSizeInPixel));
-          myself.adjustingFontSize = "";
-        }
-      };
-      setTimeout(() => {
-        myself.$nextTick(ptrBook.onDomRefreshed);
-      }, 100);
+      myself.cvPageFontSizeHelper.adjustFontSize();
     }
   }
 });
