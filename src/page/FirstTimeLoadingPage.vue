@@ -121,8 +121,13 @@
             </center-box>
           </div>
         </circle-progress-bar>
-        <br v-if="debugMode" />
-        <input v-if="debugMode" v-model="progress" type="number" />
+        <div v-if="exhibition">
+          <button @click="jumpTarget">点我继续转跳</button>
+        </div>
+        <div v-if="debugMode">
+          <br />
+          <input v-model="progress" type="number" />
+        </div>
       </div>
     </div>
   </div>
@@ -161,6 +166,7 @@ export default defineComponent({
       .map((item) => item.toHexString());
     const checkItemNameList = ["正在检查您的浏览器，请稍等……", "正在检查浏览器对字体支持的情况"];
     return {
+      exhibition: false,
       canMount: true,
       debugMode: false,
       progress: 0,
@@ -226,8 +232,8 @@ export default defineComponent({
   created() {},
   beforeMount() {
     const myself = this;
-    const exhibition = myself.$route.query.exhibition;
-    if (!exhibition) {
+    myself.exhibition = JSON.parse(myself.$route.query.exhibition as string) as boolean;
+    if (!myself.exhibition) {
       if (myself.store.state.browserInitiated) {
         myself.canMount = false;
         myself.router.push({ name: "cv" });
@@ -321,6 +327,12 @@ export default defineComponent({
   beforeUnmount() {},
   unmounted() {},
   methods: {
+    jumpTarget() {
+      const myself = this;
+      const tmpJumpTarget = myself.$route.query.jumpTarget as string | undefined;
+      const jumpTarget: string = typeof tmpJumpTarget === "undefined" ? "cv" : tmpJumpTarget;
+      myself.router.push(jumpTarget);
+    },
     onOneHundredReached(reached: boolean) {
       const myself = this;
       if (reached) {
@@ -335,11 +347,9 @@ export default defineComponent({
       const myself = this;
       myself.store.commit("setBrowserInitiatedFlag", true);
       myself.progress = myself.progressMax;
-      setTimeout(() => {
-        const tmpJumpTarget = myself.$route.query.jumpTarget as string | undefined;
-        const jumpTarget: string = typeof tmpJumpTarget === "undefined" ? "cv" : tmpJumpTarget;
-        myself.router.push(jumpTarget);
-      }, 2300);
+      if (!myself.exhibition) {
+        setTimeout(myself.jumpTarget, 2300);
+      }
     },
     onFailed() {
       this.circleProgressBarColorArray = ["#FF0000", "#FF0000"];
