@@ -86,20 +86,25 @@ export class CvPageFontSizeHelper {
           myself.setFontSize(myself.getMiddleFontSize());
           myself.debugLog("Too big...Adjust FontSize to", myself.currentFontSize);
         } else if (myself.scrollWidth <= myself.cvBoxWidthInPixel) {
-          const gap = Math.abs(
-            Math.ceil(myself.scrollWidth / myself.currentFontSize) -
-              Math.ceil(myself.cvBoxWidthInPixel / myself.currentFontSize)
-          );
-          // if (gap > 1) {
-          //   myself.maxFontSize += gap < 2 ? 1 : 2;
-          // }
-          if (gap > 2) {
-            myself.maxFontSize += 2;
-          }
+          if (myself.minFontSize === myself.maxFontSize) {
+            myself.horizontal.done = true;
+            myself.debugLog("Horizontal adjustment done!");
+          } else {
+            const gap = Math.abs(
+              Math.ceil(myself.scrollWidth / myself.currentFontSize) -
+                Math.ceil(myself.cvBoxWidthInPixel / myself.currentFontSize)
+            );
+            // if (gap > 1) {
+            //   myself.maxFontSize += gap < 2 ? 1 : 2;
+            // }
+            if (gap > 2) {
+              myself.maxFontSize += 2;
+            }
 
-          myself.minFontSize = myself.currentFontSize;
-          myself.setFontSize(myself.getMiddleFontSize());
-          myself.debugLog("Too small..Adjust FontSize to", myself.currentFontSize);
+            myself.minFontSize = myself.currentFontSize;
+            myself.setFontSize(myself.getMiddleFontSize());
+            myself.debugLog("Too small..Adjust FontSize to", myself.currentFontSize);
+          }
         }
       }
     };
