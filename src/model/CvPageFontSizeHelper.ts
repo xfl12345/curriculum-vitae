@@ -78,13 +78,13 @@ export class CvPageFontSizeHelper {
           }
 
           myself.horizontal.done = true;
-          console.log("Horizontal adjustment done!");
+          myself.debugLog("Horizontal adjustment done!");
         } else if (myself.scrollWidth > myself.cvBoxWidthInPixel) {
-          console.log("minFontSize", myself.minFontSize);
+          myself.debugLog("minFontSize", myself.minFontSize);
           // myself.minFontSize = Math.floor(myself.currentFontSize - 2);
           myself.maxFontSize = myself.currentFontSize;
           myself.setFontSize(myself.getMiddleFontSize());
-          console.log("Too big...Adjust FontSize to", myself.currentFontSize);
+          myself.debugLog("Too big...Adjust FontSize to", myself.currentFontSize);
         } else if (myself.scrollWidth <= myself.cvBoxWidthInPixel) {
           const gap = Math.abs(
             Math.ceil(myself.scrollWidth / myself.currentFontSize) -
@@ -96,7 +96,7 @@ export class CvPageFontSizeHelper {
 
           myself.minFontSize = myself.currentFontSize;
           myself.setFontSize(myself.getMiddleFontSize());
-          console.log("Too small..Adjust FontSize to", myself.currentFontSize);
+          myself.debugLog("Too small..Adjust FontSize to", myself.currentFontSize);
         }
       }
     };
@@ -105,6 +105,11 @@ export class CvPageFontSizeHelper {
       adjustFunc: () => {}
     };
   }
+
+  // eslint-disable-next-line class-methods-use-this
+  debugLog = (...data: any[]) => {
+    console.log(...data);
+  };
 
   setFontSize = (fontSize: number) => {
     const myself = this;
@@ -131,11 +136,11 @@ export class CvPageFontSizeHelper {
     myself.minFontSize = 1;
     myself.horizontal.done = false;
     myself.vertical.done = false;
-    console.log("cvBoxWidthInPixel", myself.cvBoxWidthInPixel);
-    console.log("scrollWidth", myself.scrollWidth);
-    console.log("Current FontSize", myself.currentFontSize);
-    console.log("minFontSize", myself.minFontSize);
-    console.log("maxFontSize", myself.maxFontSize);
+    myself.debugLog("cvBoxWidthInPixel", myself.cvBoxWidthInPixel);
+    myself.debugLog("scrollWidth", myself.scrollWidth);
+    myself.debugLog("Current FontSize", myself.currentFontSize);
+    myself.debugLog("minFontSize", myself.minFontSize);
+    myself.debugLog("maxFontSize", myself.maxFontSize);
     myself.dataProxy.restartedCallback();
   };
 
@@ -154,12 +159,12 @@ export class CvPageFontSizeHelper {
     } else {
       myself.dataProxy.setNextDomRefreshedCallback(() => {});
       myself.updateData();
-      console.log("adjustFontSize done.");
-      console.log("cvBoxWidthInPixel", myself.cvBoxWidthInPixel);
-      console.log("scrollWidth", myself.scrollWidth);
-      console.log("Final FontSize", myself.currentFontSize);
-      console.log("current maxLine", Math.ceil(myself.scrollHeight / myself.currentFontSize));
-      console.log("target maxLine", Math.ceil(myself.cvBoxHeightInPixel / myself.currentFontSize));
+      myself.debugLog("adjustFontSize done.");
+      myself.debugLog("cvBoxWidthInPixel", myself.cvBoxWidthInPixel);
+      myself.debugLog("scrollWidth", myself.scrollWidth);
+      myself.debugLog("Final FontSize", myself.currentFontSize);
+      myself.debugLog("current maxLine", Math.ceil(myself.scrollHeight / myself.currentFontSize));
+      myself.debugLog("target maxLine", Math.ceil(myself.cvBoxHeightInPixel / myself.currentFontSize));
 
       myself.dataProxy.onFinishedCallback();
     }
