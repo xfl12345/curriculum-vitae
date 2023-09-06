@@ -90,6 +90,9 @@ export class CvPageFontSizeHelper {
             Math.ceil(myself.scrollWidth / myself.currentFontSize) -
               Math.ceil(myself.cvBoxWidthInPixel / myself.currentFontSize)
           );
+          // if (gap > 1) {
+          //   myself.maxFontSize += gap < 2 ? 1 : 2;
+          // }
           if (gap > 2) {
             myself.maxFontSize += 2;
           }
@@ -144,7 +147,7 @@ export class CvPageFontSizeHelper {
     myself.dataProxy.restartedCallback();
   };
 
-  getMiddleFontSize = () => Math.round((this.minFontSize + this.maxFontSize) / 2);
+  getMiddleFontSize = () => Math.floor((this.minFontSize + this.maxFontSize) / 2);
 
   onDomRefreshed = () => {
     const myself = this;
