@@ -73,3 +73,22 @@ const rootHeightStyle = computed(() => {
   ) as VuePartialCssProperties;
 });
 </script>
+
+<style scoped>
+a {
+  color: blue;
+  text-decoration: none;
+}
+a:visited {
+  color: blue;
+  text-decoration: none;
+}
+a:hover {
+  color: blue;
+  text-decoration: none;
+}
+a:active {
+  color: blue;
+  text-decoration: none;
+}
+</style>
