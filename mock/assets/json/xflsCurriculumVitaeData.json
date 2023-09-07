@@ -61,18 +61,6 @@
       "degree": 0.7
     },
     {
-      "skillName": "Linux shell(bash)",
-      "degree": 0.65
-    },
-    {
-      "skillName": "C#",
-      "degree": 0.6
-    },
-    {
-      "skillName": "Intel Assembly (AT&T style)",
-      "degree": 0.5
-    },
-    {
       "skillName": "Python/C++",
       "degree": 0.25
     },
@@ -83,10 +71,6 @@
     {
       "skillName": "TypeScript 4.X/Vue 3.X",
       "degree": 0.7
-    },
-    {
-      "skillName": "折腾",
-      "degree": 1
     }
   ],
   "journey": [
