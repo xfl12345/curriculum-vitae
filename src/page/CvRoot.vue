@@ -8,7 +8,7 @@
     <div v-if="isCvDataLoaded" style="display: flex" :style="cvBoxParentStyle">
       <div
         ref="cvBox"
-        style="box-sizing: border-box; vertical-align: top"
+        style="box-sizing: border-box; vertical-align: top; display: flex"
         :style="[cvBoxStyle, { border: debugCvBoxSize ? '1px dashed aqua' : undefined }]"
       >
         <div
@@ -236,6 +236,9 @@ export default defineComponent({
     theFontSize() {
       return this.theFontSizeInPixel + "px";
     },
+    isNotInAdjustingFontSize() {
+      return this.adjustingFontSize === "";
+    },
     cvBoxWidthInPixel() {
       return this.paperSizeStandard.width * this.rootScale;
     },
@@ -247,7 +250,7 @@ export default defineComponent({
       const theStyle = {} as VuePartialCssProperties;
       if (
         myself.cvBoxWidthInPixel < myself.store.state.uiCalculation.window.innerWidth &&
-        myself.adjustingFontSize === ""
+        myself.isNotInAdjustingFontSize
       ) {
         theStyle.justifyContent = "center";
         theStyle.width = "100%";
@@ -266,7 +269,8 @@ export default defineComponent({
       return {
         minWidth: width,
         width,
-        height
+        height,
+        justifyContent: myself.isNotInAdjustingFontSize ? "center" : undefined
       };
     }
   },
