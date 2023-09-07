@@ -152,7 +152,6 @@ import { useRouter } from "vue-router";
 import { v1 as uuidv1 } from "uuid";
 import { paperA4Standard } from "@/assets/json/common.json";
 import TextPrettier from "@/components/xfl-common/vue/TextPrettier.vue";
-import { TripleItemLog } from "@/components/xfl-common/ts/TripleItemLog";
 import { PaperSizeStandard } from "@/components/xfl-common/ts/PaperSizeStandard";
 import { VuePartialCssProperties } from "@/components/xfl-common/ts/VuePartialCssProperties";
 import { CurriculumVitaeData } from "@/tsmod/CurriculumVitaeData";
@@ -306,6 +305,16 @@ export default defineComponent({
   },
   beforeMount() {
     const myself = this;
+    const window = myself.store.state.uiCalculation.window;
+    myself.rootScale = Math.floor(window.innerWidth / myself.paperSizeStandard.width);
+    if ((myself.rootScale + 0.5) * myself.paperSizeStandard.width <= window.innerWidth) {
+      myself.rootScale += 0.5;
+    }
+    if (myself.rootScale < 5) {
+      myself.rootScale = 5;
+    }
+
+    myself.store.commit("setRootScale", myself.rootScale);
     myself.widthAndHeight.width = myself.cvBoxWidthInPixel;
     myself.widthAndHeight.height = myself.cvBoxHeightInPixel;
     myself.store.state.loginManager.isAlreadyLogin().then((result: boolean) => {
