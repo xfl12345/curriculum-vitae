@@ -84,7 +84,7 @@ export class CvPageFontSizeHelper {
           // myself.minFontSize = Math.floor(myself.currentFontSize - 2);
           myself.maxFontSize = myself.currentFontSize;
           myself.setFontSize(myself.getMiddleFontSize());
-          myself.debugLog("Too big...Adjust FontSize to", myself.currentFontSize);
+          myself.debugLog("Horizontal adjustment: Too big...Adjust FontSize to", myself.currentFontSize);
         } else if (myself.scrollWidth <= myself.cvBoxWidthInPixel) {
           if (myself.minFontSize === myself.maxFontSize) {
             myself.horizontal.done = true;
@@ -103,14 +103,23 @@ export class CvPageFontSizeHelper {
 
             myself.minFontSize = myself.currentFontSize;
             myself.setFontSize(myself.getMiddleFontSize());
-            myself.debugLog("Too small..Adjust FontSize to", myself.currentFontSize);
+            myself.debugLog("Horizontal adjustment: Too small..Adjust FontSize to", myself.currentFontSize);
           }
         }
       }
     };
     this.vertical = {
       done: false,
-      adjustFunc: () => {}
+      adjustFunc: () => {
+        // 竖直方向暂时不使用二分算法，直接线性探索
+        if (myself.scrollHeight > myself.cvBoxHeightInPixel) {
+          myself.setFontSize(myself.dataProxy.getFontSize() - 1);
+          myself.debugLog("Vertical adjustment: Too big...Adjust FontSize to", myself.currentFontSize);
+        } else {
+          myself.vertical.done = true;
+          myself.debugLog("Vertical adjustment done!");
+        }
+      }
     };
   }
 
@@ -163,6 +172,9 @@ export class CvPageFontSizeHelper {
     }
     if (!myself.horizontal.done) {
       myself.horizontal.adjustFunc();
+      myself.dataProxy.setNextDomRefreshedCallback(() => setTimeout(myself.onDomRefreshed, 4));
+    } else if (!myself.vertical.done) {
+      myself.vertical.adjustFunc();
       myself.dataProxy.setNextDomRefreshedCallback(() => setTimeout(myself.onDomRefreshed, 4));
     } else {
       myself.dataProxy.setNextDomRefreshedCallback(() => {});
