@@ -69,6 +69,7 @@ export class CvPageFontSizeHelper {
           if (myself.scrollWidth > myself.cvBoxWidthInPixel) {
             if (Math.abs(myself.maxFontSize - myself.minFontSize) <= 1) {
               myself.dataProxy.setFontSize(myself.minFontSize);
+              myself.debugLog(myself.fontSizeLog);
             } else {
               let gap = myself.fontSizeLog.getMiddle() - myself.fontSizeLog.getLast();
               gap = Math.ceil(Math.abs(gap) / 2);
@@ -172,10 +173,10 @@ export class CvPageFontSizeHelper {
     }
     if (!myself.horizontal.done) {
       myself.horizontal.adjustFunc();
-      myself.dataProxy.setNextDomRefreshedCallback(() => setTimeout(myself.onDomRefreshed, 4));
+      myself.dataProxy.setNextDomRefreshedCallback(() => setTimeout(myself.onDomRefreshed, 150));
     } else if (!myself.vertical.done) {
       myself.vertical.adjustFunc();
-      myself.dataProxy.setNextDomRefreshedCallback(() => setTimeout(myself.onDomRefreshed, 4));
+      myself.dataProxy.setNextDomRefreshedCallback(() => setTimeout(myself.onDomRefreshed, 150));
     } else {
       myself.dataProxy.setNextDomRefreshedCallback(() => {});
       myself.updateData();
