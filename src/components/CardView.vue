@@ -6,8 +6,12 @@
         backgroundColor: theBackgroundColor,
         border: theBackgroundColor + ' solid 1px',
         borderRadius: quarterOfFontSize,
-        boxShadow: oneEighthOfFontSize + ' ' + oneEighthOfFontSize + ' ' + oneEighthOfFontSize + ' 0 gray'
+        boxShadow: oneEighthOfFontSize + ' ' + oneEighthOfFontSize + ' ' + oneEighthOfFontSize + ' 0 gray',
+        filter: isHover ? 'invert(100%)' : 'invert(0)'
+        // mixBlendMode: isHover ? 'difference' : 'normal'
       }"
+      @mouseenter="() => (isHover = true)"
+      @mouseleave="() => (isHover = false)"
     >
       <slot />
     </div>
@@ -54,4 +58,6 @@ const rootStyle = computed<VuePartialCssProperties>(() => {
     fontSize: theFontSize.value
   };
 });
+
+const isHover = ref(false);
 </script>
