@@ -8,9 +8,9 @@ import { ClientCookieManager } from "@/components/xfl-common/ts/ClientCookieMana
 import { LoginMananger } from "@/model/LoginMananger";
 
 const env = import.meta.env ?? ({} as any);
+
 const cookieManager = new ClientCookieManager();
 cookieManager.reloadCookie();
-
 const loginManager = new LoginMananger();
 
 const store = createStore({
@@ -46,7 +46,10 @@ const store = createStore({
     // browserInitiated: false,
     cookieManager,
     loginManager,
-    diyDefaultFontFamilyList: ["Microsoft YaHei UI"],
+    diyDefaultFontFamilyList: [
+      "Microsoft YaHei UI",
+      ...document.defaultView.getComputedStyle(document.body, "").fontFamily.split(",")
+    ],
     diyFontFamilyList: ["楷体", "KaiTi", "华文楷体", "STKaiti"]
   },
   getters: {
