@@ -114,6 +114,8 @@ export class CvPageFontSizeHelper {
       adjustFunc: () => {
         // 竖直方向暂时不使用二分算法，直接线性探索
         if (myself.scrollHeight > myself.cvBoxHeightInPixel) {
+          myself.debugLog("Vertical adjustment:", "scrollHeight", myself.scrollHeight);
+          myself.debugLog("Vertical adjustment:", "cvBoxHeightInPixel", myself.cvBoxHeightInPixel);
           myself.setFontSize(myself.dataProxy.getFontSize() - 1);
           myself.debugLog("Vertical adjustment: Too big...Adjust FontSize to", myself.currentFontSize);
         } else {
