@@ -240,10 +240,10 @@ export default defineComponent({
       return this.adjustingFontSize === "";
     },
     cvBoxWidthInPixel() {
-      return this.paperSizeStandard.width * this.rootScale;
+      return Math.ceil(this.paperSizeStandard.width * this.rootScale);
     },
     cvBoxHeightInPixel() {
-      return this.paperSizeStandard.height * this.rootScale;
+      return Math.ceil(this.paperSizeStandard.height * this.rootScale);
     },
     cvBoxParentStyle() {
       const myself = this;
