@@ -249,6 +249,7 @@ export default defineComponent({
       const myself = this;
       const theStyle = {} as VuePartialCssProperties;
       if (
+        myself.cvBoxWidthInPixel < myself.store.state.uiCalculation.window.screen.availWidth &&
         myself.cvBoxWidthInPixel < myself.store.state.uiCalculation.window.innerWidth &&
         myself.isNotInAdjustingFontSize
       ) {
