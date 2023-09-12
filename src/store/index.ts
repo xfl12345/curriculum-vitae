@@ -66,7 +66,7 @@ const store = createStore({
       state.uiCalculation.rootScale = rootScale;
     },
     addFontFamily(state, fontName) {
-      state.diyFontFamilyList.push(fontName);
+      state.diyFontFamilyList = [fontName, ...state.diyFontFamilyList];
     },
     updateGlobalUiCalculationData(state) {
       const stateDocument: Buildable<Document> = state.uiCalculation.document;
