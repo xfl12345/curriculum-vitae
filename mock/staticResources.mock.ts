@@ -20,5 +20,10 @@ export default [
     url: "/static/font/FZKTK.TTF",
     type: "FZKTK.TTF",
     body: () => createReadStream("public/static/font/FZKTK.TTF")
+  }),
+  defineMock({
+    url: "/static/font/FZ_KAITI_ZH_HANS.woff2",
+    type: "FZ_KAITI_ZH_HANS.woff2",
+    body: () => createReadStream("public/static/font/FZ_KAITI_ZH_HANS.woff2")
   })
 ];
