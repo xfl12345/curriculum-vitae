@@ -1,3 +1,13 @@
+# AI Tools
+.qwen/
+.iflow/
+.claude/
+.codeartsdoer/
+.playwright-mcp/
+
+# APP data persistent
+/storage/
+
 # Gradle
 .gradle/
 build/

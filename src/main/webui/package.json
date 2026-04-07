@@ -1,6 +1,6 @@
 {
-  "name": "quinoa-starter",
-  "version": "0.0.1",
+  "name": "curriculum-vitae",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,38 +17,54 @@
     "prepare": "vp config"
   },
   "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "@vueuse/core": "^14.2.1",
+    "@vueuse/integrations": "^14.2.1",
+    "alova": "^3.5.1",
+    "element-plus": "^2.13.7",
+    "is-chinese": "^2.0.0",
+    "naive-ui": "^2.44.1",
     "pinia": "^3.0.4",
+    "resize-observer-vue": "^1.2.0",
+    "tinygradient": "^2.0.1",
+    "universal-cookie": "^8.1.0",
+    "uuid": "^14.0.0",
     "vue": "^3.5.32",
-    "vue-router": "^5.0.4"
+    "vue-i18n": "^11.3.2",
+    "vue-qr": "^5.0.3",
+    "vue-router": "^5.0.4",
+    "vue3-clipboard": "^1.0.0",
+    "vxe-table": "^4.18.13"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",
     "@types/jsdom": "^28.0.1",
     "@types/node": "^24.12.2",
-    "@vitejs/plugin-vue": "^6.0.5",
+    "@vitejs/plugin-vue": "^6.0.6",
     "@vitejs/plugin-vue-jsx": "^5.1.5",
-    "@vitest/eslint-plugin": "^1.6.14",
+    "@vitest/eslint-plugin": "^1.6.15",
     "@vue/eslint-config-typescript": "^14.7.0",
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.9.1",
     "eslint": "^10.2.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-oxlint": "~1.58.0",
+    "eslint-plugin-oxlint": "~1.60.0",
     "eslint-plugin-vue": "~10.8.0",
     "jiti": "^2.6.1",
     "jsdom": "^28.1.0",
     "npm-run-all2": "^8.0.4",
+    "type-fest": "^5.5.0",
     "typescript": "~6.0.2",
-    "vite": "npm:@voidzero-dev/vite-plus-core@^0.1.15",
+    "vite": "npm:@voidzero-dev/vite-plus-core@^0.1.18",
     "vite-plugin-vue-devtools": "^8.1.1",
     "vite-plus": "latest",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@^0.1.15",
+    "vitest": "npm:@voidzero-dev/vite-plus-test@^0.1.18",
     "vue-tsc": "^3.2.6"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
-  "packageManager": "pnpm@10.33.0+sha512.10568bb4a6afb58c9eb3630da90cc9516417abebd3fabbe6739f0ae795728da1491e9db5a544c76ad8eb7570f5c4bb3d6c637b2cb41bfdcdb47fa823c8649319",
+  "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8",
   "pnpm": {
     "overrides": {
       "vite": "npm:@voidzero-dev/vite-plus-core@latest",

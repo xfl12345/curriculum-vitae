@@ -1,8 +1,24 @@
+app:
+  webui:
+    admin:
+      phone-number: "admin-phone"
+      password: "admin-password"
+  sms:
+    xfl12345:
+      access-key-secret: 'just-test_https://github.com/xfl12345/java-curriculum-vitae-server-web'
+      validation-code-length: 6
+      expiration-in-minute: 15
+      sign-name: "测试签名"
+      template: "您的验证码是 %s 。（共%s位，%s分钟内有效。切勿将验证码泄漏于他人，如非本人操作请忽略）"
+
 greeting:
   message: "hello"
+
 quarkus:
+  application:
+    name: curriculum-vitae
   quinoa:
-    ui-root-path: "quinoa"
+    ui-root-path: "ui"
     package-manager: "pnpm"
     package-manager-command:
       dev: "run dev"
@@ -10,3 +26,74 @@ quarkus:
     build-dir: "dist"
     dev-server:
       port: 5173
+
+  datasource:
+    db-kind: sqlite
+    jdbc:
+      url: jdbc:sqlite:storage/curriculum-vitae.db
+
+  http:
+    port: 8880
+    access-log:
+      enabled: true
+
+  cache:
+    caffeine:
+      sms-validation-code:
+        expire-after-write: "${app.sms.xfl12345.expiration-in-minute}M"
+
+  native:
+    additional-build-args: >
+      --initialize-at-build-time=com.easy-query
+
+  scheduler:
+    start-mode: forced
+
+  rate-limiter:
+    enabled: true
+    buckets:
+      captcha-generate: &bucket-captcha-generate
+        shared: false
+        identity-resolver: cc.xfl12345.person.cv.framework.bucket4j.UserIdentityResolver
+        limits:
+          - permitted-uses: 20
+            period: 1M
+          - permitted-uses: 30
+            period: 5M
+      captcha-check:
+        <<: *bucket-captcha-generate
+      login:
+        shared: false
+        identity-resolver: cc.xfl12345.person.cv.framework.bucket4j.UserIdentityResolver
+        limits:
+          - permitted-uses: 5
+            period: 1M
+      sms-validation-code:
+        shared: false
+        identity-resolver: cc.xfl12345.person.cv.framework.bucket4j.UserIdentityResolver
+        limits:
+          - permitted-uses: 1
+            period: 1M
+      global:
+        shared: false
+        identity-resolver: cc.xfl12345.person.cv.framework.bucket4j.UserIdentityResolver
+        limits:
+          - permitted-uses: 60
+            period: 1M
+
+############## Sa-Token 配置 (文档: https://sa-token.cc) ##############
+sa-token:
+  # token名称 (同时也是cookie名称)
+  token-name: ${quarkus.application.name}
+  # token有效期，单位s 默认30天, -1代表永不过期
+  timeout: 2592000
+  # token临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
+  active-timeout: -1
+  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
+  is-concurrent: false
+  # 在多人登录同一账号时，是否共用一个token (为true时所有登录共用一个token, 为false时每次登录新建一个token)
+  is-share: false
+  # token风格
+  token-style: uuid
+  # 是否输出操作日志
+  is-log: true

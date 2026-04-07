@@ -9,16 +9,18 @@ repositories {
 }
 
 dependencies {
+    // Source: https://mvnrepository.com/artifact/io.quarkus/quarkus-bom
     //noinspection VulnerableLibrariesLocal
     implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    // Source: https://mvnrepository.com/artifact/io.quarkus.platform/quarkus-camel-bom
     implementation enforcedPlatform("${quarkusPlatformGroupId}:quarkus-camel-bom:${quarkusPlatformVersion}")
     implementation 'io.quarkus:quarkus-rest'
-    implementation 'io.quarkiverse.jdbc:quarkus-jdbc-sqlite4j:0.0.8'
     implementation 'io.quarkus:quarkus-info'
+    implementation 'io.quarkus:quarkus-cache'
     implementation 'io.quarkus:quarkus-container-image-docker'
     implementation 'io.quarkus:quarkus-messaging-mqtt'
     implementation 'io.quarkus:quarkus-config-yaml'
-    implementation 'io.quarkus:quarkus-logging-json'
+    // implementation 'io.quarkus:quarkus-logging-json'
     implementation 'io.quarkus:quarkus-micrometer'
     implementation 'io.quarkus:quarkus-grpc'
     implementation 'io.quarkus:quarkus-rest-jsonb'
@@ -28,16 +30,59 @@ dependencies {
     implementation 'io.quarkus:quarkus-smallrye-openapi'
     implementation 'io.quarkus:quarkus-quartz'
     implementation 'io.quarkus:quarkus-rest-jackson'
+    implementation 'io.quarkiverse.tika:quarkus-tika:2.3.1'
     implementation 'io.quarkiverse.quinoa:quarkus-quinoa:2.8.0'
     implementation 'org.apache.camel.quarkus:camel-quarkus-vertx-http'
     implementation 'org.apache.camel.quarkus:camel-quarkus-snakeyaml'
     implementation 'io.quarkus:quarkus-arc'
+    implementation 'io.quarkus:quarkus-scheduler'
+
+    // Datasource & Connection Pool
+    implementation 'io.quarkus:quarkus-agroal'
+    implementation 'io.quarkus:quarkus-datasource'
+    implementation 'io.quarkiverse.jdbc:quarkus-jdbc-sqlite4j:0.0.8'
+
+    // Lombok
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    // EasyQuery ORM
+    implementation "com.easy-query:sql-api-proxy:${easyQueryVersion}"
+    implementation "com.easy-query:sql-sqlite:${easyQueryVersion}"
+    annotationProcessor "com.easy-query:sql-processor:${easyQueryVersion}"
+
+    // Rate limiting (quarkiverse bucket4j, in-memory by default)
+    implementation 'io.quarkiverse.bucket4j:quarkus-bucket4j:1.0.7'
+
+    // Captcha (core library, no Spring Boot auto-config)
+    implementation 'cloud.tianai.captcha:tianai-captcha:1.5.5'
+
+    // Commons
+    implementation 'commons-codec:commons-codec:1.19.0'
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
+
+    // Native transport (Unix Domain Socket support)
+    // implementation 'io.netty:netty-transport-native-epoll::linux-x86_64'
+    // implementation 'io.netty:netty-transport-native-epoll::linux-aarch_64'
+    // implementation 'io.netty:netty-transport-native-kqueue::linux-x86_64'
+    // implementation 'io.netty:netty-transport-native-kqueue::linux-aarch_64'
+    // Source: https://mvnrepository.com/artifact/io.netty/netty-all
+    implementation 'io.netty:netty-all'
+
+    // Sa-Token (核心包)
+    implementation 'cn.dev33:sa-token-core:1.45.0'
+    // 引入 Spring 核心包以使用其中的工具类。因为 Sa-Token 大量依赖 Spring 的工具，为了兼容性，所以引入此包
+    // Source: https://mvnrepository.com/artifact/org.springframework/spring-core
+    implementation "org.springframework:spring-core:${springVersion}"
+
     testImplementation 'io.quarkus:quarkus-junit'
     testImplementation 'io.rest-assured:rest-assured'
 }
 
-group = 'org.acme'
-version = '0.0.1-SNAPSHOT'
+group = 'cc.xfl12345.person.cv'
+version = '0.2.0-SNAPSHOT'
 
 java {
     toolchain {

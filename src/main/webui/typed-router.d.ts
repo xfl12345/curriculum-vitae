@@ -34,9 +34,100 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/cv-root-page': RouteRecordInfo<
+      '/cv-root-page',
+      '/cv-root-page',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/first-time-loading-page': RouteRecordInfo<
+      '/first-time-loading-page',
+      '/first-time-loading-page',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/login-page': RouteRecordInfo<
+      '/login-page',
+      '/login-page',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/not-found-page': RouteRecordInfo<
+      '/not-found-page',
+      '/not-found-page',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/routes': RouteRecordInfo<
       '/routes',
       '/routes',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/setting-page': RouteRecordInfo<
+      '/setting-page',
+      '/setting-page',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/study-blob-url': RouteRecordInfo<
+      '/study-blob-url',
+      '/study-blob-url',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/test-chatgpt-works': RouteRecordInfo<
+      '/test-chatgpt-works',
+      '/test-chatgpt-works',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/test-community-box': RouteRecordInfo<
+      '/test-community-box',
+      '/test-community-box',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/test-font-support': RouteRecordInfo<
+      '/test-font-support',
+      '/test-font-support',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/test-hr-info-page': RouteRecordInfo<
+      '/test-hr-info-page',
+      '/test-hr-info-page',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/test-page': RouteRecordInfo<
+      '/test-page',
+      '/test-page',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/test-resize-observer': RouteRecordInfo<
+      '/test-resize-observer',
+      '/test-resize-observer',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/test-tianai-captcha': RouteRecordInfo<
+      '/test-tianai-captcha',
+      '/test-tianai-captcha',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -60,9 +151,87 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'src/pages/cv-root-page.vue': {
+      routes:
+        | '/cv-root-page'
+      views:
+        | never
+    }
+    'src/pages/first-time-loading-page.vue': {
+      routes:
+        | '/first-time-loading-page'
+      views:
+        | never
+    }
+    'src/pages/login-page.vue': {
+      routes:
+        | '/login-page'
+      views:
+        | never
+    }
+    'src/pages/not-found-page.vue': {
+      routes:
+        | '/not-found-page'
+      views:
+        | never
+    }
     'src/pages/routes.vue': {
       routes:
         | '/routes'
+      views:
+        | never
+    }
+    'src/pages/setting-page.vue': {
+      routes:
+        | '/setting-page'
+      views:
+        | never
+    }
+    'src/pages/study-blob-url.vue': {
+      routes:
+        | '/study-blob-url'
+      views:
+        | never
+    }
+    'src/pages/test-chatgpt-works.vue': {
+      routes:
+        | '/test-chatgpt-works'
+      views:
+        | never
+    }
+    'src/pages/test-community-box.vue': {
+      routes:
+        | '/test-community-box'
+      views:
+        | never
+    }
+    'src/pages/test-font-support.vue': {
+      routes:
+        | '/test-font-support'
+      views:
+        | never
+    }
+    'src/pages/test-hr-info-page.vue': {
+      routes:
+        | '/test-hr-info-page'
+      views:
+        | never
+    }
+    'src/pages/test-page.vue': {
+      routes:
+        | '/test-page'
+      views:
+        | never
+    }
+    'src/pages/test-resize-observer.vue': {
+      routes:
+        | '/test-resize-observer'
+      views:
+        | never
+    }
+    'src/pages/test-tianai-captcha.vue': {
+      routes:
+        | '/test-tianai-captcha'
       views:
         | never
     }

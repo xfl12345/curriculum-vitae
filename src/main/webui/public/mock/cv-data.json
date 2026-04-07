@@ -1,0 +1,125 @@
+{
+  "basicInformation": {
+    "name": {
+      "theCopyValue": "张三"
+    },
+    "phoneNumberSameToWechat": {
+      "theCopyValue": "+86114",
+      "theDisplayValue": "+86 114"
+    },
+    "emailAddress": {
+      "theCopyValue": "example@qq.com"
+    },
+    "birthdayInYearAndMonth": {
+      "theCopyValue": "6666.01"
+    },
+    "maritalStatus": {
+      "theCopyValue": "未婚"
+    },
+    "nation": {
+      "theCopyValue": "X族"
+    },
+    "stature": {
+      "theCopyValue": "200cm"
+    },
+    "schooling": {
+      "theCopyValue": "大专"
+    },
+    "lastInstitute": {
+      "theCopyValue": "XX学院"
+    },
+    "nativePlace": {
+      "theCopyValue": "XX省YY市ZZ县"
+    },
+    "jobPrefer": {
+      "theCopyValue": "风水八卦、房屋补漏"
+    },
+    "facePhoto": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBhcmlhLWhpZGRlbj0idHJ1ZSIgcm9sZT0iaW1nIiBjbGFzcz0iaWNvbmlmeSBpY29uaWZ5LS1sb2dvcyIgd2lkdGg9IjM3LjA3IiBoZWlnaHQ9IjM2IiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0IiB2aWV3Qm94PSIwIDAgMjU2IDE5OCI+PHBhdGggZmlsbD0iIzQxQjg4MyIgZD0iTTIwNC44IDBIMjU2TDEyOCAyMjAuOEwwIDBoOTcuOTJMMTI4IDUxLjJMMTU3LjQ0IDBoNDcuMzZaIj48L3BhdGg+PHBhdGggZmlsbD0iIzQxQjg4MyIgZD0ibTAgMGwxMjggMjIwLjhMMjU2IDBoLTUxLjJMMTI4IDEzMi40OEw1MC41NiAwSDBaIj48L3BhdGg+PHBhdGggZmlsbD0iIzM1NDk1RSIgZD0iTTUwLjU2IDBMMTI4IDEzMy4xMkwyMDQuOCAwaC00Ny4zNkwxMjggNTEuMkw5Ny45MiAwSDUwLjU2WiI+PC9wYXRoPjwvc3ZnPg=="
+  },
+  "community": {
+    "communityUrlList": [
+      "https://github.com/example",
+      "https://gitlab.com/example",
+      "https://gitee.com/example",
+      "https://blog.csdn.net/example"
+    ],
+    "weChatHeadPhoto": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiBhcmlhLWhpZGRlbj0idHJ1ZSIgcm9sZT0iaW1nIiBjbGFzcz0iaWNvbmlmeSBpY29uaWZ5LS1sb2dvcyIgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJJY29uaWZ5SWQxODEzMDg4ZmUxZmJjMDFmYjQ2NiIgeDE9Ii0uODI4JSIgeDI9IjU3LjYzNiUiIHkxPSI3LjY1MiUiIHkyPSI3OC40MTElIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjNDFEMUZGIj48L3N0b3A+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjQkQzNEZFIj48L3N0b3A+PC9saW5lYXJHcmFkaWVudD48bGluZWFyR3JhZGllbnQgaWQ9Ikljb25pZnlJZDE4MTMwODhmZTFmYmMwMWZiNDY3IiB4MT0iNDMuMzc2JSIgeDI9IjUwLjMxNiUiIHkxPSIyLjI0MiUiIHkyPSI4OS4wMyUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNGRkVBODMiPjwvc3RvcD48c3RvcCBvZmZzZXQ9IjguMzMzJSIgc3RvcC1jb2xvcj0iI0ZGREQzNSI+PC9zdG9wPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI0ZGQTgwMCI+PC9zdG9wPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGZpbGw9InVybCgjSWNvbmlmeUlkMTgxMzA4OGZlMWZiYzAxZmI0NjYpIiBkPSJNMjU1LjE1MyAzNy45MzhMMTM0Ljg5NyAyNTIuOTc2Yy0yLjQ4MyA0LjQ0LTguODYyIDQuNDY2LTExLjM4Mi4wNDhMLjg3NSAzNy45NThjLTIuNzQ2LTQuODE0IDEuMzcxLTEwLjY0NiA2LjgyNy05LjY3bDEyMC4zODUgMjEuNTE3YTYuNTM3IDYuNTM3IDAgMCAwIDIuMzIyLS4wMDRsMTE3Ljg2Ny0yMS40ODNjNS40MzgtLjk5MSA5LjU3NCA0Ljc5NiA2Ljg3NyA5LjYyWiI+PC9wYXRoPjxwYXRoIGZpbGw9InVybCgjSWNvbmlmeUlkMTgxMzA4OGZlMWZiYzAxZmI0NjcpIiBkPSJNMTg1LjQzMi4wNjNMOTYuNDQgMTcuNTAxYTMuMjY4IDMuMjY4IDAgMCAwLTIuNjM0IDMuMDE0bC01LjQ3NCA5Mi40NTZhMy4yNjggMy4yNjggMCAwIDAgMy45OTcgMy4zNzhsMjQuNzc3LTUuNzE4YzIuMzE4LS41MzUgNC40MTMgMS41MDcgMy45MzYgMy44MzhsLTcuMzYxIDM2LjA0N2MtLjQ5NSAyLjQyNiAxLjc4MiA0LjUgNC4xNTEgMy43OGwxNS4zMDQtNC42NDljMi4zNzItLjcyIDQuNjUyIDEuMzYgNC4xNSAzLjc4OGwtMTEuNjk4IDU2LjYyMWMtLjczMiAzLjU0MiAzLjk3OSA1LjQ3MyA1Ljk0MyAyLjQzN2wxLjMxMy0yLjAyOGw3Mi41MTYtMTQ0LjcyYzEuMjE1LTIuNDIzLS44OC01LjE4Ni0zLjU0LTQuNjcybC0yNS41MDUgNC45MjJjLTIuMzk2LjQ2Mi00LjQzNS0xLjc3LTMuNzU5LTQuMTE0bDE2LjY0Ni01Ny43MDVjLjY3Ny0yLjM1LTEuMzctNC41ODMtMy43NjktNC4xMTNaIj48L3BhdGg+PC9zdmc+",
+    "wechatUrl": "https://weixin.qq.com/r/y0TI0LDENu1JrfSz9xHZ",
+    "curriculumVitaeSourceCodeUrl": "https://github.com/xfl12345/curriculum-vitae-stack"
+  },
+  "skillDegree": [
+    {
+      "skillName": "C",
+      "degree": 0.98
+    },
+    {
+      "skillName": "Java",
+      "degree": 0.9
+    },
+    {
+      "skillName": "HTML/JavaScript(ES6)/CSS/SQL",
+      "degree": 0.7
+    },
+    {
+      "skillName": "Python/C++",
+      "degree": 0.25
+    },
+    {
+      "skillName": "SpringBoot 3.X/Bee ORM 2.X",
+      "degree": 0.7
+    },
+    {
+      "skillName": "TypeScript 4.X/Vue 3.X",
+      "degree": 0.7
+    }
+  ],
+  "journey": [
+    {
+      "id": 1,
+      "period": "20XX.09-20XX.06",
+      "headerCenter": "XX大学",
+      "headerRight": "软件工程",
+      "body": "主修课程：C 语言程序设计、巴拉巴拉"
+    },
+    {
+      "id": 2,
+      "period": "20XX.XX-20XX.XX",
+      "headerCenter": "XX比赛",
+      "headerRight": "XX角色",
+      "body": "巴拉巴拉"
+    }
+  ],
+  "projectExperience": [
+    {
+      "id": 1,
+      "period": "20XX.XX-20XX.XX",
+      "name": "俄罗斯方块",
+      "technologyStack": "技术栈：C#, WPF",
+      "body": "巴拉巴拉"
+    },
+    {
+      "id": 2,
+      "period": "20XX.XX-20XX.XX",
+      "name": "XX商城",
+      "technologyStack": "技术栈：SpringCloud, Vue3",
+      "body": "巴拉巴拉"
+    }
+  ],
+  "certificate": [
+    {
+      "id": 1,
+      "content": "大学英语四级（CET-4），良好的听说读写能力"
+    }
+  ],
+  "interestingBlog": [
+    {
+      "id": 1,
+      "content": "学会降龙十八掌并且申遗成功"
+    },
+    {
+      "id": 2,
+      "content": "胸口碎大石、扑克牌飞镖"
+    }
+  ],
+  "selfAppraisal": "为人XXXX，如此这般，如此这般。喜欢XXXX，热衷XXXXX，不喜欢XXXXX……"
+}
