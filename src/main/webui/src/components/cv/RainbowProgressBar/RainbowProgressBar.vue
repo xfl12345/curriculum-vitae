@@ -61,7 +61,7 @@ const percentText = computed(() => (props.thePercent * 100).toFixed(props.percen
   border-radius: v-bind(theFontSize);
   border-color: v-bind(borderColor);
   height: v-bind(theFontSize);
-  clip-path: inset(0 round calc(v-bind(theFontSizeInPixel) * 1px));
+  clip-path: inset(0 round v-bind(theFontSize));
 }
 .fill {
   height: 120%;
