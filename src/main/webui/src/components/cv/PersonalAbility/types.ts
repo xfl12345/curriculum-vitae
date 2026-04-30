@@ -1,4 +1,4 @@
-import type { SkillDegree } from '@/model/cv/types'
+import type { SkillDegree } from '@/model/business'
 
 export interface Props {
   theFontSizeInPixel?: number

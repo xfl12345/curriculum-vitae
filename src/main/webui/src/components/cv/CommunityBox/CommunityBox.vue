@@ -2,7 +2,7 @@
 import { computed, ref, onMounted } from 'vue'
 import VueQr, { type VueQrProps } from 'vue-qr'
 
-import type { CommunityData } from '@/model/cv/types'
+import type { CommunityData } from '@/model/business'
 
 import { TextPrettier } from '@/components/cv/TextPrettier'
 import { UrlItem } from '@/components/cv/UrlItem'

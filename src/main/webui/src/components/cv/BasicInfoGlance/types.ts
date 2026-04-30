@@ -1,4 +1,4 @@
-import type { BasicInformation } from '@/model/cv/types'
+import type { BasicInformation } from '@/model/business'
 
 export interface Props {
   theFontSizeInPixel?: number

@@ -1,4 +1,4 @@
-import type { BasicInformation, CurriculumVitaeData } from '@/model/cv/types'
+import type { BasicInformation, CurriculumVitaeData } from '@/model/business'
 
 export const cvPageTitle = {
   basicInformation: '基本信息',

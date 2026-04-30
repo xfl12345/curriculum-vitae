@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import type { BasicInformation } from '@/model/cv/types'
+import type { BasicInformation } from '@/model/business'
 
 import { BasicInfoPair } from '@/components/cv/BasicInfoPair'
 import { useI18nStore } from '@/stores/i18n'

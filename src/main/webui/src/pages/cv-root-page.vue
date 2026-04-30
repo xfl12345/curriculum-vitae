@@ -2,8 +2,6 @@
 import { computed, onBeforeMount, onMounted, ref, useCssModule, watch, type CSSProperties } from 'vue'
 import { useRouter } from 'vue-router'
 
-import type { CurriculumVitaeData } from '@/model/cv/types'
-
 import {
   BasicInfoGlance,
   CommunityBox,
@@ -16,7 +14,7 @@ import {
   TextPrettier,
   Vue3MountedHelper,
 } from '@/components'
-import { CvPageFontSizeHelper } from '@/model/cv/CvPageFontSizeHelper'
+import { CvPageFontSizeHelper, type CurriculumVitaeData } from '@/model/business'
 import { getCvData } from '@/model/web/api/cv'
 import { ROUTER_NAMES } from '@/router/TheConst'
 import { useAuthStore } from '@/stores/auth'

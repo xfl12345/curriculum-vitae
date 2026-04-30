@@ -2,7 +2,7 @@
 import cvDataUrl from '/mock/cv-data.json?url&no-inline'
 import { nextTick, ref } from 'vue'
 
-import type { CommunityData, CurriculumVitaeData } from '@/model/cv/types'
+import type { CommunityData, CurriculumVitaeData } from '@/model/business'
 
 import { CommunityBox } from '@/components/cv/CommunityBox'
 

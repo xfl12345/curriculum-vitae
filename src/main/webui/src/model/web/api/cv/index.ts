@@ -1,6 +1,6 @@
 import MockCvDataJson from '/mock/cv-data.json?url&no-inline'
 
-import type { CurriculumVitaeData } from '@/model/cv/types'
+import type { CurriculumVitaeData } from '@/model/business'
 
 import { httpClient } from '../common'
 

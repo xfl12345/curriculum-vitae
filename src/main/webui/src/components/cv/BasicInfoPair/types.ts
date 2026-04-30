@@ -1,4 +1,4 @@
-import type { ValuePair } from '@/model/cv/types'
+import type { ValuePair } from '@/model/business'
 
 export interface KeyValuePair extends ValuePair {
   theKey: string
