@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import defaultBackgroundImage from '/pic/yourname_dusk.jpg?url&no-inline'
 import { useIntervalFn } from '@vueuse/core'
-import { computed, onMounted, ref, type CSSProperties } from 'vue'
+import { computed, onMounted, ref, useTemplateRef, type CSSProperties } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { CenterBox, XflsSingleLineInput, CaptchaBoxTypeRotate } from '@/components'
@@ -27,7 +27,6 @@ const fontSizeInPixelQuarter = computed(() => fontSizeInPixel.value / 4)
 const fontSizeQuarter = computed(() => fontSizeInPixelQuarter.value + 'px')
 
 const centerBoxMinWidth = computed(() => fontSizeInPixel.value * 22 + 'px')
-const formBoxBorderRadius = computed(() => fontSizeInPixelQuarter.value * 3.4142 + 'px')
 const loginMessageColor = computed<CSSProperties['color']>(() => (authStore.signedIn ? 'lawngreen' : 'red'))
 
 const backgroundImage = ref(defaultBackgroundImage)
@@ -43,7 +42,7 @@ const rootBackgroundImage = computed(() => `url(${backgroundImage.value})`)
 const smsCoolDownTimeLeft = ref(0)
 const isInSmsCoolDown = computed(() => smsCoolDownTimeLeft.value > 0)
 const smsButtonStyle = computed<CSSProperties>(() => ({
-  padding: '0 ' + Math.floor(fontSizeInPixelHalf.value) + 'px',
+  padding: `0 ${Math.floor(fontSizeInPixelHalf.value)}px`,
   cursor: isInSmsCoolDown.value ? 'unset' : 'pointer',
   minWidth: fontSizeInPixel.value * 4 + Math.floor(fontSizeInPixel.value) + 'px',
   backgroundColor: isInSmsCoolDown.value ? 'gray' : 'lawngreen',
@@ -79,7 +78,7 @@ function onInputVerificationCodeKeyDownEnter() {
   onClickLoginButton()
 }
 
-const codeInputRef = ref<InstanceType<typeof XflsSingleLineInput>>()
+const codeInputRef = useTemplateRef('codeInputRef')
 function onInputPhoneNumberKeyDownEnter() {
   codeInputRef.value?.$el?.querySelector('input')?.focus()
 }
@@ -263,7 +262,7 @@ onMounted(async () => {
   animation: borderBreath 1.5s infinite alternate;
   animation-delay: -0.25s;
   padding: v-bind(fontSizeQuarter);
-  border-radius: v-bind(formBoxBorderRadius);
+  border-radius: calc(v-bind(fontSizeInPixelQuarter) * 3.4142 * 1px);
 }
 
 @keyframes borderBreath {
