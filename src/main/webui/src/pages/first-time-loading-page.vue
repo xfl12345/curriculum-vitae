@@ -27,7 +27,7 @@ const exhibition = queryExhibition === '' ? true : queryExhibition === 'true'
 
 function jumpTarget(): void {
   const target = (route.query.jumpTarget as keyof RouteNamedMap | undefined) ?? '/'
-  console.log('jumpTarget', target, 'route', { name: target })
+  console.log('jumpTarget', target)
   router.push({ name: target })
 }
 
