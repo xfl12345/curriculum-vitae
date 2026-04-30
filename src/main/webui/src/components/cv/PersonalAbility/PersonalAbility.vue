@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
 import { RainbowProgressBar } from '@/components/cv/RainbowProgressBar'
 import { TextPrettier } from '@/components/cv/TextPrettier'
 
 import type { Props } from './types'
-
-const templateRoot = ref<HTMLDivElement>()
 
 const props = withDefaults(defineProps<Props>(), {
   theFontSizeInPixel: 24,
@@ -18,7 +16,7 @@ const quarterFontSize = computed(() => Math.floor(props.theFontSizeInPixel / 4) 
 </script>
 
 <template>
-  <div ref="templateRoot" :class="$style.root">
+  <div :class="$style.root">
     <div v-for="degreeItem in skillDegreeList" :key="degreeItem.skillName" :class="$style.row">
       <div :class="$style.barCell">
         <div :class="$style.barCellInner">

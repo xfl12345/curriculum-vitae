@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
 import { CardView } from '@/components/cv/CardView'
 import { TextPrettier } from '@/components/cv/TextPrettier'
 
 import type { Props } from './types'
-
-const templateRoot = ref<HTMLDivElement>()
 
 withDefaults(defineProps<Props>(), {
   theFontSizeInPixel: 24,
@@ -19,7 +15,6 @@ withDefaults(defineProps<Props>(), {
 
 <template>
   <CardView
-    ref="templateRoot"
     :the-font-size-in-pixel="theFontSizeInPixel"
     the-background-color="greenyellow"
   >

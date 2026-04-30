@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import tinygradient from 'tinygradient'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
 import { CenterBox } from '@/components/common'
 
 import type { Props } from './types'
-
-const templateRoot = ref<HTMLDivElement>()
 
 const props = withDefaults(defineProps<Props>(), {
   theFontSizeInPixel: 24,
@@ -44,7 +42,7 @@ const percentText = computed(() => (props.thePercent * 100).toFixed(props.percen
 </script>
 
 <template>
-  <div ref="templateRoot" :class="$style.root">
+  <div :class="$style.root">
     <div :class="$style.fill" />
     <CenterBox v-if="showPercentNumber" :class="$style.percentOverlay">
       <span :class="[$style.percentText, percentNumberClass]">{{ percentText }}</span>

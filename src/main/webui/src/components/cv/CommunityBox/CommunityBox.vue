@@ -9,7 +9,6 @@ import { UrlItem } from '@/components/cv/UrlItem'
 
 import type { Props } from './types'
 
-const templateRoot = ref<HTMLDivElement>()
 const urlListContainer = ref<HTMLDivElement>()
 
 const props = withDefaults(defineProps<Props>(), {
@@ -66,7 +65,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div ref="templateRoot" :class="$style.root">
+  <div :class="$style.root">
     <div ref="urlListContainer" v-resize="qrCodeContainerResize" :class="$style.urlListBox">
       <UrlItem
         v-for="item in community.communityUrlList"

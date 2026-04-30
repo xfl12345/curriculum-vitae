@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
 import { TextPrettier } from '@/components/cv/TextPrettier'
 
 import type { Props } from './types'
-
-const templateRoot = ref<HTMLDivElement>()
 
 const props = withDefaults(defineProps<Props>(), {
   theFontSizeInPixel: 24,
@@ -18,7 +16,7 @@ const iconFontSize = computed(() => Math.floor(props.theFontSizeInPixel * 0.5) +
 </script>
 
 <template>
-  <div ref="templateRoot" :class="[$style.root, { [$style.sizedHeight]: useFontSizeAsHeight }]">
+  <div :class="[$style.root, { [$style.sizedHeight]: useFontSizeAsHeight }]">
     <span :class="$style.icon">💥</span>
     <a :class="$style.link" :href="theUrl" target="_blank" rel="noopener noreferrer">
       <TextPrettier :content="theUrl" :foxy-text-class="$style.textPrettier" />

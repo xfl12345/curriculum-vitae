@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { NConfigProvider, NSlider, NSpace } from 'naive-ui'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
 import { getTextSize } from '@/model/browser/FontUtils'
 import { useFoxyBrowserStore } from '@/stores/foxy-browser'
@@ -11,8 +11,6 @@ const rootScale = defineModel<number>('rootScale', { required: true })
 const props = withDefaults(defineProps<Props>(), { theFontSizeInPixel: () => getTextSize('medium') })
 const theFontSize = computed(() => props.theFontSizeInPixel + 'px')
 const contentBoxMinWidth = computed(() => props.theFontSizeInPixel * 16 + 'px')
-
-const templateRoot = ref<HTMLDivElement>()
 
 const foxyBrowserStore = useFoxyBrowserStore()
 const domBody = computed(() => foxyBrowserStore.computedDocument.body)
@@ -27,7 +25,7 @@ const closePanel = () => (isPanelOpened.value = false)
 </script>
 
 <template>
-  <div v-if="isPanelOpened" ref="templateRoot" :class="$style.overlay" @click="closePanel">
+  <div v-if="isPanelOpened" :class="$style.overlay" @click="closePanel">
     <div :class="$style.fullContainer">
       <div :class="$style.contentBox" @click.stop="">
         <div :class="$style.headerRow">
