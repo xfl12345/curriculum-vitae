@@ -1,12 +1,14 @@
 package cc.xfl12345.person.cv.filter;
 
-import cc.xfl12345.person.cv.framework.satoken.QuarkusSaRequest;
-import cc.xfl12345.person.cv.framework.satoken.QuarkusSaResponse;
-import cc.xfl12345.person.cv.framework.satoken.QuarkusSaStorage;
+import cc.xfl12345.person.cv.framework.satoken.RamSaStorage;
+import cc.xfl12345.person.cv.framework.satoken.VertxSaRequest;
+import cc.xfl12345.person.cv.framework.satoken.VertxSaResponse;
 import cn.dev33.satoken.SaManager;
 import io.quarkus.logging.Log;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -24,15 +26,18 @@ import jakarta.ws.rs.ext.Provider;
 @Priority(Priorities.AUTHENTICATION - 100)
 public class SaTokenContextFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
+    @Inject
+    RoutingContext routingContext;
+
     // ==================== 请求阶段 ====================
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
         // 初始化 Sa-Token 上下文
         SaManager.getSaTokenContext().setContext(
-                new QuarkusSaRequest(requestContext),
-                new QuarkusSaResponse(requestContext),
-                new QuarkusSaStorage()
+                new VertxSaRequest(routingContext.request()),
+                new VertxSaResponse(routingContext.response()),
+                new RamSaStorage()
         );
     }
 

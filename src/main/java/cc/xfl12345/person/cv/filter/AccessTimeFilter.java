@@ -48,7 +48,7 @@ public class AccessTimeFilter implements ContainerRequestFilter {
             vThreads.submit(() -> {
                 var now = nowZonedDateTime.toOffsetDateTime();
                 try {
-                    if(userService.justUpdateVisitTimeById(Long.parseLong(loginId), nowZonedDateTime.toLocalDateTime())) {
+                    if(userService.justUpdateVisitTimeById(Long.parseLong(loginId), nowZonedDateTime)) {
                         Log.infof("Succeed to update access time for loginId[%s] at time[%s]", loginId, now);
                     } else {
                         Log.warnf("Failed to update access time for loginId[%s] at time[%s]", loginId, now);

@@ -7,6 +7,12 @@
 
 # APP data persistent
 /storage/
+/config/
+/volume/
+
+# Container Override
+*.override.yaml
+*.override.yml
 
 # Gradle
 .gradle/

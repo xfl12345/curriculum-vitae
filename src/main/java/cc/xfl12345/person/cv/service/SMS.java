@@ -179,7 +179,7 @@ public class SMS {
         String phoneNumber = phoneNumberDTO.phoneNumber;
 
         // 第二关：检查用户权限（是否为受邀面试官）
-        MeetHr meetHr = userService.getHrInfoAndUpdateVisitTime(phoneNumber, java.time.LocalDateTime.now());
+        MeetHr meetHr = userService.getHrInfoAndUpdateVisitTime(phoneNumber, ZonedDateTime.now());
         if (meetHr == null) {
             return failedResult.withApiResult(JsonApiResult.FAILED_FORBIDDEN)
                 .withMessage("您好，您的权限不足，可联系站长成为受邀面试官。");

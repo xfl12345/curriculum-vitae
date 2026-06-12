@@ -2,10 +2,11 @@ package cc.xfl12345.person.cv.service;
 
 import cc.xfl12345.person.cv.pojo.database.MeetHr;
 import com.easy.query.api.proxy.client.EasyEntityQuery;
+import com.easy.query.core.api.pagination.EasyPageResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @ApplicationScoped
@@ -30,6 +31,12 @@ public class UserService {
 
     public List<MeetHr> getAllHrInfo() {
         return entityQuery.queryable(MeetHr.class).toList();
+    }
+
+    public EasyPageResult<MeetHr> getHrInfoPage(long pageIndex, long pageSize) {
+        return entityQuery.queryable(MeetHr.class)
+            .orderBy(m -> m.createTime().desc())
+            .toPageResult(pageIndex, pageSize);
     }
 
     public long getHrInfoCount() {
@@ -59,7 +66,7 @@ public class UserService {
         return rows == 1;
     }
 
-    public MeetHr getHrInfoAndUpdateVisitTime(String phoneNumber, LocalDateTime visitTime) {
+    public MeetHr getHrInfoAndUpdateVisitTime(String phoneNumber, ZonedDateTime visitTime) {
         MeetHr meetHr = entityQuery.queryable(MeetHr.class)
             .where(m -> m.hrPhoneNumber().eq(phoneNumber))
             .firstOrNull();
@@ -73,7 +80,7 @@ public class UserService {
         return meetHr;
     }
 
-    public boolean justUpdateVisitTimeById(Long id, LocalDateTime visitTime) {
+    public boolean justUpdateVisitTimeById(Long id, ZonedDateTime visitTime) {
         MeetHr meetHr = entityQuery.queryable(MeetHr.class)
             .where(m -> m.id().eq(id))
             .firstOrNull();

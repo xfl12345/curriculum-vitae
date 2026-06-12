@@ -9,10 +9,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class QuarkusSaRequest implements SaRequest {
+public class JakartaSaRequest implements SaRequest {
     protected final ContainerRequestContext ctx;
 
-    public QuarkusSaRequest(ContainerRequestContext ctx) {
+    public JakartaSaRequest(ContainerRequestContext ctx) {
         this.ctx = ctx;
     }
 

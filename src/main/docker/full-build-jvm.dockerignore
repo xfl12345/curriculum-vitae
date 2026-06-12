@@ -1,0 +1,14 @@
+*
+!gradle/
+!src/
+!.gitignore
+!.gitattributes
+!/*.gradle
+!/gradle*
+.gradle/
+!lombok.*
+src/main/webui/node_modules/
+src/main/webui/.vscode/
+src/main/webui/.aiassistant/
+src/main/webui/.codeartsdoer/
+src/main/webui/.vite-hooks/

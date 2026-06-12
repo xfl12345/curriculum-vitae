@@ -4,6 +4,7 @@ export const ROUTER_NAMES = {
   HOME: '/',
   CV_ROOT_PAGE: '/cv-root-page',
   FIRST_TIME_LOADING_PAGE: '/first-time-loading-page',
+  HR_INFO_PAGE: '/hr-info-page',
   LOGIN_PAGE: '/login-page',
   NOT_FOUND_PAGE: '/not-found-page',
   ROUTES: '/routes',
@@ -16,4 +17,5 @@ export const ROUTER_NAMES = {
   TEST_PAGE: '/test-page',
   TEST_RESIZE_OBSERVER: '/test-resize-observer',
   TEST_TIANAI_CAPTCHA: '/test-tianai-captcha',
+  TEST_VXE_TABLE_PAGED: '/test-vxe-table-paged',
 } as const satisfies Record<string, keyof RouteNamedMap>

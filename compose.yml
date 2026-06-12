@@ -1,0 +1,36 @@
+services:
+  app:
+    env_file:
+      - container.env
+    image: localbuild/curriculum-vitae
+    container_name: dev-curriculum-vitae
+    pull_policy: build
+    build:
+      context: ./
+      dockerfile: src/main/docker/Dockerfile.jvm
+      # dockerfile: src/main/docker/full-build-jvm.Dockerfile
+    volumes:
+      # /deployments/storage  /deployments/config
+      - app_storage:/deployments/storage
+      - app_config:/deployments/config
+    post_start:
+      - command: 'mkdir -p /deployments/storage && chown 185:root /deployments/storage && mkdir -p /var/run && chmod 777 /var/run'
+        user: root
+    network_mode: bridge
+    ports:
+      - '8880:8880'
+    restart: unless-stopped
+
+volumes:
+  app_storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volume/moved_root/deployments/storage
+  app_config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./volume/moved_root/deployments/config

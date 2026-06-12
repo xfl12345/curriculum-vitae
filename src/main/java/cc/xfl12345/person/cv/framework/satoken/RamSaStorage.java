@@ -2,16 +2,15 @@ package cc.xfl12345.person.cv.framework.satoken;
 
 import cn.dev33.satoken.context.model.SaStorage;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class QuarkusSaStorage implements SaStorage {
+public class RamSaStorage implements SaStorage {
     private final Map<String, Object> map = new ConcurrentHashMap<>();
 
     @Override
     public Object getSource() {
-        return this;
+        return map;
     }
 
     @Override

@@ -4,7 +4,9 @@ import cc.xfl12345.person.cv.appconst.AppConst;
 import cc.xfl12345.person.cv.appconst.JsonApiResult;
 import cc.xfl12345.person.cv.pojo.database.MeetHr;
 import cc.xfl12345.person.cv.pojo.response.ApiResponse;
+import cc.xfl12345.person.cv.pojo.response.PageData;
 import cc.xfl12345.person.cv.service.UserService;
+import com.easy.query.core.api.pagination.EasyPageResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -35,6 +37,16 @@ public class UserController {
     public ApiResponse<Long> getUserIdByPhoneNumber(@QueryParam("phoneNumber") String phoneNumber) {
         return ApiResponse.<Long>of(JsonApiResult.SUCCEED)
             .withPayload(userService.getHrIdByPhoneNumber(phoneNumber));
+    }
+
+    @GET
+    @Path("/page")
+    public ApiResponse<PageData<MeetHr>> getUsersPage(
+            @QueryParam("pageIndex") @DefaultValue("1") long pageIndex,
+            @QueryParam("pageSize") @DefaultValue("20") long pageSize) {
+        EasyPageResult<MeetHr> pageResult = userService.getHrInfoPage(pageIndex, pageSize);
+        return ApiResponse.<PageData<MeetHr>>of(JsonApiResult.SUCCEED)
+            .withPayload(new PageData<>(pageResult.getTotal(), pageResult.getData()));
     }
 
     @GET

@@ -48,6 +48,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/hr-info-page': RouteRecordInfo<
+      '/hr-info-page',
+      '/hr-info-page',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/login-page': RouteRecordInfo<
       '/login-page',
       '/login-page',
@@ -132,6 +139,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/test-vxe-table-paged': RouteRecordInfo<
+      '/test-vxe-table-paged',
+      '/test-vxe-table-paged',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
   }
 
   /**
@@ -160,6 +174,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/first-time-loading-page.vue': {
       routes:
         | '/first-time-loading-page'
+      views:
+        | never
+    }
+    'src/pages/hr-info-page.vue': {
+      routes:
+        | '/hr-info-page'
       views:
         | never
     }
@@ -232,6 +252,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/test-tianai-captcha.vue': {
       routes:
         | '/test-tianai-captcha'
+      views:
+        | never
+    }
+    'src/pages/test-vxe-table-paged.vue': {
+      routes:
+        | '/test-vxe-table-paged'
       views:
         | never
     }

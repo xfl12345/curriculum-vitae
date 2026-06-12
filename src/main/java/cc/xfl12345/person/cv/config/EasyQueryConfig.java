@@ -1,8 +1,10 @@
 package cc.xfl12345.person.cv.config;
 
+import cc.xfl12345.person.cv.framework.easyquery.ZonedDateTimeJdbcTypeHandler;
 import com.easy.query.api.proxy.client.DefaultEasyEntityQuery;
 import com.easy.query.api.proxy.client.EasyEntityQuery;
 import com.easy.query.core.api.client.EasyQueryClient;
+import com.easy.query.core.basic.jdbc.types.JdbcTypeHandlerManager;
 import com.easy.query.core.bootstrapper.EasyQueryBootstrapper;
 import com.easy.query.core.common.bean.ReflectBean;
 import com.easy.query.core.configuration.nameconversion.NameConversion;
@@ -17,6 +19,7 @@ import jakarta.inject.Singleton;
 import jakarta.interceptor.Interceptor;
 
 import javax.sql.DataSource;
+import java.time.ZonedDateTime;
 
 @RegisterForReflection(targets = {
         // EasyQuery core
@@ -45,7 +48,7 @@ public class EasyQueryConfig {
     @Produces
     @Singleton
     public EasyQueryClient easyQueryClient(DataSource dataSource) {
-        return EasyQueryBootstrapper.defaultBuilderConfiguration()
+        EasyQueryClient client = EasyQueryBootstrapper.defaultBuilderConfiguration()
                 .setDefaultDataSource(dataSource)
                 .useDatabaseConfigure(new SQLiteDatabaseConfiguration())
                 .replaceService(NameConversion.class, UnderlinedNameConversion.class)
@@ -54,6 +57,11 @@ public class EasyQueryConfig {
                     op.setPrintSql(true);
                 })
                 .build();
+
+        JdbcTypeHandlerManager typeHandlerManager = client.getRuntimeContext().getJdbcTypeHandlerManager();
+        typeHandlerManager.appendHandler(ZonedDateTime.class, new ZonedDateTimeJdbcTypeHandler(), true);
+
+        return client;
     }
 
     @Produces

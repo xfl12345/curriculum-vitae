@@ -39,6 +39,9 @@ importers:
       resize-observer-vue:
         specifier: ^1.2.0
         version: 1.2.0(vue@3.5.32(typescript@6.0.2))
+      temporal-polyfill:
+        specifier: ^0.3.2
+        version: 0.3.2
       tinygradient:
         specifier: ^2.0.1
         version: 2.0.1
@@ -63,6 +66,9 @@ importers:
       vue3-clipboard:
         specifier: ^1.0.0
         version: 1.0.0(vue@3.5.32(typescript@6.0.2))
+      vxe-pc-ui:
+        specifier: ^4.13.29
+        version: 4.13.29(vue@3.5.32(typescript@6.0.2))
       vxe-table:
         specifier: ^4.18.13
         version: 4.18.13(vue@3.5.32(typescript@6.0.2))
@@ -2258,6 +2264,12 @@ packages:
   tagged-tag@1.0.0:
     resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
     engines: {node: '>=20'}
+
+  temporal-polyfill@0.3.2:
+    resolution: {integrity: sha512-TzHthD/heRK947GNiSu3Y5gSPpeUDH34+LESnfsq8bqpFhsB79HFBX8+Z834IVX68P3EUyRPZK5bL/1fh437Eg==}
+
+  temporal-spec@0.3.1:
+    resolution: {integrity: sha512-B4TUhezh9knfSIMwt7RVggApDRJZo73uZdj8AacL2mZ8RP5KtLianh2MXxL06GN9ESYiIsiuoLQhgVfwe55Yhw==}
 
   tiny-emitter@2.1.0:
     resolution: {integrity: sha512-NB6Dk1A9xgQPMoGqC5CVXn123gWyte215ONT5Pp5a0yt4nlEoO1ZWeCwpncaekPHXO60i47ihFnZPiRPjRMq4Q==}
@@ -4556,6 +4568,12 @@ snapshots:
   symbol-tree@3.2.4: {}
 
   tagged-tag@1.0.0: {}
+
+  temporal-polyfill@0.3.2:
+    dependencies:
+      temporal-spec: 0.3.1
+
+  temporal-spec@0.3.1: {}
 
   tiny-emitter@2.1.0: {}
 

@@ -19,7 +19,7 @@ import io.quarkus.logging.Log;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Random;
 
@@ -83,7 +83,7 @@ public class LoginController {
         @QueryParam("verificationCode") String verificationCode,
         @Nullable @QueryParam("rememberMe") Boolean rememberMe) {
 
-        LocalDateTime date = LocalDateTime.now();
+        ZonedDateTime date = ZonedDateTime.now();
         String currentToken = StpUtil.getTokenValue();
 
         // 分支一：当前 token 已登录的情况

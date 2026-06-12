@@ -15,7 +15,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Data
 @SuperBuilder
@@ -29,11 +29,11 @@ public class MeetHr implements Cloneable, Serializable, ProxyEntityAvailable<Mee
     @Schema(type = SchemaType.STRING, description = "主键 ID")
     private Long id;
 
-    private LocalDateTime createTime;
+    private ZonedDateTime createTime;
 
-    private LocalDateTime firstVisitTime;
+    private ZonedDateTime firstVisitTime;
 
-    private LocalDateTime lastVisitTime;
+    private ZonedDateTime lastVisitTime;
 
     private String hrName;
 

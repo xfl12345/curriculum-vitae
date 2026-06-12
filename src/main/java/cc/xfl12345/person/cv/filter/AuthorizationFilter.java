@@ -16,6 +16,7 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.springframework.util.AntPathMatcher;
 
 import java.nio.charset.StandardCharsets;
@@ -35,6 +36,10 @@ public class AuthorizationFilter implements ContainerRequestFilter {
 
     @Inject
     ObjectMapper objectMapper;
+
+    @Inject
+    @ConfigProperty(name = "app.auth.skip", defaultValue = "false")
+    boolean authSkip;
 
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
@@ -65,6 +70,16 @@ public class AuthorizationFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
+        // 开发模式：跳过鉴权，自动以管理员身份登录
+        if (authSkip) {
+            if (StpUtil.isLogin()) {
+                StpUtil.switchTo(AppConst.XFL_WEBUI_ADMIN_LOGIN_ID);
+            } else {
+                StpUtil.login(AppConst.XFL_WEBUI_ADMIN_LOGIN_ID);
+            }
+            return;
+        }
+
         String requestPath = requestContext.getUriInfo().getPath();
 
         // 公开路径直接放行

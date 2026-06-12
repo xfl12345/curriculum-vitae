@@ -1,4 +1,6 @@
 app:
+  auth:
+    skip: false
   webui:
     admin:
       phone-number: "admin-phone"
@@ -30,7 +32,7 @@ quarkus:
   datasource:
     db-kind: sqlite
     jdbc:
-      url: jdbc:sqlite:storage/curriculum-vitae.db
+      url: jdbc:sqlite:storage/curriculum-vitae.db?journal_mode=WAL&synchronous=NORMAL
 
   http:
     port: 8880
