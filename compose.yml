@@ -10,27 +10,12 @@ services:
       dockerfile: src/main/docker/Dockerfile.jvm
       # dockerfile: src/main/docker/full-build-jvm.Dockerfile
     volumes:
-      # /deployments/storage  /deployments/config
-      - app_storage:/deployments/storage
-      - app_config:/deployments/config
+      - ./volume/moved_root/deployments/storage:/deployments/storage
+      - ./volume/moved_root/deployments/config:/deployments/config
     post_start:
-      - command: 'mkdir -p /deployments/storage && chown 185:root /deployments/storage && mkdir -p /var/run && chmod 777 /var/run'
+      - command: "chown 185:root /deployments/storage"
         user: root
     network_mode: bridge
     ports:
-      - '8880:8880'
+      - "8880:8880"
     restart: unless-stopped
-
-volumes:
-  app_storage:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./volume/moved_root/deployments/storage
-  app_config:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./volume/moved_root/deployments/config
