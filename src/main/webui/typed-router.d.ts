@@ -144,6 +144,29 @@ declare module 'vue-router/auto-routes' {
       '/test-vxe-table-paged',
       Record<never, never>,
       Record<never, never>,
+      | '/test-vxe-table-paged/'
+      | '/test-vxe-table-paged/infinite-plain'
+      | '/test-vxe-table-paged/infinite-window'
+    >,
+    '/test-vxe-table-paged/': RouteRecordInfo<
+      '/test-vxe-table-paged/',
+      '/test-vxe-table-paged',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/test-vxe-table-paged/infinite-plain': RouteRecordInfo<
+      '/test-vxe-table-paged/infinite-plain',
+      '/test-vxe-table-paged/infinite-plain',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/test-vxe-table-paged/infinite-window': RouteRecordInfo<
+      '/test-vxe-table-paged/infinite-window',
+      '/test-vxe-table-paged/infinite-window',
+      Record<never, never>,
+      Record<never, never>,
       | never
     >,
   }
@@ -258,6 +281,27 @@ declare module 'vue-router/auto-routes' {
     'src/pages/test-vxe-table-paged.vue': {
       routes:
         | '/test-vxe-table-paged'
+        | '/test-vxe-table-paged/'
+        | '/test-vxe-table-paged/infinite-plain'
+        | '/test-vxe-table-paged/infinite-window'
+      views:
+        | 'default'
+    }
+    'src/pages/test-vxe-table-paged/index.vue': {
+      routes:
+        | '/test-vxe-table-paged/'
+      views:
+        | never
+    }
+    'src/pages/test-vxe-table-paged/infinite-plain.vue': {
+      routes:
+        | '/test-vxe-table-paged/infinite-plain'
+      views:
+        | never
+    }
+    'src/pages/test-vxe-table-paged/infinite-window.vue': {
+      routes:
+        | '/test-vxe-table-paged/infinite-window'
       views:
         | never
     }

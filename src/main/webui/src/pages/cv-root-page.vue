@@ -29,7 +29,7 @@ const { cvPageTitle: cvPageTitleTranslation } = useI18nStore().currentI18nBook.s
 const { devMode } = useSettingsStore()
 
 function jump2IndexPage() {
-  router.push({ name: ROUTER_NAMES.HOME })
+  router.push({ name: ROUTER_NAMES.INDEX })
 }
 
 const PAPER_WIDTH_MM = 210
