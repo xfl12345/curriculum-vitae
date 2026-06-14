@@ -133,6 +133,9 @@ importers:
       vite-plugin-vue-devtools:
         specifier: ^8.1.1
         version: 8.1.1(@voidzero-dev/vite-plus-core@0.1.18(@types/node@24.12.2)(jiti@2.6.1)(typescript@6.0.2)(yaml@2.8.3))(vue@3.5.32(typescript@6.0.2))
+      vite-plugin-vue-router-auto-generate-const:
+        specifier: ^0.1.0
+        version: 0.1.0
       vite-plus:
         specifier: latest
         version: 0.1.18(@types/node@24.12.2)(@voidzero-dev/vite-plus-core@0.1.18(@types/node@24.12.2)(jiti@2.6.1)(typescript@6.0.2)(yaml@2.8.3))(jiti@2.6.1)(jsdom@28.1.0)(typescript@6.0.2)(yaml@2.8.3)
@@ -2422,6 +2425,9 @@ packages:
     resolution: {integrity: sha512-Iq/024CydcE46FZqWPU4t4lw4uYOdLnFSO1RNxJVt2qY9zxIjmnkBqhHnYaReWM82kmNnaXs7OkfgRrV2GEjyw==}
     peerDependencies:
       vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
+
+  vite-plugin-vue-router-auto-generate-const@0.1.0:
+    resolution: {integrity: sha512-JpwAOC0tWB3DQJZl0DDTJwnGv/94bBU9Pivz1TmgZiILfn7C2wT7n4DaMyw3Hs96lsn+BWT21q7kvzowrj6zWg==}
 
   vite-plus@0.1.18:
     resolution: {integrity: sha512-RiWUoOmQiJMtd4Dfm6WD0v0Selqh/nQzmaGVIrkfnr+2s5UxGVZy7n2TCO5ZnR7w9noMIgtUAQN8GtKhwHEiOQ==}
@@ -4736,6 +4742,8 @@ snapshots:
       vite: '@voidzero-dev/vite-plus-core@0.1.18(@types/node@24.12.2)(jiti@2.6.1)(typescript@6.0.2)(yaml@2.8.3)'
     transitivePeerDependencies:
       - supports-color
+
+  vite-plugin-vue-router-auto-generate-const@0.1.0: {}
 
   vite-plus@0.1.18(@types/node@24.12.2)(@voidzero-dev/vite-plus-core@0.1.18(@types/node@24.12.2)(jiti@2.6.1)(typescript@6.0.2)(yaml@2.8.3))(jiti@2.6.1)(jsdom@28.1.0)(typescript@6.0.2)(yaml@2.8.3):
     dependencies:
