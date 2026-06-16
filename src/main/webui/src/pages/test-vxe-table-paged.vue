@@ -32,6 +32,16 @@ const tabs: TabDef[] = [
     label: '50条窗口+HashMap',
     desc: 'DOM 始终 ~80 行 + Map 缓存 + 自定义滚动壳',
   },
+  {
+    name: ROUTER_NAMES.TEST_VXE_TABLE_PAGED_INFINITE_CONTEXT,
+    label: '上下文窗口',
+    desc: 'vxe-grid 自带表头 + 恒长 3 页 context + 双层预备缓冲（滚动条会跳）',
+  },
+  {
+    name: ROUTER_NAMES.TEST_VXE_TABLE_PAGED_INFINITE_PAGES,
+    label: '分页 ListView',
+    desc: '每页一个完整 grid（带表头）+ 实心蓝底「第 X 页」分割条 + 跳页',
+  },
 ]
 
 const route = useRoute()

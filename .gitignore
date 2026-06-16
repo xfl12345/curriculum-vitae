@@ -4,6 +4,7 @@
 .claude/
 .codeartsdoer/
 .playwright-mcp/
+.marscode/
 
 # APP data persistent
 /storage/
