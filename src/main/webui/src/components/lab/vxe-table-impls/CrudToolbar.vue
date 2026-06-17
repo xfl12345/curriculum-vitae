@@ -16,6 +16,8 @@ defineEmits<{
     <button type="button" :class="$style.btnSuccess" @click="$emit('insert')">新增</button>
     <button type="button" :class="$style.btnDanger" @click="$emit('delete')">删除选中</button>
     <button type="button" :class="$style.btnPrimary" @click="$emit('save')">保存</button>
+    <!-- 取消按钮：仅编辑态显示。位置插在"保存"和默认 slot 之间，保持"操作按钮"语义聚合 -->
+    <slot name="cancel" />
     <slot />
   </div>
 </template>
@@ -29,8 +31,10 @@ defineEmits<{
   flex-wrap: wrap;
 }
 
-/* toolbar 内所有 button（含 slot 里调用方加的）统一基础样式 */
-.toolbar button {
+/* 只匹配直接子按钮（新增/删除/保存/取消），不影响 slot 里调用方自定义样式的按钮
+ * （如 InfinitePagesImpl 的 Go / ‹ / ›）。用 > 子代选择器，避免后代选择器特异性 (0,1,1)
+ * 盖过调用方单类样式 (0,1,0) 导致按钮被强制套大 padding */
+.toolbar > button {
   padding: 6px 16px;
   border-radius: 4px;
   border: 1px solid #dcdfe6;
@@ -38,7 +42,7 @@ defineEmits<{
   font-size: 14px;
 }
 
-.toolbar button:disabled {
+.toolbar > button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }

@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import type { VxeGridProps } from 'vxe-table'
+import type { VxeGridInstance, VxeGridProps } from 'vxe-table'
 
-import { useResizeObserver, useThrottleFn } from '@vueuse/core'
+import { useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { NInputNumber, NSelect } from 'naive-ui'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 
 import type { MeetHr } from '@/model/web/api/meet-hr'
 
-import { mockGetMeetHrCount, mockGetMeetHrPage } from './mock-data'
-import { buildMeetHrColumns, clamp, ROW_HEIGHT } from './shared'
+import CrudToolbar from './CrudToolbar.vue'
+import {
+  mockAddMeetHr,
+  mockDeleteMeetHr,
+  mockGetMeetHrCount,
+  mockGetMeetHrPage,
+  mockUpdateMeetHr,
+} from './mock-data'
+import { buildMeetHrColumns, clamp, createEmptyMeetHr, ROW_HEIGHT } from './shared'
 
 /**
  * 分页 ListView 版：每个分页用一个完整的 vxe-grid 表格（含表头）展示，外部容器
@@ -36,10 +43,10 @@ import { buildMeetHrColumns, clamp, ROW_HEIGHT } from './shared'
  *   - 本实现：多 grid 串联，每页独立 header + 分页分隔条（DOM 最多，但分页语义最清晰，
  *     用户能直观看到"现在看的是第几页"，跳页/对比方便）
  *
- * 代价：pageSize 大时 DOM 节点多（每页 ~pageSize 行 + 1 header + 1 divider），
- * 但因为只有可见 ±1 页被渲染，DOM 总数 = ~(2-3) × pageSize，pageSize=50 时约 150 行，可控。
- *
- * 注：本实现聚焦"多页 ListView"演示，不接 CRUD（多 grid 的编辑态追踪复杂，留给其他实现演示）。
+ * CRUD：多 grid 实例的编辑态由 editingPageIdx 路由——双击哪页就把那页标为"编辑中"，
+ * 新增/保存/删除/取消按钮都对它操作。编辑期间锁滚动 + 锁 pageSize/跳页切换，防止 grid 因
+ * renderedPageIndices 变化而卸载、丢失 vxe-grid 内部的 insertRecords/updateRecords。
+ * ESC 键 = 取消（丢弃所有未保存修改，还原 cell 显示）。
  */
 
 // ==================== 常量 ====================
@@ -84,6 +91,38 @@ const loadingPages = ref<Set<number>>(new Set())
 
 /** 跳页输入框绑定值（1-based） */
 const jumpTarget = ref(1)
+
+// ==================== 多 grid 实例追踪（CRUD 用） ====================
+
+/**
+ * 每个渲染页对应的 vxe-grid 实例：pageIdx → VxeGridInstance。
+ * 用普通 Map（非 reactive）：function ref 在 v-for 里维护，CRUD 操作时按需读取，
+ * 模板不需要响应式依赖它。
+ */
+const pageGridRefs = new Map<number, VxeGridInstance>()
+/**
+ * 当前正在编辑/有未保存变更的页号（0-based）。null 表示空闲。
+ *
+ * - 双击某页行触发 edit-actived 时设为该 pageIdx
+ * - 点新增时设为 firstVisiblePageIdx（用户当前看的页）
+ * - 保存/删除/取消完成时清空
+ *
+ * CRUD 按钮都通过它路由到正确的 grid；scroll/pageSize/jumpToPage 在它非 null 时被锁，
+ * 防止 renderedPageIndices 变化导致编辑中的 grid 被卸载、丢失 vxe-grid 内部的
+ * insertRecords/updateRecords（vxe-grid 卸载即销毁内部状态）。
+ */
+const editingPageIdx = ref<number | null>(null)
+/** 是否处于"单元格编辑中"（edit-actived/closed 之间）。用于更细的 UI 状态显示 */
+const isEditing = ref(false)
+
+/** v-for 里的 function ref：vxe-grid 挂载时入表，卸载时出表 */
+function setPageGridRef(pageIdx: number, el: VxeGridInstance | null) {
+  if (el) {
+    pageGridRefs.set(pageIdx, el)
+  } else {
+    pageGridRefs.delete(pageIdx)
+  }
+}
 
 // ==================== 派生 ====================
 
@@ -184,6 +223,12 @@ const gridOptions: VxeGridProps<MeetHr> = {
   // 与外部 scroll-shell 的滚动语义冲突（用户在 grid 内滚 ≠ ListView 滚）。
   // 每页 ≤ 100 行，全量渲染开销可接受，禁用虚拟滚动让滚动行为单一来源（scroll-shell）。
   virtualYConfig: { enabled: false, gt: 99999 },
+  // CRUD：双击行进入编辑态，showStatus 让修改过的 cell 显示脏标记
+  editConfig: {
+    trigger: 'dblclick',
+    mode: 'row',
+    showStatus: true,
+  },
   rowConfig: { keyField: 'id', isHover: true },
   columnConfig: { resizable: true },
   toolbarConfig: { enabled: false },
@@ -239,6 +284,8 @@ async function ensurePagesLoaded(indices: readonly number[]) {
 // ==================== 滚动 handler ====================
 
 const onScroll = useThrottleFn((e: Event) => {
+  // editingPageIdx !== null 表示有 grid 在编辑或有未保存变更，锁滚动防止 grid 卸载
+  if (editingPageIdx.value !== null) return
   const target = e.target as HTMLElement
   scrollTop.value = target.scrollTop
 }, 16)
@@ -246,6 +293,7 @@ const onScroll = useThrottleFn((e: Event) => {
 // ==================== 跳页 ====================
 
 function jumpToPage() {
+  if (editingPageIdx.value !== null) return
   const target = clamp(jumpTarget.value, 1, Math.max(totalPages.value, 1))
   jumpTarget.value = target
   // 直接赋值 scrollTop（同步、瞬间），会触发 scroll 事件 → onScroll → renderedPageIndices 重算
@@ -253,6 +301,140 @@ function jumpToPage() {
     scrollShellEl.value.scrollTop = (target - 1) * pageBlockHeight.value
   }
 }
+
+/** 上一页 / 下一页：基于 currentVisiblePage 增减，clamp 到 [1, totalPages] */
+function prevPage() {
+  if (editingPageIdx.value !== null) return
+  if (currentVisiblePage.value <= 1) return
+  jumpTarget.value = currentVisiblePage.value - 1
+  if (scrollShellEl.value) {
+    scrollShellEl.value.scrollTop = (jumpTarget.value - 1) * pageBlockHeight.value
+  }
+}
+
+function nextPage() {
+  if (editingPageIdx.value !== null) return
+  if (currentVisiblePage.value >= totalPages.value) return
+  jumpTarget.value = currentVisiblePage.value + 1
+  if (scrollShellEl.value) {
+    scrollShellEl.value.scrollTop = (jumpTarget.value - 1) * pageBlockHeight.value
+  }
+}
+
+// ==================== CRUD（多 grid 版，不能复用 useVxeGridCrud） ====================
+
+/**
+ * 多 grid 实例下 CRUD 的核心路由：editingPageIdx 决定操作哪页的 grid。
+ * 空闲时默认首个可见页（用户当前看的页）。
+ */
+async function handleInsert() {
+  if (total.value === 0) return
+  // 已在编辑某页时连续插入到同一页；否则用首个可见页
+  const idx = editingPageIdx.value ?? firstVisiblePageIdx.value
+  const grid = pageGridRefs.get(idx)
+  if (!grid) return
+  editingPageIdx.value = idx
+  const { row } = await grid.insert(createEmptyMeetHr())
+  await grid.setEditRow(row)
+}
+
+/** edit-actived 来自具体某页的 grid，通过模板 () => handleEditActived(pageIdx) 闭包传 pageIdx */
+function handleEditActived(pageIdx: number) {
+  editingPageIdx.value = pageIdx
+  isEditing.value = true
+}
+
+function handleEditClosed() {
+  isEditing.value = false
+  // 不清 editingPageIdx：用户可能继续编辑别的 cell，或准备点保存/取消。
+  // editingPageIdx 只在 handleSave/handleDelete/handleCancel 时清空，
+  // 这样编辑闭态期间（点别的 cell、按 Esc 等）scroll/pageSize 仍锁着，避免 grid 卸载丢变更
+}
+
+async function handleSave() {
+  // 遍历所有渲染中的 grid 收集变更。理论上只有 editingPageIdx 的 grid 有变更，
+  // 但全遍历更保险（防止 edit-closed 触发时机和 insert 时序边界）
+  const tasks: Promise<unknown>[] = []
+  for (const grid of pageGridRefs.values()) {
+    const { insertRecords, updateRecords } = grid.getRecordset()
+    for (const record of insertRecords as MeetHr[]) {
+      // 新增记录的 id 是前端临时负数（createEmptyMeetHr 用 -Date.now() - seed），交给后端分配
+      record.id = void 0
+      tasks.push(mockAddMeetHr(record))
+    }
+    for (const record of updateRecords as MeetHr[]) {
+      if (record.id) tasks.push(mockUpdateMeetHr(record.id, record))
+    }
+    await grid.clearEdit()
+  }
+  if (tasks.length > 0) await Promise.all(tasks)
+  await onAfterMutation()
+}
+
+async function handleDelete() {
+  const tasks: Promise<unknown>[] = []
+  for (const grid of pageGridRefs.values()) {
+    const selectRecords = grid.getCheckboxRecords()
+    for (const record of selectRecords as MeetHr[]) {
+      // 临时负 id（前端未保存的新增行）跳过，没真入库不需要调 deleteFn
+      if (record.id && record.id > 0) {
+        tasks.push(mockDeleteMeetHr(record.id))
+      }
+    }
+  }
+  if (tasks.length > 0) await Promise.all(tasks)
+  await onAfterMutation()
+}
+
+/**
+ * 取消编辑：先 clearEdit 把 in-flight 的 cell 编辑值 commit 到 updateRecords，
+ * 然后才能读到完整的 insertRecords/updateRecords 并撤销。
+ *
+ * 顺序很关键：若先 getRecordset 再 clearEdit，正在编辑但未 commit 的值会漏掉，
+ * clearEdit 反而把它 commit 进 updateRecords，但还原已过了——结果就是值没还原。
+ *
+ * API：vxe-grid 有 revert 和 revertData 两个方法，但只有 revertData 真正还原 source
+ * （revert 在 v4 下未生效，可能是签名变更或被废弃）；remove(insertRecords) 撤销新增行。
+ */
+async function handleCancel() {
+  for (const grid of pageGridRefs.values()) {
+    await grid.clearEdit()
+    const { insertRecords, updateRecords } = grid.getRecordset()
+    if (insertRecords.length > 0) {
+      await grid.remove(insertRecords)
+    }
+    if (updateRecords.length > 0) {
+      // revertData 把行还原到 keepSource 的原始数据，需要 gridOptions.keepSource=true
+      await grid.revertData(updateRecords)
+    }
+  }
+  editingPageIdx.value = null
+  isEditing.value = false
+}
+
+/**
+ * 增删改后回调：全局行号位移（add 在尾部 +1，delete -N），整个 rowCache 失效。
+ * 重新拉 total 和当前可见范围（保留 scrollTop 让用户视觉位置不变）。
+ */
+async function onAfterMutation() {
+  rowCache.value = new Map()
+  total.value = await mockGetMeetHrCount()
+  editingPageIdx.value = null
+  isEditing.value = false
+  // 等 nextTick 让 totalPages / spacerHeight / renderedPageIndices 全部按新 total 重算
+  await nextTick()
+  await ensurePagesLoaded(renderedPageIndices.value)
+}
+
+// ESC 键取消编辑：在编辑态（editingPageIdx !== null）按 Esc 触发 handleCancel。
+// 用 useEventListener 自动在组件卸载时清理，避免泄漏。
+// 注：vxe-grid 自身可能也监听 Esc（关闭 cell edit），但不会清 insertRecords/updateRecords，
+// 这里在 window 层兜底，保证 Esc 后所有未保存变更全部丢弃。
+useEventListener(window, 'keydown', (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && editingPageIdx.value !== null) {
+    void handleCancel()
+  }
+})
 
 // ==================== 客户端尺寸监听 ====================
 
@@ -266,6 +448,8 @@ useResizeObserver(scrollShellEl, (entries) => {
 // ==================== pageSize 变化 ====================
 
 watch(pageSize, (newSize, oldSize) => {
+  // 编辑中不允许切 pageSize：pageSize 变化会重排 renderedPageIndices，编辑中的 grid 可能被卸载
+  if (editingPageIdx.value !== null) return
   // 切换分页大小：行缓存按"全局行号"索引，与 pageSize 无关，已缓存行全部保留；
   // 这里只调整滚动位置——目标是"视口顶端看到的还是原来那行"。
   //
@@ -420,50 +604,110 @@ if (window !== void 0) {
 
 <template>
   <div :class="$style.root">
-    <div :class="$style.toolbar">
-      <label :class="$style.fieldLabel">
-        分页大小
-        <NSelect
-          v-model:value="pageSize"
-          :options="pageSizeOptions"
-          size="small"
-          :class="$style.pageSizeSelect"
-        />
-      </label>
-      <label :class="$style.fieldLabel">
-        跳转到第
-        <NInputNumber
-          v-model:value="jumpTarget"
-          size="small"
-          :min="1"
-          :max="Math.max(totalPages, 1)"
-          :class="$style.jumpInput"
-          @keyup.enter="jumpToPage"
-        />
-        页
-        <button type="button" :class="$style.jumpBtn" @click="jumpToPage">Go</button>
-      </label>
-      <span :class="$style.status">
-        当前第 {{ currentVisiblePage }} / {{ totalPages }} 页 · 共 {{ total }} 条 · 已缓存
-        {{ rowCache.size }} 行 · 渲染 {{ renderedPageIndices.length }} 页 · scrollTop
-        {{ Math.round(scrollTop) }}px
-      </span>
-    </div>
-    <div ref="scrollShellEl" :class="$style.scrollShell" @scroll.passive="onScroll">
-      <div :class="$style.spacer" :style="{ height: spacerHeight + 'px' }">
-        <div
-          v-for="pageIdx in renderedPageIndices"
-          :key="pageIdx"
-          :class="$style.pageBlock"
-          :style="{ top: pageIdx * pageBlockHeight + 'px', height: pageBlockHeight + 'px' }"
+    <CrudToolbar @insert="handleInsert" @delete="handleDelete" @save="handleSave">
+      <template #cancel>
+        <button
+          v-if="editingPageIdx !== null"
+          type="button"
+          :class="$style.btnCancel"
+          @click="handleCancel"
         >
-          <div :class="$style.pageDivider">
-            <span :class="$style.pageDividerText">第 {{ pageIdx + 1 }} 页</span>
-          </div>
-          <div :class="$style.gridWrapper">
-            <vxe-grid v-bind="gridOptions" height="100%" :data="renderedPageData.get(pageIdx) ?? []" />
+          取消
+        </button>
+      </template>
+      <div :class="$style.navGroup">
+        <label :class="$style.fieldLabel">
+          分页大小
+          <NSelect
+            v-model:value="pageSize"
+            :options="pageSizeOptions"
+            size="small"
+            :disabled="editingPageIdx !== null"
+            :class="$style.pageSizeSelect"
+          />
+        </label>
+        <!-- 当前页 + 上下页按钮：完整的页码导航控件 -->
+        <div :class="$style.pageNav">
+          <button
+            type="button"
+            :class="$style.navBtn"
+            :disabled="editingPageIdx !== null || currentVisiblePage <= 1"
+            title="上一页"
+            @click="prevPage"
+          >
+            ‹
+          </button>
+          <span :class="$style.pageBadge">{{ currentVisiblePage }} / {{ totalPages }} 页</span>
+          <button
+            type="button"
+            :class="$style.navBtn"
+            :disabled="editingPageIdx !== null || currentVisiblePage >= totalPages"
+            title="下一页"
+            @click="nextPage"
+          >
+            ›
+          </button>
+        </div>
+        <label :class="$style.fieldLabel">
+          跳转到第
+          <NInputNumber
+            v-model:value="jumpTarget"
+            size="small"
+            :min="1"
+            :max="Math.max(totalPages, 1)"
+            :disabled="editingPageIdx !== null"
+            :class="$style.jumpInput"
+            @keyup.enter="jumpToPage"
+          />
+          页
+          <button
+            type="button"
+            :class="$style.jumpBtn"
+            :disabled="editingPageIdx !== null"
+            @click="jumpToPage"
+          >
+            Go
+          </button>
+        </label>
+      </div>
+      <span :class="$style.status">
+        共 {{ total }} 条 · 已缓存 {{ rowCache.size }} 行 · 渲染 {{ renderedPageIndices.length }} 页 ·
+        scrollTop {{ Math.round(scrollTop) }}px<template v-if="editingPageIdx !== null">
+          · <span :class="$style.editingTag">编辑中（第 {{ editingPageIdx + 1 }} 页，Esc 取消）</span>
+        </template>
+      </span>
+    </CrudToolbar>
+    <div :class="$style.tableContainer">
+      <div
+        ref="scrollShellEl"
+        :class="[$style.scrollShell, editingPageIdx !== null && $style.scrollLocked]"
+        @scroll.passive="onScroll"
+      >
+        <div :class="$style.spacer" :style="{ height: spacerHeight + 'px' }">
+          <div
+            v-for="pageIdx in renderedPageIndices"
+            :key="pageIdx"
+            :class="$style.pageBlock"
+            :style="{ top: pageIdx * pageBlockHeight + 'px', height: pageBlockHeight + 'px' }"
+          >
+            <div :class="$style.pageDivider">
+              <span :class="$style.pageDividerText">第 {{ pageIdx + 1 }} 页</span>
+            </div>
+            <div :class="$style.gridWrapper">
+              <vxe-grid
+                :ref="(el) => setPageGridRef(pageIdx, el as VxeGridInstance | null)"
+                v-bind="gridOptions"
+                height="100%"
+                :data="renderedPageData.get(pageIdx) ?? []"
+                @edit-actived="() => handleEditActived(pageIdx)"
+                @edit-closed="handleEditClosed"
+              />
+            </div>
           </div>
         </div>
+      </div>
+      <div v-if="editingPageIdx !== null" :class="$style.scrollLockOverlay">
+        <span>编辑中 · 滚动 / 分页 / 跳页已锁定（保存、删除或按 Esc 解锁）</span>
       </div>
     </div>
   </div>
@@ -478,20 +722,86 @@ if (window !== void 0) {
   flex-direction: column;
 }
 
-.toolbar {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-
 .fieldLabel {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
   color: #555;
+}
+
+/* 取消按钮：中性灰，语义弱于"保存/删除"。基础 button 样式从 CrudToolbar 的
+ * `.toolbar > button` 继承（直接子按钮），这里只覆盖颜色 */
+.btnCancel {
+  color: #fff;
+  background-color: #909399;
+  border-color: #909399;
+}
+
+.btnCancel:hover {
+  background-color: #a6a9ad;
+  border-color: #a6a9ad;
+}
+
+/* 导航组：把"分页大小 / 当前页码 / 跳页"三个相关控件视觉聚合成一组，
+ * 与 CRUD 按钮、状态行之间用 border-left 留视觉分隔。
+ * 注意：内部按钮（‹ › Go）嵌套在此 div 内，不是 .toolbar 的直接子，
+ * 所以不会被 CrudToolbar 的 `.toolbar > button` 大 padding 污染 */
+.navGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  padding-left: 12px;
+  margin-left: 4px;
+  border-left: 1px solid #e8e8e8;
+}
+
+.pageNav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* navBtn / jumpBtn 用 `.pageNav .navBtn` / `.fieldLabel .jumpBtn` 提高特异性 (0,2,0)，
+ * 覆盖 CrudToolbar 的 `.toolbar button` (0,1,1)——后者虽源码是 `.toolbar > button`，
+ * 但 Vite+ 的 CSS 编译把 `>` 剥成后代选择器，会污染到 navGroup 内的按钮 */
+.pageNav .navBtn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid #dcdfe6;
+  background-color: #fff;
+  color: #555;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pageNav .navBtn:hover:not(:disabled) {
+  border-color: #409eff;
+  color: #409eff;
+}
+
+.pageNav .navBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+/* 当前页 badge：蓝底白字让用户一眼看到"现在第几页"，和 page divider 风格呼应 */
+.pageBadge {
+  padding: 4px 12px;
+  border-radius: 4px;
+  background-color: #409eff;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 1px;
+  user-select: none;
 }
 
 .pageSizeSelect {
@@ -502,7 +812,7 @@ if (window !== void 0) {
   width: 90px;
 }
 
-.jumpBtn {
+.fieldLabel .jumpBtn {
   padding: 4px 14px;
   border-radius: 4px;
   border: 1px solid #409eff;
@@ -512,9 +822,14 @@ if (window !== void 0) {
   font-size: 12px;
 }
 
-.jumpBtn:hover {
+.fieldLabel .jumpBtn:hover:not(:disabled) {
   background-color: #66b1ff;
   border-color: #66b1ff;
+}
+
+.fieldLabel .jumpBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .status {
@@ -524,6 +839,21 @@ if (window !== void 0) {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+.editingTag {
+  color: #b8860b;
+  font-weight: 600;
+}
+
+/* 表格容器：flex 子项填满 root 剩余空间；position: relative 让 scrollLockOverlay 能绝对定位 */
+.tableContainer {
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
 .scrollShell {
   flex: 1;
   min-height: 0;
@@ -531,6 +861,11 @@ if (window !== void 0) {
   position: relative;
   box-sizing: border-box;
   border: 1px solid #e8e8e8;
+}
+
+/* 编辑中：彻底关掉滚动（不只是锁 state），防止 DOM 滚走导致 grid 卸载丢变更 */
+.scrollLocked {
+  overflow: hidden !important;
 }
 
 .spacer {
@@ -572,5 +907,23 @@ if (window !== void 0) {
   flex: 1;
   min-height: 0;
   box-sizing: border-box;
+}
+
+/* 编辑锁屏：半透明黄色蒙层提示用户滚动已被锁，pointer-events:none 不阻挡 grid 编辑 */
+.scrollLockOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 200, 0, 0.08);
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 12px;
+  font-size: 12px;
+  color: #b8860b;
+  z-index: 10;
 }
 </style>
