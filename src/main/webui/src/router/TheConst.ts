@@ -29,5 +29,6 @@ export const ROUTER_NAMES = {
   TEST_VXE_TABLE_PAGED_INDEX: '/test-vxe-table-paged/',
   TEST_VXE_TABLE_PAGED_INFINITE_CONTEXT: '/test-vxe-table-paged/infinite-context',
   TEST_VXE_TABLE_PAGED_INFINITE_PAGES: '/test-vxe-table-paged/infinite-pages',
+  TEST_VXE_TABLE_PAGED_INFINITE_TRANSFORM_TRICK: '/test-vxe-table-paged/infinite-transform-trick',
   TEST_VXE_TABLE_PAGED_INFINITE_WINDOW: '/test-vxe-table-paged/infinite-window',
 } as const satisfies Record<string, keyof RouteNamedMap>

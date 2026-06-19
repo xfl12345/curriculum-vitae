@@ -147,6 +147,7 @@ declare module 'vue-router/auto-routes' {
       | '/test-vxe-table-paged/'
       | '/test-vxe-table-paged/infinite-context'
       | '/test-vxe-table-paged/infinite-pages'
+      | '/test-vxe-table-paged/infinite-transform-trick'
       | '/test-vxe-table-paged/infinite-window'
     >,
     '/test-vxe-table-paged/': RouteRecordInfo<
@@ -166,6 +167,13 @@ declare module 'vue-router/auto-routes' {
     '/test-vxe-table-paged/infinite-pages': RouteRecordInfo<
       '/test-vxe-table-paged/infinite-pages',
       '/test-vxe-table-paged/infinite-pages',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/test-vxe-table-paged/infinite-transform-trick': RouteRecordInfo<
+      '/test-vxe-table-paged/infinite-transform-trick',
+      '/test-vxe-table-paged/infinite-transform-trick',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -292,6 +300,7 @@ declare module 'vue-router/auto-routes' {
         | '/test-vxe-table-paged/'
         | '/test-vxe-table-paged/infinite-context'
         | '/test-vxe-table-paged/infinite-pages'
+        | '/test-vxe-table-paged/infinite-transform-trick'
         | '/test-vxe-table-paged/infinite-window'
       views:
         | 'default'
@@ -311,6 +320,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/test-vxe-table-paged/infinite-pages.vue': {
       routes:
         | '/test-vxe-table-paged/infinite-pages'
+      views:
+        | never
+    }
+    'src/pages/test-vxe-table-paged/infinite-transform-trick.vue': {
+      routes:
+        | '/test-vxe-table-paged/infinite-transform-trick'
       views:
         | never
     }

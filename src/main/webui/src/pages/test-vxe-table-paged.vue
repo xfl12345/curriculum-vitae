@@ -37,6 +37,11 @@ const tabs: TabDef[] = [
     label: '分页 ListView',
     desc: '每页一个完整 grid（带表头）+ 实心蓝底「第 X 页」分割条 + 跳页',
   },
+  {
+    name: ROUTER_NAMES.TEST_VXE_TABLE_PAGED_INFINITE_TRANSFORM_TRICK,
+    label: 'Transform Trick',
+    desc: '零 DOM 挂载/卸载 + transform 平移 + 双层 z-index（骨架层 + 数据层）+ LRU 缓存',
+  },
 ]
 
 const route = useRoute()
