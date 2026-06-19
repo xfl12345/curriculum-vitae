@@ -23,11 +23,6 @@ const tabs: TabDef[] = [
     desc: 'concat + vxe 自带虚拟滚动 + 滚到底加载下一页',
   },
   {
-    name: ROUTER_NAMES.TEST_VXE_TABLE_PAGED_INFINITE_PLAIN,
-    label: '朴素无限滚动',
-    desc: 'concat 全部数据，无虚拟滚动（反例，会卡）',
-  },
-  {
     name: ROUTER_NAMES.TEST_VXE_TABLE_PAGED_INFINITE_WINDOW,
     label: '50条窗口+HashMap',
     desc: 'DOM 始终 ~80 行 + Map 缓存 + 自定义滚动壳',

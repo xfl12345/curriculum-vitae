@@ -1,8 +1,7 @@
 <script setup lang="ts">
 /**
  * 三个 vxe-table 实现共享的工具栏：「新增 / 删除选中 / 保存」按钮 + 配套样式。
- * 默认插槽放在按钮右侧，给状态行（如「已加载 N 条」）或额外按钮（如 InfinitePlainImpl
- * 的「加载第 N 页」）用。按钮样式 + slot 内 button 的统一样式都在这里维护。
+ * 默认插槽放在按钮右侧，给状态行（如「已加载 N 条」）或额外按钮用。按钮样式 + slot 内 button 的统一样式都在这里维护。
  */
 defineEmits<{
   insert: []
