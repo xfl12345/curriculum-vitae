@@ -2,9 +2,9 @@ import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import { fileURLToPath, URL } from 'node:url'
 import vueDevTools from 'vite-plugin-vue-devtools'
-import { defineConfig, type UserConfig } from 'vite-plus'
-import VueRouter from 'vue-router/vite'
 import { VueRouterAutoGenerateConst } from 'vite-plugin-vue-router-auto-generate-const'
+import { defineConfig, lazyPlugins, type UserConfig } from 'vite-plus'
+import VueRouter from 'vue-router/vite'
 
 // prettier
 const fmt: UserConfig['fmt'] = {
@@ -50,7 +50,7 @@ export default defineConfig({
   base: '/ui',
   fmt,
   lint,
-  plugins: [VueRouter(), VueRouterAutoGenerateConst(), vue(), vueJsx(), vueDevTools()],
+  plugins: lazyPlugins(() => [VueRouter(), VueRouterAutoGenerateConst(), vue(), vueJsx(), vueDevTools()]),
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

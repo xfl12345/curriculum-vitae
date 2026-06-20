@@ -14,11 +14,15 @@ import type {
   ParamValueZeroOrMore,
   ParamValueZeroOrOne,
 } from 'vue-router'
+import type {
+  _ExtractParamParserType,
+} from 'vue-router/experimental'
 
 declare module 'vue-router' {
   interface TypesConfig {
-    ParamParsers:
-      | never
+    _ParamParsers: {}
+    RouteNamedMap: import('vue-router/auto-routes').RouteNamedMap
+    _RouteFileInfoMap: import('vue-router/auto-routes')._RouteFileInfoMap
   }
 }
 
@@ -203,11 +207,15 @@ declare module 'vue-router/auto-routes' {
         | '/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/cv-root-page.vue': {
       routes:
         | '/cv-root-page'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/first-time-loading-page.vue': {
@@ -215,11 +223,15 @@ declare module 'vue-router/auto-routes' {
         | '/first-time-loading-page'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/hr-info-page.vue': {
       routes:
         | '/hr-info-page'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/login-page.vue': {
@@ -227,11 +239,15 @@ declare module 'vue-router/auto-routes' {
         | '/login-page'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/not-found-page.vue': {
       routes:
         | '/not-found-page'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/routes.vue': {
@@ -239,11 +255,15 @@ declare module 'vue-router/auto-routes' {
         | '/routes'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/setting-page.vue': {
       routes:
         | '/setting-page'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/study-blob-url.vue': {
@@ -251,11 +271,15 @@ declare module 'vue-router/auto-routes' {
         | '/study-blob-url'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/test-chatgpt-works.vue': {
       routes:
         | '/test-chatgpt-works'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/test-community-box.vue': {
@@ -263,11 +287,15 @@ declare module 'vue-router/auto-routes' {
         | '/test-community-box'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/test-font-support.vue': {
       routes:
         | '/test-font-support'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/test-hr-info-page.vue': {
@@ -275,11 +303,15 @@ declare module 'vue-router/auto-routes' {
         | '/test-hr-info-page'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/test-page.vue': {
       routes:
         | '/test-page'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/test-resize-observer.vue': {
@@ -287,11 +319,15 @@ declare module 'vue-router/auto-routes' {
         | '/test-resize-observer'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/test-tianai-captcha.vue': {
       routes:
         | '/test-tianai-captcha'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/test-vxe-table-paged.vue': {
@@ -304,11 +340,15 @@ declare module 'vue-router/auto-routes' {
         | '/test-vxe-table-paged/infinite-window'
       views:
         | 'default'
+      pathParamNames:
+        | never
     }
     'src/pages/test-vxe-table-paged/index.vue': {
       routes:
         | '/test-vxe-table-paged/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/test-vxe-table-paged/infinite-context.vue': {
@@ -316,11 +356,15 @@ declare module 'vue-router/auto-routes' {
         | '/test-vxe-table-paged/infinite-context'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/test-vxe-table-paged/infinite-pages.vue': {
       routes:
         | '/test-vxe-table-paged/infinite-pages'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/test-vxe-table-paged/infinite-transform-trick.vue': {
@@ -328,11 +372,15 @@ declare module 'vue-router/auto-routes' {
         | '/test-vxe-table-paged/infinite-transform-trick'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/test-vxe-table-paged/infinite-window.vue': {
       routes:
         | '/test-vxe-table-paged/infinite-window'
       views:
+        | never
+      pathParamNames:
         | never
     }
   }

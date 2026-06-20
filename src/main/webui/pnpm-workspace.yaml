@@ -15,4 +15,13 @@ overrides:
 
 peerDependencyRules:
   allowAny:
-    - 'vue'
+    - vue
+    - vite
+    - vitest
+  allowedVersions:
+    vite: '*'
+    vitest: '*'
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@^0.2.1
+  vitest: npm:@voidzero-dev/vite-plus-test@^0.1.24
+  vite-plus: ^0.2.1
