@@ -140,38 +140,26 @@ const PHONE_PREFIXES = [
   '189',
 ]
 
-// ==================== Seeded PRNG (mulberry32) ====================
-// 固定种子保证刷新页面后数据一致，便于 chrome-devtools 反复测试
+// ==================== 顺序递增辅助函数 ====================
+// 按自然顺序生成数据，每条记录的字段都是确定性的，便于测试和调试
 
-function createRng(seed: number): () => number {
-  let state = seed >>> 0
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0
-    let t = state
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
+/** 按索引从池中循环选取（0-based） */
+function pickByIndex<T>(index: number, pool: readonly T[]): T {
+  return pool[index % pool.length]!
 }
 
-function pick<T>(rand: () => number, pool: readonly T[]): T {
-  return pool[Math.floor(rand() * pool.length)]!
-}
-
-function randomPhoneNumber(rand: () => number): string {
-  const prefix = pick(rand, PHONE_PREFIXES)
-  let suffix = ''
-  for (let i = 0; i < 8; i++) {
-    suffix += String(Math.floor(rand() * 10))
-  }
+/** 按索引生成递增手机号：1300000001, 1300000002, ... */
+function phoneNumberByIndex(index: number): string {
+  const prefix = PHONE_PREFIXES[index % PHONE_PREFIXES.length]!
+  const suffix = String(index + 1).padStart(8, '0')
   return prefix + suffix
 }
 
-function randomDateTimeString(rand: () => number): string {
-  // 过去 365 天内随机时间，格式 YYYY-MM-DDTHH:MM:SS（无时区，匹配 formatIsoTime 的 PlainDateTime 解析）
-  const now = Date.now()
-  const offsetMs = Math.floor(rand() * 365 * 24 * 60 * 60 * 1000)
-  const d = new Date(now - offsetMs)
+/** 按索引生成递增时间戳：从基准时间开始，每条记录间隔 1 天 */
+function dateTimeByIndex(index: number): string {
+  // 基准时间：2025-01-01T00:00:00，每条记录间隔 1 天
+  const baseTime = new Date(2025, 0, 1)
+  const d = new Date(baseTime.getTime() + index * 24 * 60 * 60 * 1000)
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
@@ -183,17 +171,16 @@ let nextId = 1
 
 function ensureGenerated(): void {
   if (mockDB.size > 0) return
-  const rand = createRng(0x5eeded)
-  const baseTime = randomDateTimeString(rand)
   for (let i = 1; i <= MOCK_TOTAL; i++) {
+    const idx = i - 1 // 0-based 索引，用于顺序选取
     mockDB.set(i, {
       id: i,
-      hrName: pick(rand, HR_NAMES),
-      hrPhoneNumber: randomPhoneNumber(rand),
-      hrJob: pick(rand, HR_JOBS),
-      myJob: pick(rand, MY_JOBS),
-      note: pick(rand, NOTE_TEMPLATES),
-      createTime: baseTime,
+      hrName: pickByIndex(idx, HR_NAMES),
+      hrPhoneNumber: phoneNumberByIndex(idx),
+      hrJob: pickByIndex(idx, HR_JOBS),
+      myJob: pickByIndex(idx, MY_JOBS),
+      note: pickByIndex(idx, NOTE_TEMPLATES),
+      createTime: dateTimeByIndex(idx),
       firstVisitTime: null,
       lastVisitTime: null,
     })
