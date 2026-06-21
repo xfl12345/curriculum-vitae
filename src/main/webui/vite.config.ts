@@ -57,6 +57,8 @@ export default defineConfig({
     },
   },
   server: {
+    host: '::',
+    allowedHosts: ['.internal'],
     proxy: {
       '/api': 'http://localhost:8880',
     },
