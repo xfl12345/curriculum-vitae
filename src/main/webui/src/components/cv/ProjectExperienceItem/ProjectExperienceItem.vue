@@ -14,10 +14,7 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <CardView
-    :the-font-size-in-pixel="theFontSizeInPixel"
-    the-background-color="greenyellow"
-  >
+  <CardView :the-font-size-in-pixel="theFontSizeInPixel" the-background-color="greenyellow">
     <div :class="$style.header">
       <TextPrettier :class="$style.headerItem" :content="thePeriod" />
       <TextPrettier :class="$style.headerItem" :content="theName" />

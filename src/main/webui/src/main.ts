@@ -11,6 +11,7 @@ import { router } from '@/router'
 
 import App from './App.vue'
 import '@/assets/main.css'
+
 import { registerAppAlovaHooks, unregisterAppAlovaHooks } from './model/web'
 
 registerAppAlovaHooks()

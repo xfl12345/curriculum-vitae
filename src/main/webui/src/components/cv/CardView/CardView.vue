@@ -14,12 +14,7 @@ const oneEighthFontSizeInPixel = computed(() => Math.floor(quarterFontSizeInPixe
 const quarterFontSize = computed(() => quarterFontSizeInPixel.value + 'px')
 const oneEighthFontSize = computed(() => oneEighthFontSizeInPixel.value + 'px')
 const rootMargin = computed(() =>
-  [
-    oneEighthFontSize.value,
-    quarterFontSize.value,
-    quarterFontSize.value,
-    quarterFontSize.value,
-  ].join(' ')
+  [oneEighthFontSize.value, quarterFontSize.value, quarterFontSize.value, quarterFontSize.value].join(' ')
 )
 const boxShadow = computed(() => {
   const fSize = oneEighthFontSize.value

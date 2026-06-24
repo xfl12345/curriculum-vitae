@@ -7,7 +7,7 @@ const phone = ref('123-456-7890')
 const location = ref('City, State')
 
 const summary = ref(
-  'A brief introduction of yourself highlighting your career objectives, key skills and achievements.',
+  'A brief introduction of yourself highlighting your career objectives, key skills and achievements.'
 )
 
 const skills = ref(['Skill 1', 'Skill 2', 'Skill 3'])
