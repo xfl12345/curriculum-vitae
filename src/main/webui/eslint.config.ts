@@ -5,6 +5,7 @@ import { configureVueProject } from '@vue/eslint-config-typescript'
 import skipFormatting from 'eslint-config-prettier/flat'
 import pluginVue from 'eslint-plugin-vue'
 import { globalIgnores } from 'eslint/config'
+import { DEFAULT_OPTIONS as VueRouterAutoGenerateConstPluginDefaultOptions } from 'vite-plugin-vue-router-auto-generate-const'
 
 // More info at https://github.com/vuejs/eslint-config-typescript/#advanced-setup
 configureVueProject({ scriptLangs: ['ts', 'tsx'] })
@@ -19,8 +20,8 @@ export default defineConfigWithVueTs(
     '**/dist/**',
     '**/dist-ssr/**',
     '**/coverage/**',
-    'typed-router.d.ts',
-    'src/router/TheConst.ts',
+    VueRouterAutoGenerateConstPluginDefaultOptions.typedRouterFile.path,
+    VueRouterAutoGenerateConstPluginDefaultOptions.generatedConstFile.path,
   ]),
 
   ...pluginVue.configs['flat/essential'],

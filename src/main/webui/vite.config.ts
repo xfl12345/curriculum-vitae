@@ -2,12 +2,19 @@ import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import { fileURLToPath, URL } from 'node:url'
 import vueDevTools from 'vite-plugin-vue-devtools'
-import { VueRouterAutoGenerateConst } from 'vite-plugin-vue-router-auto-generate-const'
+import {
+  VueRouterAutoGenerateConst,
+  DEFAULT_OPTIONS as VueRouterAutoGenerateConstPluginDefaultOptions,
+} from 'vite-plugin-vue-router-auto-generate-const'
 import { defineConfig, lazyPlugins, type UserConfig } from 'vite-plus'
 import VueRouter from 'vue-router/vite'
 
 // prettier
 const fmt: UserConfig['fmt'] = {
+  ignorePatterns: [
+    VueRouterAutoGenerateConstPluginDefaultOptions.typedRouterFile.path,
+    VueRouterAutoGenerateConstPluginDefaultOptions.generatedConstFile.path,
+  ],
   semi: false,
   singleQuote: true,
   jsxSingleQuote: true,
