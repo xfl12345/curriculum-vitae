@@ -28,23 +28,48 @@
 
 import type { VxeGridInstance, VxeGridProps } from 'vxe-table'
 
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import type { MeetHr } from '@/model/web/api/meet-hr'
 
 interface Props {
-  /** 面板固定 ID（用于 v-for key 和 grid 实例收集，永不变化） */
+  /** 面板固定 ID（用于 v-for key 和 reactive Map 的索引，永不变化） */
   panelId: number
-  /** 当前显示的页号（0-based）。父组件按滚动模式决定何时更新 */
-  pageIdx: number
+  /**
+   * 父组件维护的「panelId → pageIdx」reactive Map（坦克履带模式）。
+   *
+   * 父组件用数论取模代表元算法 + watch diff 只更新变化的 entry，
+   * 子组件自己 computed 读自己 panelId 对应的 entry——Vue 3 reactive Map 的 get
+   * 只追踪该 key，其他 key 的 set 不触发本 computed 重算。
+   *
+   * 这就是「坦克履带」精准响应式的关键：每次滚动只有 1 个 panelId 的 pageIdx 真变化，
+   * 对应那一格 DataPanel 才 re-render（包括 vxe-grid 的 :data 重算），其他 DataPanel
+   * 完全不受影响——避免了「全表格重新加载数据」的开销。
+   */
+  pageIdxMap: Map<number, number>
   /** 单页块高度。所有面板共享同一公式 translateY(pageIdx × pageBlockHeight) */
   pageBlockHeight: number
   /** 分割条高度（与骨架层一致，让两层在垂直方向完美对齐） */
   dividerHeight: number
   /** vxe-grid 配置（columns/editConfig 等）。父级 memoize 后传同一引用 */
   gridOptions: VxeGridProps<MeetHr>
-  /** 该页的行数据。父级用 memoize 保证引用稳定，未加载时传空数组 */
-  data: MeetHr[]
+  /**
+   * 父级数据构造器：按 pageIdx 构造该页行数组（含 memoize + EMPTY_ROWS 兜底）。
+   *
+   * 设计缘由：把 data 的构造放到子组件内部 computed 里——避免父组件 render effect
+   * 追踪所有 panelId 的 Map entry（违背「坦克履带精准响应式」原则）。
+   * 父级只传一个稳定的函数引用 + 一个会 bump 的 dataVersion 数字，
+   * 子组件自己读自己 panelId 的 pageIdx + 自己调 buildPageData(pageIdx)。
+   */
+  buildPageData: (pageIdx: number) => MeetHr[]
+  /**
+   * 数据版本号：父级在 rowCache/cachedPageSet/pageDataMemo 这些**非响应式**容器
+   * 变更后显式 bump，作为唯一响应式触发点让本面板的 data computed 重算。
+   *
+   * 不在 buildPageData 里搞响应式追踪是因为 rowCache 是 Map（1000 行 × N 列），
+   * 深度 reactive 会带来沉重开销。dataVersion 一个数字的 patch 成本忽略不计。
+   */
+  dataVersion: number
 }
 
 const props = defineProps<Props>()
@@ -56,28 +81,120 @@ const emit = defineEmits<{
   editClosed: []
 }>()
 
+/**
+ * 本面板当前显示的页号：从父组件传入的 reactive Map 中读自己的 entry。
+ *
+ * 设计缘由：让响应式追踪发生在子组件内部——只有 map.set(本 panelId, 新值) 才会触发
+ * 本 computed 重算，map.set(其他 panelId, ...) 不影响本面板。这就是「坦克履带」
+ * 精准响应式的关键：滚动时只 1 个 panelId 真变，对应那一格 DataPanel（含 vxe-grid）
+ * 才重渲染，避免「全表格重新加载数据」的开销。
+ *
+ * ?? -1 兜底：Map 初始化或异常时 entry 可能缺失；越界 pageIdx 由父组件写入 -1，
+ * buildPageData 已对越界值返回 EMPTY_ROWS，grid 实例不卸载只显示空。
+ */
+const pageIdx = computed(() => props.pageIdxMap.get(props.panelId) ?? -1)
+
+/**
+ * 本面板当前显示的行数组。
+ *
+ * 响应式追踪收敛在子组件内部：
+ * - 依赖 1：pageIdx（来自 props.pageIdxMap.get(panelId)，只追踪本 panelId 的 key）
+ * - 依赖 2：props.dataVersion（父级在 rowCache 变更后 bump，作为非响应式 Map 的代理触发点）
+ *
+ * 父级 buildPageData 内部用 pageDataMemo 做 O(1) 浅比较命中：当 pageIdx 未变且
+ * dataVersion bump 但本页行对象引用都未变时（其他面板的页加载完毕），memoize 直接
+ * 返回旧数组引用，vxe-grid 看到引用未变会跳过 calcCellHeight 等强制 reflow。
+ */
+const data = computed<MeetHr[]>(() => {
+  void props.dataVersion
+  return props.buildPageData(pageIdx.value)
+})
+
 const gridRef = ref<VxeGridInstance>()
 
 function onEditActived() {
   // 透传 pageIdx 给父级：父级用 pageIdx 路由后续 CRUD 操作（哪个 grid 进入编辑）
-  emit('editActived', props.pageIdx)
+  emit('editActived', pageIdx.value)
 }
 
 function onEditClosed() {
   emit('editClosed')
 }
 
-// 暴露 grid 实例给父级：父级用 panelId 收集，CRUD 时取出对应实例
-defineExpose({
-  getGrid: () => gridRef.value,
-})
+// ==================== 暴露给父级的语义化操作 ====================
+//
+// 设计缘由：父组件不应直接操作 vxe-grid 实例（脏、紧耦合、易误用）。
+// 这里封装父组件需要的 4 个 CRUD 原语，把 grid 实例藏在 DataPanel 内部。
+// 父组件用 template ref 数组收集所有 DataPanel 实例，按 panelId 索引取用。
+
+/**
+ * 新增：在当前 grid 顶部插入一行并立即进入编辑态。
+ * @param emptyRow 父组件构造的空记录（含默认值），由父级决定字段语义
+ */
+async function insert(emptyRow: MeetHr): Promise<void> {
+  const grid = gridRef.value
+  if (!grid) return
+  const { row } = await grid.insert(emptyRow)
+  await grid.setEditRow(row)
+}
+
+/**
+ * 读取待提交的变更（不修改编辑状态）。
+ *
+ * 父级保存流程：先读所有面板的 pending changes 收集 API 任务，再统一调 clearEdit。
+ * 不在此方法内 clearEdit：父级可能想先校验/聚合多面板变更再决定是否清编辑态。
+ */
+function getPendingChanges(): { insertRecords: MeetHr[]; updateRecords: MeetHr[] } {
+  const grid = gridRef.value
+  if (!grid) return { insertRecords: [], updateRecords: [] }
+  const { insertRecords, updateRecords } = grid.getRecordset()
+  return {
+    insertRecords: insertRecords as MeetHr[],
+    updateRecords: updateRecords as MeetHr[],
+  }
+}
+
+/** 读取多选勾选的行（删除用） */
+function getSelectedRecords(): MeetHr[] {
+  const grid = gridRef.value
+  if (!grid) return []
+  return grid.getCheckboxRecords() as MeetHr[]
+}
+
+/** 关闭编辑态（不还原数据）。保存流程的最后一步 */
+async function clearEdit(): Promise<void> {
+  await gridRef.value?.clearEdit()
+}
+
+/**
+ * 取消编辑：clearEdit 让 in-flight 编辑值 commit 到 updateRecords，
+ * 再 getRecordset 读完整变更并撤销。
+ *
+ * 顺序很关键：先 getRecordset 再 clearEdit 会漏掉正在编辑的值
+ * （clearEdit 反而把它 commit 进 updateRecords，但还原已过）。
+ */
+async function cancel(): Promise<void> {
+  const grid = gridRef.value
+  if (!grid) return
+  await grid.clearEdit()
+  const { insertRecords, updateRecords } = grid.getRecordset()
+  if (insertRecords.length > 0) {
+    await grid.remove(insertRecords)
+  }
+  if (updateRecords.length > 0) {
+    // revertData 把行还原到 keepSource 的原始数据，需要 gridOptions.keepSource=true
+    await grid.revertData(updateRecords)
+  }
+}
+
+defineExpose({ insert, getPendingChanges, getSelectedRecords, clearEdit, cancel })
 </script>
 
 <template>
   <div
     :class="$style.panel"
     :style="{
-      transform: `translateY(${props.pageIdx * props.pageBlockHeight}px)`,
+      transform: `translateY(${pageIdx * props.pageBlockHeight}px)`,
       height: `${props.pageBlockHeight}px`,
     }"
   >
@@ -87,7 +204,7 @@ defineExpose({
          OUT_OF_RANGE 时数据层在旧 pageIdx 冻结，骨架层在新 pageIdx 显示分割条，
          两层位于不同 translateY 位置永不重叠，不会出现"双分割条" -->
     <div :class="$style.pageDivider" :style="{ height: `${props.dividerHeight}px` }">
-      <span :class="$style.pageDividerText">第 {{ props.pageIdx + 1 }} 页</span>
+      <span :class="$style.pageDividerText">第 {{ pageIdx + 1 }} 页</span>
     </div>
 
     <div :class="$style.gridWrapper">
@@ -95,7 +212,7 @@ defineExpose({
         ref="gridRef"
         v-bind="props.gridOptions"
         height="auto"
-        :data="props.data"
+        :data="data"
         @edit-actived="onEditActived"
         @edit-closed="onEditClosed"
       />

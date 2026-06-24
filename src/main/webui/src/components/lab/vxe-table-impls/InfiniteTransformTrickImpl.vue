@@ -29,17 +29,16 @@
  * 性能目标：滚动 0 卡顿，DOM 节点数恒定，FPS 稳定 60
  */
 
-import type { VxeGridInstance, VxeGridProps } from 'vxe-table'
+import type { VxeGridProps } from 'vxe-table'
 
 import { useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { NInputNumber, NSelect } from 'naive-ui'
-import { computed, nextTick, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 
 import type { MeetHr } from '@/model/web/api/meet-hr'
 
 import CrudToolbar from './CrudToolbar.vue'
 import DataPanel from './DataPanel.vue'
-import SkeletonPanel from './SkeletonPanel.vue'
 import {
   mockAddMeetHr,
   mockDeleteMeetHr,
@@ -48,8 +47,30 @@ import {
   mockUpdateMeetHr,
 } from './mock-data'
 import { buildMeetHrColumns, clamp, createEmptyMeetHr, ROW_HEIGHT } from './shared'
+import SkeletonPanel from './SkeletonPanel.vue'
 
 // ==================== 常量 ====================
+
+/**
+ * 滚动模式：根据当前可见页是否已缓存判定。
+ *
+ * 设计缘由：用字符串字面量类型（'IN_RANGE' | 'OUT_OF_RANGE'）会让每个使用点
+ * 都散落魔法字符串，且没有 IDE 的"跳转到定义 / 重命名 / 检查遗漏"支持。
+ * enum 既能做值（scrollMode computed 返回）、又能做类型（接口字段、函数签名），
+ * 让"模式"这个概念在代码里有一个具名中心。
+ */
+enum ScrollMode {
+  /**
+   * 当前可见的所有页都在 rowCache 内（cachedPageSet 命中）。
+   * 数据层即时跟踪 scrollTop——同 tick 让 dataScrollTop 跟上，无缝滚动。
+   */
+  IN_RANGE = 'IN_RANGE',
+  /**
+   * 可见页中有任何一页未缓存，视为超速滚动。
+   * 数据层节流（300ms 一次），期间骨架层先闪电追到新位置显示 shimmer 兜底。
+   */
+  OUT_OF_RANGE = 'OUT_OF_RANGE',
+}
 
 /** 页分割条高度（与 SkeletonPanel/DataPanel 内部 CSS 严格一致） */
 const DIVIDER_HEIGHT = 40
@@ -66,14 +87,25 @@ const MAX_CACHED_PAGES = 10
 
 const scrollShellEl = ref<HTMLElement>()
 const clientHeight = ref(0)
+/** 骨架层用的实时滚动位置：onScroll 时立即更新，让骨架层闪电响应 */
 const scrollTop = ref(0)
+/**
+ * 数据层用的滚动位置。
+ * - IN_RANGE 时：onScroll 内立即赋值 = scrollTop，数据层同 tick 跟上
+ * - OUT_OF_RANGE 时：每 300ms 在 refreshDataLayer 内赋值一次，节流避免显示空 grid
+ *
+ * 设计缘由：节流的本质是「数据层读 scrollTop 的频率」，而非「冻结 pageIdxs 快照」。
+ * 把节流体现在 dataScrollTop 这个变量上，变量职责就清晰了——scrollTop 永远实时，
+ * dataScrollTop 永远是「数据层最后一次承认要追到的位置」。
+ */
+const dataScrollTop = ref(0)
 const pageSize = ref(50)
 const total = ref(0)
 
 /**
  * 全局行缓存：globalRowIdx(0-based) → 行数据。
  * 刻意按全局行号而非页号索引——pageSize 切换时缓存不会失效。
- * Map 不响应式：内部修改不触发 patch，由显式 updateDataPanels 在恰当时机刷新视图。
+ * Map 不响应式：内部修改不触发 patch，由 dataVersion ref 显式 bump 触发 dataPanels 重算。
  */
 const rowCache = new Map<number, MeetHr>()
 /** 正在加载的页号集合：防止 watch 在 Promise resolve 前重复触发同一页请求 */
@@ -88,28 +120,55 @@ const jumpTarget = ref(1)
 
 // ==================== 面板数组 ====================
 
-interface SkeletonPanelState {
-  /** 面板固定 ID（用于 v-for key，永不变化） */
-  panelId: number
-  /** 当前显示的页号（0-based） */
-  pageIdx: number
-}
-interface DataPanelState {
-  panelId: number
-  pageIdx: number
-  /** 该页的行数据。引用由 memoize 保证稳定 */
-  data: MeetHr[]
-}
+/**
+ * 面板 ID 列表：[0, 1, 2, ..., panelCount-1]。
+ *
+ * 仅当 panelCount 变化（窗口 resize）时重建——这是合理的开销。
+ * 模板 v-for 用这个列表，传 panelId + Map prop 给子组件。
+ */
+const panelIds = computed<number[]>(() => {
+  const pc = panelCount.value
+  const arr: number[] = []
+  for (let i = 0; i < pc; i++) arr.push(i)
+  return arr
+})
 
-// shallowRef：只追踪数组本身的赋值，内部对象不深度响应。
-// 更新时替换整个数组（newArr），不修改单个元素，性能最优。
-const skeletonPanels = shallowRef<SkeletonPanelState[]>([])
-const dataPanels = shallowRef<DataPanelState[]>([])
+/**
+ * 骨架层 pageIdx Map：panelId → pageIdx（坦克履带）。
+ *
+ * reactive Map 而非 ref<Map>：让 Vue 3 的响应式系统精确追踪每个 key 的 get/set。
+ * 子组件用 props.pageIdxMap.get(panelId) 读取时，只追踪该 key——其他 key 的 set
+ * 不触发该子组件的 computed 重算。这是「坦克履带精准响应式」的根基。
+ *
+ * 由 watchTreadMap 函数手动 diff 更新（每次滚动最多 1 个 entry 变化）。
+ */
+const skeletonPageIdxMap = reactive(new Map<number, number>())
 
-// 面板 grid 实例收集：panelId → VxeGridInstance
-// 通过 DataPanel.defineExpose({ getGrid }) 暴露，父组件用函数 ref 收集
-type DataPanelInstance = InstanceType<typeof DataPanel>
-const dataPanelInstances = new Map<number, DataPanelInstance>()
+/**
+ * 数据层 pageIdx Map：独立于骨架层（互不影响）。
+ * 数据层节流（OUT_OF_RANGE 模式下 300ms 一次跟）通过独立的 dataFirstVisiblePageIdx
+ * 自然体现，无需耦合骨架层。
+ */
+const dataPageIdxMap = reactive(new Map<number, number>())
+
+/**
+ * 数据版本号：rowCache/cachedPageSet/pageDataMemo 都是非响应式容器（性能优化，
+ * 避免深度追踪 1000 行 × N 列），它们的变更不会触发 computed 重算。
+ * 每次数据加载完成、CRUD 清缓存时显式 bump，让数据层 buildPageData 重算有触发点。
+ */
+const dataVersion = ref(0)
+
+/**
+ * DataPanel 实例数组：Vue 3 在 v-for 上用 `ref="dataPanelRefs"` 自动填充数组。
+ * - 数组顺序与 dataPanels computed 的渲染顺序一致（panelId 升序）
+ * - 通过 dataPanelRefs.value[panelId] 取对应实例，O(1) 索引访问
+ *
+ * 与旧的 Map<number, DataPanelInstance> + 函数 ref 模式相比：
+ * - 不再需要"挂载收集/卸载移除"的命令式代码（Vue 自动管理生命周期）
+ * - 不再缓存实例引用，每次访问都读最新值（避免实例失效）
+ * - DataPanel 内部封装了 CRUD 语义方法（insert/save/cancel/delete），父级不直接摸 grid
+ */
+const dataPanelRefs = ref<InstanceType<typeof DataPanel>[]>([])
 
 // ==================== memoize（避免 :data 频繁变化触发 vxe-grid 全量重渲染）====================
 
@@ -121,7 +180,10 @@ const EMPTY_ROWS: MeetHr[] = []
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
 const pageBlockHeight = computed(() => DIVIDER_HEIGHT + HEADER_HEIGHT + pageSize.value * ROW_HEIGHT)
 const spacerHeight = computed(() => totalPages.value * pageBlockHeight.value)
+/** 骨架层的可见页号：基于实时 scrollTop 派生，闪电响应 */
 const firstVisiblePageIdx = computed(() => Math.floor(scrollTop.value / pageBlockHeight.value))
+/** 数据层的可见页号：基于节流版 dataScrollTop 派生，跟随 dataScrollTop 的更新节奏 */
+const dataFirstVisiblePageIdx = computed(() => Math.floor(dataScrollTop.value / pageBlockHeight.value))
 const currentVisiblePage = computed(() =>
   totalPages.value === 0 ? 0 : clamp(firstVisiblePageIdx.value + 1, 1, totalPages.value)
 )
@@ -142,6 +204,7 @@ const panelCount = computed(() => {
 })
 
 const pageSizeOptions = [
+  { label: '5 条/页', value: 5 },
   { label: '20 条/页', value: 20 },
   { label: '50 条/页', value: 50 },
   { label: '100 条/页', value: 100 },
@@ -165,41 +228,113 @@ const gridOptions: VxeGridProps<MeetHr> = {
   columns: buildMeetHrColumns(),
 }
 
-// ==================== 面板 pageIdx 计算 ====================
+// ==================== 坦克履带 pageIdx 计算 ====================
 
 /**
- * 计算 panelCount 个面板应该显示的 pageIdx 数组。
+ * 坦克履带算法：给定 firstVisible / buffer / panelCount，计算每个 panelId 的 pageIdx。
  *
- * 策略：让 firstVisiblePageIdx 处于面板数组中间偏前位置——
- * 前面有 visiblePerPageBlock 个预备（覆盖刚滚出视口的页），
- * 后面有 visiblePerPageBlock 个预备（覆盖即将进入视口的页）。
+ * 核心数学（数论取模代表元）：
+ * 每个 panelId 有固定 anchor（= panelId 自身），它的 pageIdx 必须满足：
+ *   pageIdx ≡ anchor (mod panelCount)
+ * 且落在窗口 [firstVisible - buffer, firstVisible - buffer + panelCount) 内。
+ * 这是数论中"取模代表元"问题——给定 anchor 和 panelCount，找出窗口内唯一满足
+ * pageIdx ≡ anchor (mod panelCount) 的整数：
+ *   pageIdx_k = anchor_k + ceil((lowerBound - anchor_k) / panelCount) × panelCount
  *
- * 边界 clamp：
- * - start < 0 时归 0（视口在头部时，预备被压缩到一边）
- * - start > maxStart 时归 maxStart（视口在尾部时同理）
- * - maxStart = max(0, total - panelCount)，避免面板数组末尾越过 totalPages
+ * 关键性质（坦克履带的精髓）：
+ * - 每次 firstVisible ±1，最多只有 1 个 panelId 的 pageIdx 变化（±panelCount）
+ * - 其他 panelId 的 pageIdx 保持不变 → translateY 不变 → 该子组件完全无感
+ * - 用户看到的"滚动"由 scroll-shell.scrollTop 体现，不是 panelId 自己的 transform 变化
  *
- * 末尾若总页数 < panelCount，pageIdx 仍按 0,1,2,... 顺序排（可能 > total-1），
- * buildPageData 会返回 EMPTY_ROWS，面板永远活着不卸载。
+ * 这才是真正的「DOM 元素平移魔法」——而非"整体平移 pageIdx 让所有 panelId 重新设置 data"。
+ *
+ * @param firstVisible 当前视口顶可见的页号（0-based）
+ * @param buffer 视口上方的预备页数（panelCount 的 1/3 左右，1 倍视口宽）
+ * @param panelCount 面板总数
+ * @returns 索引即 panelId 的 pageIdx 数组（可能有越界值，由 buildPageData 返回 EMPTY_ROWS 兜底）
  */
-function computePanelPageIdxs(): number[] {
-  const tp = totalPages.value
-  const pc = panelCount.value
-  if (tp === 0 || pc === 0) return []
-
-  const visiblePerPageBlock = Math.max(1, Math.ceil(clientHeight.value / pageBlockHeight.value))
-  const startOffset = visiblePerPageBlock
-  let start = firstVisiblePageIdx.value - startOffset
-  if (start < 0) start = 0
-  const maxStart = Math.max(0, tp - pc)
-  if (start > maxStart) start = maxStart
-
+function buildTreadPageIdxs(firstVisible: number, buffer: number, panelCount: number): number[] {
+  if (panelCount === 0) return []
+  const lowerBound = firstVisible - buffer
   const arr: number[] = []
-  for (let i = 0; i < pc; i++) {
-    arr.push(start + i)
+  for (let panelId = 0; panelId < panelCount; panelId++) {
+    const anchor = panelId
+    // 数论取模代表元：找最小的 k 使 anchor + k×panelCount ≥ lowerBound，
+    // 即 k = ceil((lowerBound - anchor) / panelCount)。
+    //
+    // 用 Math.ceil 直接算——JS 内置 ceil 对正负参数都正确：
+    // - ceil(-1/3) = 0（不能用 Math.floor(-1/3)=-1，那会让 lowerBound=-1 时所有 panelId
+    //   都退到 -3/-2/-1 越界，首屏看不到第 0 页）
+    // - ceil(1/3) = 1（firstVisible 推进时正确换页）
+    const k = Math.ceil((lowerBound - anchor) / panelCount)
+    arr.push(anchor + k * panelCount)
   }
   return arr
 }
+
+/**
+ * 视口缓冲页数：1 倍视口宽（与 panelCount = visiblePerPageBlock × 3 配合，
+ * 让 firstVisible 处于面板数组的"中间偏前"，上下各 1 倍预备）。
+ */
+const treadBuffer = computed(() => Math.max(1, Math.ceil(clientHeight.value / pageBlockHeight.value)))
+
+/**
+ * 用坦克履带算法 + diff 更新 reactive Map。
+ *
+ * 设计缘由：避免「整体平移 pageIdx 让所有 panelId 重设 data」。
+ * - 算出 newIdxs[panelId] 数组
+ * - 跟当前 Map 对比：只 set 变化的 entry（其他 entry 保持引用稳定）
+ * - 删除超出 panelCount 范围的多余 entry（panelCount 变小时）
+ *
+ * 每次 firstVisible ±1 时，最多只有 1 个 entry 变化 → 只 1 个子组件 re-render。
+ * 跳页（firstVisible 大幅跳跃）时多个 entry 同时变，diff 一次性更新。
+ */
+function updateTreadMap(map: Map<number, number>, firstVisible: number, buffer: number, pc: number): void {
+  if (pc === 0) {
+    // panelCount=0 兜底：清空所有 entry
+    for (const k of Array.from(map.keys())) map.delete(k)
+    return
+  }
+  const newIdxs = buildTreadPageIdxs(firstVisible, buffer, pc)
+  // 更新/添加 [0, pc) 范围内的 entry
+  for (let i = 0; i < pc; i++) {
+    const newIdx = newIdxs[i]!
+    if (map.get(i) !== newIdx) {
+      map.set(i, newIdx)
+    }
+  }
+  // 清理 [pc, ∞) 范围内的多余 entry（panelCount 减少时）
+  for (const k of Array.from(map.keys())) {
+    if (k >= pc) map.delete(k)
+  }
+}
+
+// 骨架层 Map 更新：监听实时 firstVisible + buffer + panelCount
+//
+// flush: 'sync' 是性能正确性关键——onScroll 同步读 scrollMode.value 时，scrollMode 又
+// 依赖 skeletonPageIdxMap.values()。如果用默认 'pre' flush（microtask 延后），scrollTop
+// 变化后 watch 还没回调，onScroll 看到的 skeletonPageIdxMap 是**上一帧**的值，导致
+// scrollMode 误判为 IN_RANGE（旧 pageIdx 已缓存），跳过 OUT_OF_RANGE 节流加载分支，
+// 用户感觉「滚到新页不加载」。
+// 'sync' 让 watch 在 scrollTop.value = ... 这行赋值的**同时**就更新 Map，
+// 后续 onScroll 读 scrollMode 拿到的是当前帧的真实 pageIdxs。
+//
+// immediate=true：onMounted 前就初始化一次，避免子组件首次渲染时 Map 为空
+watch(
+  () => [firstVisiblePageIdx.value, treadBuffer.value, panelCount.value] as const,
+  ([fv, buf, pc]) => updateTreadMap(skeletonPageIdxMap, fv, buf, pc),
+  { immediate: true, deep: false, flush: 'sync' }
+)
+
+// 数据层 Map 更新：监听节流派生的 dataFirstVisiblePageIdx + 同样的 buffer/panelCount
+// 同样用 flush: 'sync'——虽然数据层节流由 dataScrollTop 控制（不在 watch 链上），
+// 但保持两个 watch 行为一致便于排查；且 sync 也避免 microtask 内 dataPageIdxMap
+// 与 skeletonPageIdxMap 短暂不一致导致 getPanelByPageIdx 等查询落空
+watch(
+  () => [dataFirstVisiblePageIdx.value, treadBuffer.value, panelCount.value] as const,
+  ([fv, buf, pc]) => updateTreadMap(dataPageIdxMap, fv, buf, pc),
+  { immediate: true, deep: false, flush: 'sync' }
+)
 
 // ==================== 数据构造（memoize）====================
 
@@ -243,76 +378,87 @@ function buildPageData(pageIdx: number): MeetHr[] {
 // ==================== 滚动模式判定 ====================
 
 /**
- * 判断滚动模式：检查可见面板对应的页是否都在 cachedPageSet 中。
+ * 滚动模式：判断当前实时位置是否在缓存内。
+ * - IN_RANGE：所有可见页都在 cachedPageSet，数据层可立即跟（无加载等待）
+ * - OUT_OF_RANGE：有可见页未缓存，数据层节流，等 ensurePagesLoaded 追上
  *
- * 设计缘由：用缓存覆盖范围而非速度判定，更准确反映「数据是否就绪」。
- * - 速度判定有误判：用户快速滚回时数据已在缓存，速度虽快但应该 IN_RANGE 即时跟踪
+ * 设计缘由（用缓存覆盖范围而非速度判定，更准确反映「数据是否就绪」）：
+ * - 速度判定有误判：用户快速滚回时数据已在缓存，速度虽快但应判 IN_RANGE 让数据层即时跟
  * - 缓存覆盖判定精确：只要数据在缓存，无论滚动多快都应即时响应
+ *
+ * 为什么是 computed 而非函数：
+ * - onScroll 里高频读（≤60Hz），computed 缓存让依赖未变时 O(1) 命中，函数每次都得跑循环
+ * - 模板里直接用 scrollMode.value，无需包装；返回值未变（一直 IN_RANGE）时不触发下游重渲染
+ * - 响应式追踪 cachedPageSet：通过显式读取 dataVersion，让数据加载/驱逐后（都伴随 bump）
+ *   能触发重算（cachedPageSet 是非响应式 Set，自身变化 computed 不会知道）
+ *
+ * 依赖链：
+ * - skeletonPageIdxMap.values()（基于实时 scrollTop，onScroll 16ms 节流）→ 反映「用户当前实际位置」
+ * - totalPages（基于 total/pageSize）
+ * - dataVersion（cachedPageSet 变化的显式触发点）
+ *
+ * 注意：Map.values() 迭代会触发 ITERATE 操作，整个 Map 任何 set/delete 都触发本 computed 重算。
+ * 这是合理的——scrollMode 本来就需要在 Map 任何变化时重新评估，开销很小（≤panelCount 次 Set.has）。
  */
-function getScrollMode(): 'IN_RANGE' | 'OUT_OF_RANGE' {
+const scrollMode = computed<ScrollMode>(() => {
+  void dataVersion.value
   const tp = totalPages.value
-  for (const idx of computePanelPageIdxs()) {
+  for (const idx of skeletonPageIdxMap.values()) {
     // 只检查 [0, totalPages) 范围内的页（越界页是 EMPTY_ROWS，不影响模式）
     if (idx >= 0 && idx < tp && !cachedPageSet.has(idx)) {
-      return 'OUT_OF_RANGE'
+      return ScrollMode.OUT_OF_RANGE
     }
   }
-  return 'IN_RANGE'
-}
-
-// ==================== 面板更新 ====================
-
-/** 立即更新骨架层（始终在 onScroll 中调用，无脑跟踪） */
-function updateSkeletonPanels(): void {
-  const idxs = computePanelPageIdxs()
-  // 用 map 而非 Array.from + push：编码规范避免展开语法，这里 map 直接生成
-  skeletonPanels.value = idxs.map((pageIdx, panelId) => ({ panelId, pageIdx }))
-}
-
-/** 立即更新数据层（IN_RANGE 模式用，原子切换 pageIdx + transform + data） */
-function updateDataPanels(): void {
-  const idxs = computePanelPageIdxs()
-  dataPanels.value = idxs.map((pageIdx, panelId) => ({
-    panelId,
-    pageIdx,
-    data: buildPageData(pageIdx),
-  }))
-}
+  return ScrollMode.IN_RANGE
+})
 
 // ==================== OUT_OF_RANGE 节流刷新 ====================
 
 let outOfRangeTimer: ReturnType<typeof setTimeout> | null = null
 
 /**
- * 调度 OUT_OF_RANGE 刷新：300ms 后执行一次。
- * 已调度时不重复（让连续滚动期间至少每 300ms 刷新一次，不无限推迟）。
+ * 调度节流刷新：300ms 后让数据层追一次。
+ * 已调度时不重复——连续滚动期间至少每 300ms 追一次，不无限推迟。
  */
 function scheduleOutOfRangeRefresh(): void {
   if (outOfRangeTimer !== null) return
   outOfRangeTimer = setTimeout(() => {
     outOfRangeTimer = null
-    refreshAfterScroll()
+    refreshDataLayer()
   }, OUT_OF_RANGE_REFRESH_INTERVAL_MS)
 }
 
-/** 滚动后刷新：更新数据层 + 触发懒加载 + 预取下方页 */
-function refreshAfterScroll(): void {
-  updateDataPanels()
-  const idxs = computePanelPageIdxs()
+/**
+ * 让数据层追到当前位置 + 加载新可见页 + 预取下方页。
+ *
+ * 调用时机：
+ * - onScroll IN_RANGE 分支：立即调（用户期望无缝，dataScrollTop 同 tick 跟上）
+ * - scheduleOutOfRangeRefresh 的 300ms 定时器：节流追一次（OUT_OF_RANGE 期间）
+ *
+ * dataScrollTop 赋值后，dataFirstVisiblePageIdx → dataPageIdxs → dataPanels 链式重算，
+ * 数据层视觉上「跳」到新位置（如果数据已就绪）或显示骨架（未就绪，等下次加载）。
+ */
+function refreshDataLayer(): void {
+  dataScrollTop.value = scrollTop.value
+  const idxs = Array.from(skeletonPageIdxMap.values())
   void ensurePagesLoaded(idxs)
+  preloadAhead(idxs)
+}
 
-  // 预取下方 PRELOAD_AHEAD 页：让用户滚到下方时数据提前就位
-  if (idxs.length > 0) {
-    const lastIdx = idxs[idxs.length - 1]
-    if (lastIdx !== void 0) {
-      const preload: number[] = []
-      for (let i = 1; i <= PRELOAD_AHEAD; i++) {
-        const idx = lastIdx + i
-        if (idx < totalPages.value) preload.push(idx)
-      }
-      if (preload.length > 0) void ensurePagesLoaded(preload)
-    }
+/**
+ * 预取下方 PRELOAD_AHEAD 页：让用户滚到下方时数据提前就位，避免刚到下方就 OUT_OF_RANGE。
+ * 任何模式下都可调——预取是异步的、不影响当前视觉。
+ */
+function preloadAhead(idxs: readonly number[]): void {
+  if (idxs.length === 0) return
+  const lastIdx = idxs[idxs.length - 1]
+  if (lastIdx === void 0) return
+  const preload: number[] = []
+  for (let i = 1; i <= PRELOAD_AHEAD; i++) {
+    const idx = lastIdx + i
+    if (idx < totalPages.value) preload.push(idx)
   }
+  if (preload.length > 0) void ensurePagesLoaded(preload)
 }
 
 // ==================== 滚动 handler ====================
@@ -320,18 +466,16 @@ function refreshAfterScroll(): void {
 const onScroll = useThrottleFn((e: Event) => {
   // 编辑中锁滚动：editingPageIdx !== null 表示有 grid 在编辑或有未保存变更
   if (editingPageIdx.value !== null) return
-  const target = e.target as HTMLElement
-  scrollTop.value = target.scrollTop
 
-  // 骨架层始终立即更新（闪电响应）
-  updateSkeletonPanels()
+  scrollTop.value = (e.target as HTMLElement).scrollTop
+  // 骨架层 computed 自动跟踪 scrollTop（闪电响应），无需手动调
 
-  // 数据层根据模式：
-  // - IN_RANGE：即时跟踪（每个滚动事件都更新）
-  // - OUT_OF_RANGE：调度节流刷新（300ms 内的连续滚动只刷新一次）
-  const mode = getScrollMode()
-  if (mode === 'IN_RANGE') {
-    updateDataPanels()
+  // 数据层根据 mode 决定何时让 dataScrollTop 跟上 scrollTop：
+  // - IN_RANGE：立即 refreshDataLayer，dataScrollTop 同 tick 跟上，数据层无缝滚动
+  // - OUT_OF_RANGE：scheduleOutOfRangeRefresh 节流，300ms 后让 dataScrollTop 跟一次
+  //   期间骨架层已追到新位置显示 shimmer，数据层稳定停在旧位置兜底，等节流 tick 统一追上
+  if (scrollMode.value === ScrollMode.IN_RANGE) {
+    refreshDataLayer()
   } else {
     scheduleOutOfRangeRefresh()
   }
@@ -346,7 +490,8 @@ const onScroll = useThrottleFn((e: Event) => {
  * - 用 cachedPageSet.has(idx) 判定是否已缓存（O(1)），而非 isPageComplete 逐行查
  * - cachedPageSet 在拉取完成后 add(idx)，下次 ensurePagesLoaded 直接命中
  * - rowCache 用 Map（非 reactive），不触发响应式追踪
- * - 拉取完成后调 updateDataPanels 让数据层显示新加载的页
+ * - 拉取完成后 bump dataVersion，让 dataPanels computed 重算显示新加载的页
+ * （rowCache 是非响应式容器，自身 add/delete 不触发依赖它的 computed，必须显式 bump）
  */
 async function ensurePagesLoaded(indices: readonly number[]): Promise<void> {
   const tp = totalPages.value
@@ -376,8 +521,10 @@ async function ensurePagesLoaded(indices: readonly number[]): Promise<void> {
     // LRU 驱逐：缓存页数超限时，驱逐距离视口最远的页
     evictDistantPages()
 
-    // 数据加载完成，刷新数据层显示
-    updateDataPanels()
+    // 数据加载完成：bump dataVersion 让 dataPanels computed 重算。
+    // rowCache/cachedPageSet/pageDataMemo 都是非响应式容器，自身变更不触发依赖追踪，
+    // 必须显式 bump version 才能让 dataPanels 知道"数据变了"需要重建 panel.data
+    dataVersion.value++
   } finally {
     needLoad.forEach((idx) => loadingPages.delete(idx))
   }
@@ -422,27 +569,6 @@ function evictDistantPages(): void {
   }
 }
 
-// ==================== DataPanel 实例收集 ====================
-
-/**
- * 函数 ref：DataPanel 挂载时收集实例，卸载时移除。
- * 用 Map 而非数组：panelId 是稳定的，Map 查找 O(1)。
- */
-function setDataPanelRef(panelId: number, el: Element | DataPanelInstance | null): void {
-  if (el) {
-    dataPanelInstances.set(panelId, el as DataPanelInstance)
-  } else {
-    dataPanelInstances.delete(panelId)
-  }
-}
-
-/** 通过 pageIdx 找到对应 grid 实例（CRUD 用） */
-function getGridByPageIdx(pageIdx: number): VxeGridInstance | undefined {
-  const panel = dataPanels.value.find((p) => p.pageIdx === pageIdx)
-  if (!panel) return void 0
-  return dataPanelInstances.get(panel.panelId)?.getGrid()
-}
-
 // ==================== 跳页 ====================
 
 function jumpToPage(): void {
@@ -475,17 +601,28 @@ function nextPage(): void {
 // ==================== CRUD ====================
 
 /**
+ * 通过 pageIdx 找到对应的 DataPanel 实例。
+ * 遍历 dataPageIdxMap 找出 pageIdx 对应的 panelId，再从 dataPanelRefs 索引取出。
+ * 编辑/插入等场景按 pageIdx 路由，需要这个反查。
+ */
+function getPanelByPageIdx(pageIdx: number): InstanceType<typeof DataPanel> | undefined {
+  for (const [pid, idx] of dataPageIdxMap.entries()) {
+    if (idx === pageIdx) return dataPanelRefs.value[pid]
+  }
+  return void 0
+}
+
+/**
  * 新增：默认插入到 firstVisiblePageIdx（用户当前看的页）。
  * 已在编辑某页时连续插入到同一页（保留编辑上下文）。
  */
 async function handleInsert(): Promise<void> {
   if (total.value === 0) return
   const idx = editingPageIdx.value ?? firstVisiblePageIdx.value
-  const grid = getGridByPageIdx(idx)
-  if (!grid) return
+  const panel = getPanelByPageIdx(idx)
+  if (!panel) return
   editingPageIdx.value = idx
-  const { row } = await grid.insert(createEmptyMeetHr())
-  await grid.setEditRow(row)
+  await panel.insert(createEmptyMeetHr())
 }
 
 function onEditActived(pageIdx: number): void {
@@ -500,37 +637,36 @@ function onEditClosed(): void {
 }
 
 /**
- * 保存：遍历所有数据面板的 grid 收集 insertRecords/updateRecords，调对应 API。
- * 理论上只有 editingPageIdx 的 grid 有变更，但全遍历更保险。
+ * 保存：遍历所有数据面板收集 insertRecords/updateRecords，调对应 API。
+ * 理论上只有 editingPageIdx 的面板有变更，但全遍历更保险。
+ *
+ * 流程：每面板先读 pending changes 收集 API 任务，再 clearEdit 关闭编辑态。
  */
 async function handleSave(): Promise<void> {
   const tasks: Promise<unknown>[] = []
-  for (const panel of dataPanels.value) {
-    const grid = dataPanelInstances.get(panel.panelId)?.getGrid()
-    if (!grid) continue
-    const { insertRecords, updateRecords } = grid.getRecordset()
-    for (const record of insertRecords as MeetHr[]) {
+  for (const panel of dataPanelRefs.value) {
+    if (!panel) continue
+    const { insertRecords, updateRecords } = panel.getPendingChanges()
+    for (const record of insertRecords) {
       // 新增记录的 id 是前端临时负数（createEmptyMeetHr 用 -Date.now() - seed），交给后端分配
       record.id = void 0
       tasks.push(mockAddMeetHr(record))
     }
-    for (const record of updateRecords as MeetHr[]) {
+    for (const record of updateRecords) {
       if (record.id) tasks.push(mockUpdateMeetHr(record.id, record))
     }
-    await grid.clearEdit()
+    await panel.clearEdit()
   }
   if (tasks.length > 0) await Promise.all(tasks)
   await onAfterMutation()
 }
 
-/** 删除：遍历所有数据面板的 grid 收集 checkbox 选中的行 */
+/** 删除：遍历所有数据面板收集 checkbox 选中的行，调 delete API */
 async function handleDelete(): Promise<void> {
   const tasks: Promise<unknown>[] = []
-  for (const panel of dataPanels.value) {
-    const grid = dataPanelInstances.get(panel.panelId)?.getGrid()
-    if (!grid) continue
-    const selectRecords = grid.getCheckboxRecords()
-    for (const record of selectRecords as MeetHr[]) {
+  for (const panel of dataPanelRefs.value) {
+    if (!panel) continue
+    for (const record of panel.getSelectedRecords()) {
       // 临时负 id（前端未保存的新增行）跳过
       if (record.id && record.id > 0) {
         tasks.push(mockDeleteMeetHr(record.id))
@@ -542,25 +678,13 @@ async function handleDelete(): Promise<void> {
 }
 
 /**
- * 取消编辑：先 clearEdit 让 in-flight 编辑值 commit 到 updateRecords，
- * 再 getRecordset 读完整变更并撤销。
- *
- * 顺序很关键：先 getRecordset 再 clearEdit 会漏掉正在编辑的值
- * （clearEdit 反而把它 commit 进 updateRecords，但还原已过）。
+ * 取消编辑：每面板自己处理 clearEdit + revert/remove 语义（详见 DataPanel.cancel）。
+ * 父级只负责清空 editingPageIdx/isEditing 状态。
  */
 async function handleCancel(): Promise<void> {
-  for (const panel of dataPanels.value) {
-    const grid = dataPanelInstances.get(panel.panelId)?.getGrid()
-    if (!grid) continue
-    await grid.clearEdit()
-    const { insertRecords, updateRecords } = grid.getRecordset()
-    if (insertRecords.length > 0) {
-      await grid.remove(insertRecords)
-    }
-    if (updateRecords.length > 0) {
-      // revertData 把行还原到 keepSource 的原始数据，需要 gridOptions.keepSource=true
-      await grid.revertData(updateRecords)
-    }
+  for (const panel of dataPanelRefs.value) {
+    if (!panel) continue
+    await panel.cancel()
   }
   editingPageIdx.value = null
   isEditing.value = false
@@ -570,7 +694,7 @@ async function handleCancel(): Promise<void> {
  * 增删改后回调：清空所有缓存，重新拉 total 和当前可见范围。
  *
  * 设计缘由：CRUD 让数据顺序/内容变化，旧缓存的行都对应错误的页。
- * 全部清空 → cachedPageSet 清空 → getScrollMode 必返回 OUT_OF_RANGE →
+ * 全部清空 → cachedPageSet 清空 → scrollMode 必为 OUT_OF_RANGE →
  * 数据层冻结 → 骨架层接管显示 → ensurePagesLoaded 重新拉取 → 数据层刷新
  */
 async function onAfterMutation(): Promise<void> {
@@ -585,15 +709,16 @@ async function onAfterMutation(): Promise<void> {
   // 等 nextTick 让 totalPages / spacerHeight 等派生重算
   await nextTick()
 
-  // 骨架层立即更新（让用户看到「正在重新加载」的骨架）
-  updateSkeletonPanels()
+  // 清空缓存已让 cachedPageSet 为空 → scrollMode 必为 OUT_OF_RANGE。
+  // 骨架层是 computed，自动跟踪 scrollTop/totalPages 变化无需手动调。
+  // 数据层需要：让 dataScrollTop 跟上 scrollTop（数据层也追到当前位置）+
+  // bump dataVersion（让 buildPageData 重新读已清空的 rowCache，否则会命中 pageDataMemo
+  // 旧 memo 显示陈旧数据）。
+  dataScrollTop.value = scrollTop.value
+  dataVersion.value++
 
-  // 数据层暂不更新（让其停留在旧位置，等 ensurePagesLoaded 内部 updateDataPanels 刷新）
-  // 但 dataPanels 的旧 pageIdx 可能越界（totalPages 变了），主动清空让面板消失或显示空
-  updateDataPanels()
-
-  // 拉取当前可见范围
-  await ensurePagesLoaded(computePanelPageIdxs())
+  // 拉取当前可见范围（成功后内部 bump dataVersion 让数据层显示）
+  await ensurePagesLoaded(Array.from(skeletonPageIdxMap.values()))
 }
 
 // ESC 键取消编辑：编辑态按 Esc 触发 handleCancel
@@ -608,13 +733,9 @@ useEventListener(window, 'keydown', (e: KeyboardEvent) => {
 useResizeObserver(scrollShellEl, (entries) => {
   const rect = entries[0]?.contentRect
   if (rect) {
-    const oldPanelCount = panelCount.value
+    // clientHeight 变化让 panelCount/skeletonPageIdxs/dataPageIdxs 全部 computed 自动重算，
+    // 骨架层/数据层会自动跟到新位置——无需任何手动干预
     clientHeight.value = rect.height
-    // panelCount 变化时重新初始化所有面板（避免新面板 pageIdx 未设置）
-    if (panelCount.value !== oldPanelCount) {
-      updateSkeletonPanels()
-      updateDataPanels()
-    }
   }
 })
 
@@ -664,12 +785,13 @@ watch(pageSize, (newSize, oldSize) => {
     newPageIdx * pageBlockHeight.value + headerOverhead + newRowInPage * ROW_HEIGHT + pixelIntoRow
 
   scrollTop.value = newScrollTop
+  dataScrollTop.value = newScrollTop // 数据层也立即跟到新 pageSize 下的位置
   jumpTarget.value = newPageIdx + 1
   void nextTick(() => {
     if (scrollShellEl.value) scrollShellEl.value.scrollTop = newScrollTop
-    // 切换后立即重新初始化面板（pageBlockHeight 变化）
-    updateSkeletonPanels()
-    updateDataPanels()
+    // pageBlockHeight 变化让 skeletonPageIdxs/dataPageIdxs computed 重算新 pageIdxs，
+    // dataPanels/skeletonPanels 自动跟随。rowCache 已被 recomputeCachedPageSet 重扫但
+    // buildPageData 读的是同一 Map，无需 bump dataVersion
   })
 })
 
@@ -708,10 +830,10 @@ onMounted(async () => {
   // 等 ResizeObserver 第一次回调把 clientHeight 设上
   await nextTick()
 
-  // 初始化面板 + 触发懒加载
-  updateSkeletonPanels()
-  updateDataPanels()
-  await ensurePagesLoaded(computePanelPageIdxs())
+  // total/clientHeight 变化让 panelCount/treadBuffer 由 computed 自动派生，
+  // 进而触发 watch 把 skeletonPageIdxMap/dataPageIdxMap 填好。
+  // scrollTop/dataScrollTop 初始都是 0，数据层和骨架层都从第 0 页开始
+  await ensurePagesLoaded(Array.from(skeletonPageIdxMap.values()))
 })
 
 // ==================== 调试接口（挂 window，方便 DevTools 验证）====================
@@ -723,8 +845,12 @@ interface InfiniteTransformTrickDebug {
   readonly pageBlockHeight: number
   readonly spacerHeight: number
   readonly scrollTop: number
+  /** 数据层节流版滚动位置（IN_RANGE 同步，OUT_OF_RANGE 每 300ms 追一次） */
+  readonly dataScrollTop: number
   readonly clientHeight: number
   readonly firstVisiblePageIdx: number
+  /** 数据层节流派生的可见页号 */
+  readonly dataFirstVisiblePageIdx: number
   readonly panelCount: number
   readonly cachedPageCount: number
   readonly cachedPages: readonly number[]
@@ -732,7 +858,7 @@ interface InfiniteTransformTrickDebug {
   readonly rowCacheSize: number
   readonly skeletonPanels: ReadonlyArray<{ panelId: number; pageIdx: number }>
   readonly dataPanels: ReadonlyArray<{ panelId: number; pageIdx: number; rowCount: number }>
-  readonly scrollMode: 'IN_RANGE' | 'OUT_OF_RANGE'
+  readonly scrollMode: ScrollMode
   scrollToPage: (pageIdx1Based: number) => void
 }
 declare global {
@@ -760,11 +886,17 @@ if (window !== void 0) {
     get scrollTop() {
       return scrollTop.value
     },
+    get dataScrollTop() {
+      return dataScrollTop.value
+    },
     get clientHeight() {
       return clientHeight.value
     },
     get firstVisiblePageIdx() {
       return firstVisiblePageIdx.value
+    },
+    get dataFirstVisiblePageIdx() {
+      return dataFirstVisiblePageIdx.value
     },
     get panelCount() {
       return panelCount.value
@@ -782,13 +914,17 @@ if (window !== void 0) {
       return rowCache.size
     },
     get skeletonPanels() {
-      return skeletonPanels.value
+      return Array.from(skeletonPageIdxMap.entries()).map(([panelId, pageIdx]) => ({ panelId, pageIdx }))
     },
     get dataPanels() {
-      return dataPanels.value.map((p) => ({ ...p, rowCount: p.data.length }))
+      return Array.from(dataPageIdxMap.entries()).map(([panelId, pageIdx]) => ({
+        panelId,
+        pageIdx,
+        rowCount: buildPageData(pageIdx).length,
+      }))
     },
     get scrollMode() {
-      return getScrollMode()
+      return scrollMode.value
     },
     scrollToPage: (pageIdx1Based: number) => {
       if (scrollShellEl.value) {
@@ -867,9 +1003,25 @@ if (window !== void 0) {
         </label>
       </div>
       <span :class="$style.status">
-        共 {{ total }} 条 · 已缓存 {{ cachedPageSet.size }} 页 · 面板 {{ panelCount }} · scrollTop
-        {{ Math.round(scrollTop) }}px<template v-if="editingPageIdx !== null">
-          · <span :class="$style.editingTag">编辑中（第 {{ editingPageIdx + 1 }} 页，Esc 取消）</span>
+        共 {{ total }} 条 · 已缓存 {{ cachedPageSet.size }} 页 · 实际DOM表格总数 {{ panelCount }} ·
+        scrollTop {{ Math.round(scrollTop) }}px · dataScrollTop {{ Math.round(dataScrollTop) }}px · 页
+        {{ currentVisiblePage }}/{{ totalPages }}
+        <span
+          :class="[
+            $style.modeTag,
+            scrollMode === ScrollMode.OUT_OF_RANGE ? $style.modeTagOut : $style.modeTagIn,
+          ]"
+          :title="
+            scrollMode === ScrollMode.OUT_OF_RANGE
+              ? '可见页有未缓存的，数据层节流（300ms 一次），骨架层先兜底'
+              : '所有可见页都已缓存，数据层即时跟踪 scrollTop'
+          "
+        >
+          {{ scrollMode === ScrollMode.OUT_OF_RANGE ? '超速模式' : '跟踪正常' }}
+        </span>
+        <template v-if="editingPageIdx !== null">
+          ·
+          <span :class="$style.editingTag">编辑中（第 {{ editingPageIdx + 1 }} 页，Esc 取消）</span>
         </template>
       </span>
     </CrudToolbar>
@@ -880,29 +1032,34 @@ if (window !== void 0) {
         @scroll.passive="onScroll"
       >
         <div :class="$style.spacer" :style="{ height: spacerHeight + 'px' }">
-          <!-- 骨架层（z-index 1）：始终即时响应用户滚动，提供「闪电响应」 -->
+          <!-- 骨架层（z-index 1）：始终即时响应用户滚动，提供「闪电响应」。
+               子组件自己读 reactive Map 的对应 entry，每次滚动只 1 个面板 re-render -->
           <SkeletonPanel
-            v-for="panel in skeletonPanels"
-            :key="`s-${panel.panelId}`"
-            :panel-id="panel.panelId"
-            :page-idx="panel.pageIdx"
+            v-for="pid in panelIds"
+            :key="`s-${pid}`"
+            :panel-id="pid"
+            :page-idx-map="skeletonPageIdxMap"
             :page-block-height="pageBlockHeight"
             :divider-height="DIVIDER_HEIGHT"
             :header-height="HEADER_HEIGHT"
             :row-height="ROW_HEIGHT"
             :page-size="pageSize"
           />
-          <!-- 数据层（z-index 2）：vxe-grid 实例固定不变，按滚动模式策略性更新 -->
+          <!-- 数据层（z-index 2）：vxe-grid 实例固定不变。
+               子组件读 reactive Map entry + 自己构造 data，每次滚动只 1 个 DataPanel
+               （含 vxe-grid）重渲染，其他 DataPanel 完全无感。
+               传 buildPageData + dataVersion 让子组件内部 computed 能响应 rowCache 变化 -->
           <DataPanel
-            v-for="panel in dataPanels"
-            :key="`d-${panel.panelId}`"
-            :ref="(el) => setDataPanelRef(panel.panelId, el)"
-            :panel-id="panel.panelId"
-            :page-idx="panel.pageIdx"
+            v-for="pid in panelIds"
+            :key="`d-${pid}`"
+            ref="dataPanelRefs"
+            :panel-id="pid"
+            :page-idx-map="dataPageIdxMap"
             :page-block-height="pageBlockHeight"
             :divider-height="DIVIDER_HEIGHT"
             :grid-options="gridOptions"
-            :data="panel.data"
+            :build-page-data="buildPageData"
+            :data-version="dataVersion"
             @edit-actived="onEditActived"
             @edit-closed="onEditClosed"
           />
@@ -1039,6 +1196,43 @@ if (window !== void 0) {
 .editingTag {
   color: #b8860b;
   font-weight: 600;
+}
+
+/* 滚动模式标签：把 scrollMode 这个抽象状态可视化，让用户/Demo 观众一眼看到
+ * 「现在是不是超速」。颜色用语义色——蓝色 = 正常跟踪，橙色 = 超速节流 */
+.modeTag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-left: 4px;
+  user-select: none;
+}
+
+.modeTagIn {
+  background-color: #e6f4ff;
+  color: #1890ff;
+  border: 1px solid #91caff;
+}
+
+.modeTagOut {
+  background-color: #fff7e6;
+  color: #d46b08;
+  border: 1px solid #ffd591;
+  /* 超速模式用轻微脉冲提醒用户：数据层正在节流追赶 */
+  animation: modeTagPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes modeTagPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(212, 107, 8, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(212, 107, 8, 0);
+  }
 }
 
 .tableContainer {
