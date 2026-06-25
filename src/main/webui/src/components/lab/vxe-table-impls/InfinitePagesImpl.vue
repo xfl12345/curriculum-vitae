@@ -741,12 +741,12 @@ if (window !== void 0) {
         :class="[$style.scrollShell, editingPageIdx !== null && $style.scrollLocked]"
         @scroll.passive="onScroll"
       >
-        <div :class="$style.spacer" :style="{ height: spacerHeight + 'px' }">
+        <div :class="$style.spacer">
           <div
             v-for="pageIdx in renderedPageIndices"
             :key="pageIdx"
             :class="$style.pageBlock"
-            :style="{ top: pageIdx * pageBlockHeight + 'px', height: pageBlockHeight + 'px' }"
+            :style="{ '--pblock-top': pageIdx * pageBlockHeight + 'px' }"
           >
             <div :class="$style.pageDivider">
               <span :class="$style.pageDividerText">第 {{ pageIdx + 1 }} 页</span>
@@ -929,6 +929,7 @@ if (window !== void 0) {
 .spacer {
   position: relative;
   width: 100%;
+  height: calc(v-bind(spacerHeight) * 1px);
 }
 
 .pageBlock {
@@ -942,10 +943,11 @@ if (window !== void 0) {
    * 单个 page 内 vxe-grid 的 DOM ~2500 个元素（50 行 × 9 列 × 多层 wrapper），
    * 4 个同时渲染 = 1 万元素。无 content-visibility 时每次 layout 几乎全节点参与（5665/5967）。
    * contain-intrinsic-size 给离屏 block 一个占位高度，避免滚动条估算抖动；
-
-   * 高度等于 pageBlockHeight（动态由 :style 设的 height 优先级更高，这里只做 hint）。 */
+   * height 由 calc(v-bind) 动态计算，top 由每页的 CSS 变量 --pblock-top 驱动（v-for 逐页绑定）。 */
   content-visibility: auto;
   contain-intrinsic-size: auto 2488px;
+  top: var(--pblock-top);
+  height: calc(v-bind(pageBlockHeight) * 1px);
 }
 
 /* 分割条：实心蓝底白字，让用户一眼看出"这是第 X 页"。

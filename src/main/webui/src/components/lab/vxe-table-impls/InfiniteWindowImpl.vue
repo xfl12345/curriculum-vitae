@@ -224,25 +224,21 @@ if (typeof window !== 'undefined') {
     </CrudToolbar>
     <div :class="$style.tableContainer">
       <div :class="$style.stickyHeader">
-        <div :class="$style.headerRow" :style="{ minWidth: FIXED_COLUMNS_TOTAL_WIDTH + 'px' }">
-          <div :class="$style.headerCell" :style="{ width: FIXED_COLUMN_WIDTHS.checkbox + 'px' }" />
-          <div :class="$style.headerCell" :style="{ width: FIXED_COLUMN_WIDTHS.seq + 'px' }">#</div>
-          <div :class="$style.headerCell" :style="{ flex: 1 }">HR姓名</div>
-          <div :class="$style.headerCell" :style="{ flex: 1 }">手机号</div>
-          <div :class="$style.headerCell" :style="{ flex: 1 }">HR职位</div>
-          <div :class="$style.headerCell" :style="{ flex: 1 }">我的职位</div>
-          <div :class="$style.headerCell" :style="{ flex: 1 }">备注</div>
-          <div :class="$style.headerCell" :style="{ width: FIXED_COLUMN_WIDTHS.createTime + 'px' }">
-            创建时间
-          </div>
-          <div :class="$style.headerCell" :style="{ width: FIXED_COLUMN_WIDTHS.lastVisitTime + 'px' }">
-            最后访问
-          </div>
+        <div :class="$style.headerRow">
+          <div :class="[$style.headerCell, $style.headerCellCheckbox]" />
+          <div :class="[$style.headerCell, $style.headerCellSeq]">#</div>
+          <div :class="[$style.headerCell, $style.headerCellText]">HR姓名</div>
+          <div :class="[$style.headerCell, $style.headerCellText]">手机号</div>
+          <div :class="[$style.headerCell, $style.headerCellText]">HR职位</div>
+          <div :class="[$style.headerCell, $style.headerCellText]">我的职位</div>
+          <div :class="[$style.headerCell, $style.headerCellText]">备注</div>
+          <div :class="[$style.headerCell, $style.headerCellTime]">创建时间</div>
+          <div :class="[$style.headerCell, $style.headerCellTime]">最后访问</div>
         </div>
       </div>
       <div ref="scrollShellRef" :class="$style.scrollShell" @scroll.passive="onScroll">
-        <div :class="$style.spacer" :style="{ height: spacerHeight + 'px' }">
-          <div :class="$style.gridWrapper" :style="{ top: offsetY + 'px', height: gridHeight + 'px' }">
+        <div :class="$style.spacer">
+          <div :class="$style.gridWrapper">
             <vxe-grid
               ref="gridRef"
               v-bind="gridOptions"
@@ -300,6 +296,24 @@ if (typeof window !== 'undefined') {
   display: flex;
   height: 48px;
   box-sizing: border-box;
+  min-width: calc(v-bind('FIXED_COLUMNS_TOTAL_WIDTH') * 1px);
+}
+
+/* 列宽类：与 buildMeetHrColumns fixedLayout 的列定义对齐 */
+.headerCellCheckbox {
+  width: calc(v-bind('FIXED_COLUMN_WIDTHS.checkbox') * 1px);
+  flex: 0 0 auto;
+}
+.headerCellSeq {
+  width: calc(v-bind('FIXED_COLUMN_WIDTHS.seq') * 1px);
+  flex: 0 0 auto;
+}
+.headerCellText {
+  flex: 1;
+}
+.headerCellTime {
+  width: calc(v-bind('FIXED_COLUMN_WIDTHS.createTime') * 1px);
+  flex: 0 0 auto;
 }
 
 .headerCell {
@@ -329,6 +343,7 @@ if (typeof window !== 'undefined') {
 .spacer {
   position: relative;
   width: 100%;
+  height: calc(v-bind(spacerHeight) * 1px);
 }
 
 .gridWrapper {
@@ -336,6 +351,8 @@ if (typeof window !== 'undefined') {
   left: 0;
   right: 0;
   box-sizing: border-box;
+  top: calc(v-bind(offsetY) * 1px);
+  height: calc(v-bind(gridHeight) * 1px);
 }
 
 .loadingOverlay {
