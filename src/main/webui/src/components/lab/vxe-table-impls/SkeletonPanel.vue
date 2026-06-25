@@ -24,24 +24,27 @@
  * 骨架层就是那个「闪电响应」，数据层是「渐进加载」。
  */
 
-import { computed } from 'vue'
+import { computed, type CSSProperties } from 'vue'
 
 import { FIXED_COLUMN_WIDTHS, FLEX_COLUMN_COUNT } from './shared'
 
 interface Props {
-  /** 面板固定 ID（用于 v-for key 和 reactive Map 的索引，永不变化） */
+  /** 面板固定 ID（仅用于 v-for key，永不变化） */
   panelId: number
   /**
-   * 父组件维护的「panelId → pageIdx」reactive Map（坦克履带模式）。
+   * 本面板显示的页号（0-based）。
    *
-   * 父组件用数论取模代表元算法 + watch diff 只更新变化的 entry，
-   * 子组件自己 computed 读自己 panelId 对应的 entry——Vue 3 reactive Map 的 get
-   * 只追踪该 key，其他 key 的 set 不触发本 computed 重算。
+   * 父组件用一个简单 computed 数组按「整体平移」生成 pageIdxs：
+   *   pageIdxs[panelId] = firstVisible - buffer + panelId
+   * 每次 firstVisible ±1，所有 panelCount 个面板的 pageIdx 都 ±1，全部重渲染。
    *
-   * 这就是「坦克履带」精准响应式的关键：每次滚动只有 1 个 panelId 的 pageIdx 真变化，
-   * 对应那一格 SkeletonPanel 才 re-render，其余 SkeletonPanel 完全不受影响。
+   * 为什么骨架层不用数据层的「坦克履带」精准响应式？
+   * - 骨架面板只是「分割条文字 + shimmer 占位行」，重渲染 = 改一个 div 的 transform + text，
+   *   compositor-only 操作，sub-ms 开销，panelCount 个同时重渲染无感
+   * - 数据层（vxe-grid）重渲染才贵（calcCellHeight 重 reflow 几十毫秒），才需要坦克履带
+   * - 给骨架层也上坦克履带是过度设计
    */
-  pageIdxMap: Map<number, number>
+  pageIdx: number
   /** 单页块高度（含分割条 + 表头 + pageSize 行）。父组件按 pageBlockHeight 计算确定值 */
   pageBlockHeight: number
   /** 分割条高度（与 InfinitePagesImpl 的 DIVIDER_HEIGHT 保持一致） */
@@ -55,19 +58,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-
-/**
- * 本面板当前显示的页号：从父组件传入的 reactive Map 中读自己的 entry。
- *
- * 设计缘由：让响应式追踪发生在子组件内部——只有 map.set(本 panelId, 新值) 才会触发
- * 本 computed 重算，map.set(其他 panelId, ...) 不影响本面板。这就是「坦克履带」
- * 精准响应式的关键：滚动时只 1 个 panelId 真变，对应那一格 SkeletonPanel 才重渲染。
- *
- * ?? -1 兜底：Map 初始化或异常时 entry 可能缺失，越界值（< 0 或 ≥ totalPages）
- * 由父组件显式写入 -1，模板里 pageIdx+1=0 时分割条显示「第 0 页」，无意义但
- * 不影响视觉——越界面板位于视口外，用户看不到。
- */
-const pageIdx = computed(() => props.pageIdxMap.get(props.panelId) ?? -1)
 
 /**
  * 列规格：与 vxe-grid 列定义（buildMeetHrColumns）保持一致。
@@ -92,12 +82,13 @@ const columnSpecs: ColumnSpec[] = [
   { width: FIXED_COLUMN_WIDTHS.createTime },
   { width: FIXED_COLUMN_WIDTHS.lastVisitTime },
 ]
+const panelTransform = computed(() => `translateY(${props.pageIdx * props.pageBlockHeight}px)`)
 
 /**
  * 把 ColumnSpec 转成 inline style 对象，让模板里的 v-for 直接绑定。
  * width 优先（固定宽度列），否则按 flex 权重。
  */
-function colStyle(col: ColumnSpec): Record<string, string> {
+function colStyle(col: ColumnSpec): CSSProperties {
   if (col.width !== void 0) {
     return { width: `${col.width}px`, flex: '0 0 auto' }
   }
@@ -106,21 +97,15 @@ function colStyle(col: ColumnSpec): Record<string, string> {
 </script>
 
 <template>
-  <div
-    :class="$style.panel"
-    :style="{
-      transform: `translateY(${pageIdx * props.pageBlockHeight}px)`,
-      height: `${props.pageBlockHeight}px`,
-    }"
-  >
+  <div :class="$style.panel">
     <!-- 分割条：实心蓝底白字，与 InfinitePagesImpl 的 pageDivider 风格统一，
          让用户在滚动时一眼看到「现在到了第几页」 -->
-    <div :class="$style.divider" :style="{ height: `${props.dividerHeight}px` }">
+    <div :class="$style.divider">
       <span :class="$style.dividerText">第 {{ pageIdx + 1 }} 页</span>
     </div>
 
     <!-- 表头骨架：高 headerHeight 的浅灰条，内含每列一个略深的灰块模拟表头文字 -->
-    <div :class="$style.headerRow" :style="{ height: `${props.headerHeight}px` }">
+    <div :class="$style.headerRow">
       <div
         v-for="(col, i) in columnSpecs"
         :key="`h-${i}`"
@@ -130,12 +115,7 @@ function colStyle(col: ColumnSpec): Record<string, string> {
     </div>
 
     <!-- 数据行骨架：pageSize 行 × columnSpecs 列 = 浅灰底 + 灰色长条模拟文本 -->
-    <div
-      v-for="rowIdx in props.pageSize"
-      :key="`r-${rowIdx - 1}`"
-      :class="$style.skeletonRow"
-      :style="{ height: `${props.rowHeight}px` }"
-    >
+    <div v-for="rowIdx in pageSize" :key="`r-${rowIdx - 1}`" :class="$style.skeletonRow">
       <div
         v-for="(col, i) in columnSpecs"
         :key="`c-${i}`"
@@ -168,6 +148,8 @@ function colStyle(col: ColumnSpec): Record<string, string> {
   z-index: 1;
   pointer-events: none;
   background: #fff;
+  transform: v-bind(panelTransform);
+  height: calc(v-bind('pageBlockHeight') * 1px);
 }
 
 /* 分割条：与 InfinitePagesImpl 的 pageDivider 视觉一致，让两层架构的 UI 风格统一 */
@@ -179,6 +161,7 @@ function colStyle(col: ColumnSpec): Record<string, string> {
   justify-content: center;
   flex-shrink: 0;
   box-shadow: 0 2px 6px rgba(24, 144, 255, 0.3);
+  height: calc(v-bind('dividerHeight') * 1px);
 }
 
 .dividerText {
@@ -195,6 +178,7 @@ function colStyle(col: ColumnSpec): Record<string, string> {
   background: #fafafa;
   border-bottom: 1px solid #ebeef5;
   box-sizing: border-box;
+  height: calc(v-bind('headerHeight') * 1px);
 }
 
 .headerCell {
@@ -214,6 +198,7 @@ function colStyle(col: ColumnSpec): Record<string, string> {
   align-items: stretch;
   border-bottom: 1px solid #f5f5f5;
   box-sizing: border-box;
+  height: calc(v-bind('rowHeight') * 1px);
 }
 
 .skeletonCell {

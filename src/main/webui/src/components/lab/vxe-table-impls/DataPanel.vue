@@ -94,6 +94,8 @@ const emit = defineEmits<{
  */
 const pageIdx = computed(() => props.pageIdxMap.get(props.panelId) ?? -1)
 
+const panelTransform = computed(() => `translateY(${pageIdx.value * props.pageBlockHeight}px)`)
+
 /**
  * 本面板当前显示的行数组。
  *
@@ -191,19 +193,13 @@ defineExpose({ insert, getPendingChanges, getSelectedRecords, clearEdit, cancel 
 </script>
 
 <template>
-  <div
-    :class="$style.panel"
-    :style="{
-      transform: `translateY(${pageIdx * props.pageBlockHeight}px)`,
-      height: `${props.pageBlockHeight}px`,
-    }"
-  >
+  <div :class="$style.panel">
     <!-- 数据层自带分割条：样式与 InfinitePagesImpl 的 pageDivider 严格一致，
          让用户在 IN_RANGE 滚动时看到"延续"的页码分割条。
          不再用透明占位穿透骨架层——直接渲染真实分割条，避免双层 z-index 的透明 hack。
          OUT_OF_RANGE 时数据层在旧 pageIdx 冻结，骨架层在新 pageIdx 显示分割条，
          两层位于不同 translateY 位置永不重叠，不会出现"双分割条" -->
-    <div :class="$style.pageDivider" :style="{ height: `${props.dividerHeight}px` }">
+    <div :class="$style.pageDivider">
       <span :class="$style.pageDividerText">第 {{ pageIdx + 1 }} 页</span>
     </div>
 
@@ -237,6 +233,8 @@ defineExpose({ insert, getPendingChanges, getSelectedRecords, clearEdit, cancel 
   will-change: transform;
   z-index: 2;
   background: #fff;
+  transform: v-bind(panelTransform);
+  height: calc(v-bind('pageBlockHeight') * 1px);
 }
 
 /* 分割条：与 InfinitePagesImpl 的 pageDivider 视觉完全一致。
@@ -250,6 +248,7 @@ defineExpose({ insert, getPendingChanges, getSelectedRecords, clearEdit, cancel 
   justify-content: center;
   flex-shrink: 0;
   box-shadow: 0 2px 6px rgba(24, 144, 255, 0.3);
+  height: calc(v-bind('dividerHeight') * 1px);
 }
 
 .pageDividerText {

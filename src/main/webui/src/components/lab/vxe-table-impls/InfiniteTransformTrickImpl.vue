@@ -32,7 +32,7 @@
 import type { VxeGridProps } from 'vxe-table'
 
 import { useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
-import { NInputNumber, NSelect } from 'naive-ui'
+import { NInputNumber, NSelect, NSwitch } from 'naive-ui'
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 
 import type { MeetHr } from '@/model/web/api/meet-hr'
@@ -118,13 +118,24 @@ const isEditing = ref(false)
 
 const jumpTarget = ref(1)
 
+/**
+ * Demo 开关：隐藏数据层（z-index 2），露出底层骨架层（z-index 1）。
+ *
+ * 设计缘由：开发/演示时需要肉眼验证「骨架层确实即时追到新位置，数据层冻结在旧位置」
+ * 的分层行为。普通用户看到的永远是数据层（不透明白底），无法观察骨架层的工作。
+ * 切到隐藏模式可立即看到骨架层的 shimmer 占位和分割条。
+ *
+ * 编辑中锁开关：避免用户在编辑态隐藏数据层，丢失编辑视觉反馈。
+ */
+const showDataLayer = ref(true)
+
 // ==================== 面板数组 ====================
 
 /**
  * 面板 ID 列表：[0, 1, 2, ..., panelCount-1]。
  *
  * 仅当 panelCount 变化（窗口 resize）时重建——这是合理的开销。
- * 模板 v-for 用这个列表，传 panelId + Map prop 给子组件。
+ * 模板 v-for 用这个列表给骨架层/数据层 v-for，传 panelId 给每个面板。
  */
 const panelIds = computed<number[]>(() => {
   const pc = panelCount.value
@@ -134,20 +145,17 @@ const panelIds = computed<number[]>(() => {
 })
 
 /**
- * 骨架层 pageIdx Map：panelId → pageIdx（坦克履带）。
+ * 数据层 pageIdx Map：panelId → pageIdx（坦克履带）。
  *
  * reactive Map 而非 ref<Map>：让 Vue 3 的响应式系统精确追踪每个 key 的 get/set。
  * 子组件用 props.pageIdxMap.get(panelId) 读取时，只追踪该 key——其他 key 的 set
- * 不触发该子组件的 computed 重算。这是「坦克履带精准响应式」的根基。
+ * 不触发该子组件的 computed 重算。这是「坦克履带精准响应式」的根基——
+ * 数据层 vxe-grid 重渲染昂贵（calcCellHeight reflow 几十毫秒），值得用复杂算法换性能。
  *
- * 由 watchTreadMap 函数手动 diff 更新（每次滚动最多 1 个 entry 变化）。
- */
-const skeletonPageIdxMap = reactive(new Map<number, number>())
-
-/**
- * 数据层 pageIdx Map：独立于骨架层（互不影响）。
- * 数据层节流（OUT_OF_RANGE 模式下 300ms 一次跟）通过独立的 dataFirstVisiblePageIdx
- * 自然体现，无需耦合骨架层。
+ * 由 updateTreadMap 函数手动 diff 更新（每次滚动最多 1 个 entry 变化）。
+ *
+ * 骨架层不再使用 reactive Map——改用整体平移的 computed 数组（见 skeletonPageIdxs）。
+ * 骨架面板重渲染极廉价（compositor-only transform + text），不需要坦克履带精准响应式。
  */
 const dataPageIdxMap = reactive(new Map<number, number>())
 
@@ -184,6 +192,32 @@ const spacerHeight = computed(() => totalPages.value * pageBlockHeight.value)
 const firstVisiblePageIdx = computed(() => Math.floor(scrollTop.value / pageBlockHeight.value))
 /** 数据层的可见页号：基于节流版 dataScrollTop 派生，跟随 dataScrollTop 的更新节奏 */
 const dataFirstVisiblePageIdx = computed(() => Math.floor(dataScrollTop.value / pageBlockHeight.value))
+
+/**
+ * 骨架层每个面板显示的页号数组：按「整体平移」生成，索引即 panelId。
+ *
+ * 公式：skeletonPageIdxs[panelId] = firstVisiblePageIdx - treadBuffer + panelId
+ * - treadBuffer（视口上方预备页数）让 firstVisiblePageIdx 处于面板数组「中间偏前」
+ * - panelId 升序对应 pageIdx 升序，物理上从上到下排列
+ *
+ * 为什么骨架层用整体平移而非数据层的坦克履带？
+ * - 骨架面板只是「分割条文字 + shimmer 占位行」，重渲染 = compositor-only transform +
+ *   text node 改动，sub-ms 开销；panelCount 个面板同时 ±1 全部重渲染也无感
+ * - 数据层（vxe-grid）重渲染才贵（calcCellHeight reflow 几十毫秒），才需要坦克履带
+ *   用数论取模让每次滚动只 1 个面板的 pageIdx 真变，其余面板完全无感
+ * - 给骨架层也上坦克履带是过度设计——一个 computed 数组够用且代码直观
+ *
+ * treadBuffer/panelCount 是 computed（在下方声明），computed 求值是惰性的，
+ * 此处前向引用在首次 .value 访问时已就绪。
+ */
+const skeletonPageIdxs = computed<number[]>(() => {
+  const fv = firstVisiblePageIdx.value
+  const buf = treadBuffer.value
+  const pc = panelCount.value
+  const arr: number[] = []
+  for (let i = 0; i < pc; i++) arr.push(fv - buf + i)
+  return arr
+})
 const currentVisiblePage = computed(() =>
   totalPages.value === 0 ? 0 : clamp(firstVisiblePageIdx.value + 1, 1, totalPages.value)
 )
@@ -309,27 +343,12 @@ function updateTreadMap(map: Map<number, number>, firstVisible: number, buffer: 
   }
 }
 
-// 骨架层 Map 更新：监听实时 firstVisible + buffer + panelCount
-//
-// flush: 'sync' 是性能正确性关键——onScroll 同步读 scrollMode.value 时，scrollMode 又
-// 依赖 skeletonPageIdxMap.values()。如果用默认 'pre' flush（microtask 延后），scrollTop
-// 变化后 watch 还没回调，onScroll 看到的 skeletonPageIdxMap 是**上一帧**的值，导致
-// scrollMode 误判为 IN_RANGE（旧 pageIdx 已缓存），跳过 OUT_OF_RANGE 节流加载分支，
-// 用户感觉「滚到新页不加载」。
-// 'sync' 让 watch 在 scrollTop.value = ... 这行赋值的**同时**就更新 Map，
-// 后续 onScroll 读 scrollMode 拿到的是当前帧的真实 pageIdxs。
-//
-// immediate=true：onMounted 前就初始化一次，避免子组件首次渲染时 Map 为空
-watch(
-  () => [firstVisiblePageIdx.value, treadBuffer.value, panelCount.value] as const,
-  ([fv, buf, pc]) => updateTreadMap(skeletonPageIdxMap, fv, buf, pc),
-  { immediate: true, deep: false, flush: 'sync' }
-)
-
 // 数据层 Map 更新：监听节流派生的 dataFirstVisiblePageIdx + 同样的 buffer/panelCount
-// 同样用 flush: 'sync'——虽然数据层节流由 dataScrollTop 控制（不在 watch 链上），
-// 但保持两个 watch 行为一致便于排查；且 sync 也避免 microtask 内 dataPageIdxMap
-// 与 skeletonPageIdxMap 短暂不一致导致 getPanelByPageIdx 等查询落空
+// flush: 'sync'：dataScrollTop.value = ... 同步赋值后立即让 dataPageIdxMap 跟上，
+// 行为可预测（未来若在 refreshDataLayer 内同步读 dataPageIdxMap 不必再考虑 flush）。
+//
+// 骨架层不需要 watch——它用 skeletonPageIdxs computed 数组（整体平移），
+// Vue 3 computed 求值是同步懒加载，scrollMode.value 读取时自然拿到当前帧的最新值。
 watch(
   () => [dataFirstVisiblePageIdx.value, treadBuffer.value, panelCount.value] as const,
   ([fv, buf, pc]) => updateTreadMap(dataPageIdxMap, fv, buf, pc),
@@ -393,17 +412,17 @@ function buildPageData(pageIdx: number): MeetHr[] {
  *   能触发重算（cachedPageSet 是非响应式 Set，自身变化 computed 不会知道）
  *
  * 依赖链：
- * - skeletonPageIdxMap.values()（基于实时 scrollTop，onScroll 16ms 节流）→ 反映「用户当前实际位置」
+ * - skeletonPageIdxs（基于实时 scrollTop，onScroll 16ms 节流）→ 反映「用户当前实际位置」
  * - totalPages（基于 total/pageSize）
  * - dataVersion（cachedPageSet 变化的显式触发点）
  *
- * 注意：Map.values() 迭代会触发 ITERATE 操作，整个 Map 任何 set/delete 都触发本 computed 重算。
- * 这是合理的——scrollMode 本来就需要在 Map 任何变化时重新评估，开销很小（≤panelCount 次 Set.has）。
+ * 数组迭代追踪：computed 读 skeletonPageIdxs.value 时 Vue 追踪整个数组（length + 索引），
+ * 数组重新生成（firstVisible ±1）会触发本 computed 重算。开销很小（≤panelCount 次 Set.has）。
  */
 const scrollMode = computed<ScrollMode>(() => {
   void dataVersion.value
   const tp = totalPages.value
-  for (const idx of skeletonPageIdxMap.values()) {
+  for (const idx of skeletonPageIdxs.value) {
     // 只检查 [0, totalPages) 范围内的页（越界页是 EMPTY_ROWS，不影响模式）
     if (idx >= 0 && idx < tp && !cachedPageSet.has(idx)) {
       return ScrollMode.OUT_OF_RANGE
@@ -440,7 +459,7 @@ function scheduleOutOfRangeRefresh(): void {
  */
 function refreshDataLayer(): void {
   dataScrollTop.value = scrollTop.value
-  const idxs = Array.from(skeletonPageIdxMap.values())
+  const idxs = skeletonPageIdxs.value
   void ensurePagesLoaded(idxs)
   preloadAhead(idxs)
 }
@@ -718,7 +737,7 @@ async function onAfterMutation(): Promise<void> {
   dataVersion.value++
 
   // 拉取当前可见范围（成功后内部 bump dataVersion 让数据层显示）
-  await ensurePagesLoaded(Array.from(skeletonPageIdxMap.values()))
+  await ensurePagesLoaded(skeletonPageIdxs.value)
 }
 
 // ESC 键取消编辑：编辑态按 Esc 触发 handleCancel
@@ -830,10 +849,10 @@ onMounted(async () => {
   // 等 ResizeObserver 第一次回调把 clientHeight 设上
   await nextTick()
 
-  // total/clientHeight 变化让 panelCount/treadBuffer 由 computed 自动派生，
-  // 进而触发 watch 把 skeletonPageIdxMap/dataPageIdxMap 填好。
+  // total/clientHeight 变化让 panelCount/treadBuffer/skeletonPageIdxs 由 computed 自动派生，
+  // 进而触发 watch 把 dataPageIdxMap 填好。
   // scrollTop/dataScrollTop 初始都是 0，数据层和骨架层都从第 0 页开始
-  await ensurePagesLoaded(Array.from(skeletonPageIdxMap.values()))
+  await ensurePagesLoaded(skeletonPageIdxs.value)
 })
 
 // ==================== 调试接口（挂 window，方便 DevTools 验证）====================
@@ -914,7 +933,7 @@ if (window !== void 0) {
       return rowCache.size
     },
     get skeletonPanels() {
-      return Array.from(skeletonPageIdxMap.entries()).map(([panelId, pageIdx]) => ({ panelId, pageIdx }))
+      return skeletonPageIdxs.value.map((pageIdx, panelId) => ({ panelId, pageIdx }))
     },
     get dataPanels() {
       return Array.from(dataPageIdxMap.entries()).map(([panelId, pageIdx]) => ({
@@ -1001,6 +1020,10 @@ if (window !== void 0) {
             Go
           </button>
         </label>
+        <label :class="$style.fieldLabel">
+          显示数据层
+          <NSwitch v-model:value="showDataLayer" size="small" :disabled="editingPageIdx !== null" />
+        </label>
       </div>
       <span :class="$style.status">
         共 {{ total }} 条 · 已缓存 {{ cachedPageSet.size }} 页 · 实际DOM表格总数 {{ panelCount }} ·
@@ -1031,14 +1054,15 @@ if (window !== void 0) {
         :class="[$style.scrollShell, editingPageIdx !== null && $style.scrollLocked]"
         @scroll.passive="onScroll"
       >
-        <div :class="$style.spacer" :style="{ height: spacerHeight + 'px' }">
+        <div :class="$style.spacer">
           <!-- 骨架层（z-index 1）：始终即时响应用户滚动，提供「闪电响应」。
-               子组件自己读 reactive Map 的对应 entry，每次滚动只 1 个面板 re-render -->
+               父组件传整体平移的 pageIdx（firstVisible - buffer + panelId），
+               每次滚动所有面板都 ±1 重渲染，但骨架重渲染极廉价（compositor-only transform） -->
           <SkeletonPanel
             v-for="pid in panelIds"
             :key="`s-${pid}`"
             :panel-id="pid"
-            :page-idx-map="skeletonPageIdxMap"
+            :page-idx="skeletonPageIdxs[pid]!"
             :page-block-height="pageBlockHeight"
             :divider-height="DIVIDER_HEIGHT"
             :header-height="HEADER_HEIGHT"
@@ -1049,20 +1073,24 @@ if (window !== void 0) {
                子组件读 reactive Map entry + 自己构造 data，每次滚动只 1 个 DataPanel
                （含 vxe-grid）重渲染，其他 DataPanel 完全无感。
                传 buildPageData + dataVersion 让子组件内部 computed 能响应 rowCache 变化 -->
-          <DataPanel
-            v-for="pid in panelIds"
-            :key="`d-${pid}`"
-            ref="dataPanelRefs"
-            :panel-id="pid"
-            :page-idx-map="dataPageIdxMap"
-            :page-block-height="pageBlockHeight"
-            :divider-height="DIVIDER_HEIGHT"
-            :grid-options="gridOptions"
-            :build-page-data="buildPageData"
-            :data-version="dataVersion"
-            @edit-actived="onEditActived"
-            @edit-closed="onEditClosed"
-          />
+          <!-- Demo 包装层：showDataLayer=false 时 visibility:hidden 隐藏数据层，
+               露出底层骨架层（z-index 1）。保留 DOM 不触发 grid 重挂载，切换瞬时无开销 -->
+          <div :class="[$style.dataLayerWrapper, !showDataLayer && $style.dataLayerHidden]">
+            <DataPanel
+              v-for="pid in panelIds"
+              :key="`d-${pid}`"
+              ref="dataPanelRefs"
+              :panel-id="pid"
+              :page-idx-map="dataPageIdxMap"
+              :page-block-height="pageBlockHeight"
+              :divider-height="DIVIDER_HEIGHT"
+              :grid-options="gridOptions"
+              :build-page-data="buildPageData"
+              :data-version="dataVersion"
+              @edit-actived="onEditActived"
+              @edit-closed="onEditClosed"
+            />
+          </div>
         </div>
       </div>
       <div v-if="editingPageIdx !== null" :class="$style.scrollLockOverlay">
@@ -1260,6 +1288,21 @@ if (window !== void 0) {
 .spacer {
   position: relative;
   width: 100%;
+  height: calc(v-bind(spacerHeight) * 1px);
+}
+
+/* 数据层包装：position:absolute + inset:0 让它精确覆盖 spacer，
+ * 不影响内部 DataPanel 的 absolute 定位（子元素 translateY 仍相对 spacer 原点） */
+.dataLayerWrapper {
+  position: absolute;
+  inset: 0;
+}
+
+/* Demo 隐藏：visibility:hidden 保留 DOM（vxe-grid 实例不卸载），仅视觉隐藏。
+ * 比 display:none 好——display:none 触发 grid 重排，切换时卡顿；
+ * 比 opacity:0 好——opacity:0 仍可交互（pointer-events 默认 auto），用户可能误点 */
+.dataLayerHidden {
+  visibility: hidden;
 }
 
 .scrollLockOverlay {
