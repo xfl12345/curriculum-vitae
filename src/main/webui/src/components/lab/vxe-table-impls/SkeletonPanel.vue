@@ -24,9 +24,7 @@
  * 骨架层就是那个「闪电响应」，数据层是「渐进加载」。
  */
 
-import { computed, type CSSProperties } from 'vue'
-
-import { FIXED_COLUMN_WIDTHS, FLEX_COLUMN_COUNT } from './shared'
+import { computed } from 'vue'
 
 interface Props {
   /** 面板固定 ID（仅用于 v-for key，永不变化） */
@@ -55,45 +53,23 @@ interface Props {
   rowHeight: number
   /** 每页行数 */
   pageSize: number
+  /**
+   * 列宽 class 字符串数组（由父组件 useCssModule() 取出后传入）。
+   *
+   * 每项是一个已 hash 的 CSS class 字符串，模板里 :class="[$style.headerCell, colClass]"
+   * 同时应用骨架 cell 的本组件样式（边框/padding）+ 父组件的列宽样式（width/flex）。
+   *
+   * 为什么从父组件传入而非本组件自定义：
+   * - 列宽是「表格布局策略」，父组件是单一来源，便于和 vxe-grid 数据层列宽同步
+   * - CSS module 的 class 是 hash 后的全局唯一名字，传字符串给子组件用是合法且类型安全的
+   * - 改列宽只改父组件 <style module> 一处，无需同步多个子组件
+   */
+  columnClasses: string[]
 }
 
 const props = defineProps<Props>()
 
-/**
- * 列规格：与 vxe-grid 列定义（buildMeetHrColumns）保持一致。
- * - 固定宽列：checkbox / seq / createTime / lastVisitTime（用 FIXED_COLUMN_WIDTHS 单一来源）
- * - flex 列：5 个文本列用 flex:1 平均分配剩余宽度（与 FLEX_COLUMN_COUNT 一致）
- *
- * 这样骨架列宽与 vxe-grid 实际列宽视觉对齐——用户从骨架过渡到真实数据时，
- * 每列宽度都恰好一致，没有「跳一下」的视觉抖动。
- */
-interface ColumnSpec {
-  /** 固定宽度（px）。与 flex 互斥 */
-  width?: number
-  /** flex 权重（默认 1）。与 width 互斥 */
-  flex?: number
-}
-
-const columnSpecs: ColumnSpec[] = [
-  { width: FIXED_COLUMN_WIDTHS.checkbox },
-  { width: FIXED_COLUMN_WIDTHS.seq },
-  // 5 个文本列：用 spread 等会创建新数组违反编码规范，用 push 循环构造
-  ...Array.from({ length: FLEX_COLUMN_COUNT }, () => ({ flex: 1 })),
-  { width: FIXED_COLUMN_WIDTHS.createTime },
-  { width: FIXED_COLUMN_WIDTHS.lastVisitTime },
-]
 const panelTransform = computed(() => `translateY(${props.pageIdx * props.pageBlockHeight}px)`)
-
-/**
- * 把 ColumnSpec 转成 inline style 对象，让模板里的 v-for 直接绑定。
- * width 优先（固定宽度列），否则按 flex 权重。
- */
-function colStyle(col: ColumnSpec): CSSProperties {
-  if (col.width !== void 0) {
-    return { width: `${col.width}px`, flex: '0 0 auto' }
-  }
-  return { flex: String(col.flex ?? 1) }
-}
 </script>
 
 <template>
@@ -106,22 +82,12 @@ function colStyle(col: ColumnSpec): CSSProperties {
 
     <!-- 表头骨架：高 headerHeight 的浅灰条，内含每列一个略深的灰块模拟表头文字 -->
     <div :class="$style.headerRow">
-      <div
-        v-for="(col, i) in columnSpecs"
-        :key="`h-${i}`"
-        :class="$style.headerCell"
-        :style="colStyle(col)"
-      />
+      <div v-for="(colClass, i) in columnClasses" :key="`h-${i}`" :class="[$style.headerCell, colClass]" />
     </div>
 
-    <!-- 数据行骨架：pageSize 行 × columnSpecs 列 = 浅灰底 + 灰色长条模拟文本 -->
+    <!-- 数据行骨架：pageSize 行 × columnClasses 列 = 浅灰底 + 灰色长条模拟文本 -->
     <div v-for="rowIdx in pageSize" :key="`r-${rowIdx - 1}`" :class="$style.skeletonRow">
-      <div
-        v-for="(col, i) in columnSpecs"
-        :key="`c-${i}`"
-        :class="$style.skeletonCell"
-        :style="colStyle(col)"
-      >
+      <div v-for="(colClass, i) in columnClasses" :key="`c-${i}`" :class="[$style.skeletonCell, colClass]">
         <div :class="$style.skeletonBar" />
       </div>
     </div>
