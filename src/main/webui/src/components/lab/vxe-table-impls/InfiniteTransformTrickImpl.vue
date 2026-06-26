@@ -2,31 +2,34 @@
 /**
  * Transform Trick 架构：transform-trick 无限滚动实现。
  *
- * 核心理念：零 DOM 挂载/卸载，只 transform 平移。
+ * 核心理念：骨架层全量静态渲染，数据层 tank tread 滚动。
  *
- * 两层架构：
- * - 骨架层（SkeletonPanel × panelCount，z-index: 1）：始终即时响应用户滚动，
- *   显示「第 X 页」分割条 + 列形骨架。让 UI 闪电般响应。
- * - 数据层（DataPanel × panelCount，z-index: 2）：vxe-grid 实例固定不变，
- *   按滚动模式策略性更新——IN_RANGE 即时跟踪，OUT_OF_RANGE 冻结 + 300ms 节流刷新。
+ * 两层架构（按渲染策略截然分工）：
+ * - 骨架层（SkeletonPanel × totalPages，z-index: 1）：**全量静态渲染**。
+ *   一次性渲染 totalPages 个面板，每个 pageIdx 永不变化；靠浏览器的
+ *   content-visibility: auto 自动跳过屏幕外面板的 layout/paint。
+ *   滚动时零 JS handler 开销——骨架本来就在那，等数据层追上来。
+ * - 数据层（DataPanel × panelCount，z-index: 2）：**tank tread 滚动**。
+ *   vxe-grid 实例固定不变，按滚动模式策略性更新——IN_RANGE 即时跟踪，
+ *   OUT_OF_RANGE 冻结 + 300ms 节流刷新。骨架便宜可以全量，数据贵只能滚动。
  *
  * 滚动模式判定（用缓存覆盖范围，而非速度）：
  * - IN_RANGE：当前可见的所有页都在 rowCache 内（cachedPageSet 命中），数据层即时跟踪
  * - OUT_OF_RANGE：可见页中有任何一页未缓存，视为超速滚动，数据层冻结等下次刷新
  *
- * 面板计数（动态）：panelCount = ceil(clientHeight / pageBlockHeight) × 3
- * - 可见页数 × 3 倍：1 倍视口 + 上下各 1 倍预备
- * - 让 firstVisiblePageIdx 处于面板数组「中间偏前」位置，下方有更多预备
+ * 数据层面板计数（动态）：panelCount = treadBuffer × 3
+ * - treadBuffer 按视口行数算（ceil(visibleRows / pageSize)），pageSize 小时自动放大
+ * - panelCount = treadBuffer × 3：1 倍视口 + 上下各 1 倍预备
  *
- * LRU 缓存：保留 10 页（MAX_CACHED_PAGES），驱逐距离视口最远的页
+ * LRU 缓存：动态 maxCachedPages = max(panelCount × 2, 10)，驱逐距离视口最远的页
  *
  * CRUD：清缓存 → 强制 OUT_OF_RANGE → 骨架层接管 → 重新拉取 → 数据层刷新
  *
  * 与 InfinitePagesImpl 的本质差异：
  * - 后者：每页一个 grid 实例，跨页时 mount/unmount（vxe-grid 挂载开销 ~秒级）
- * - 本实现：固定 panelCount 个 grid 实例永远活着，只通过 transform 平移 + data 切换
+ * - 本实现：数据层 panelCount 个 grid 实例永远活着，骨架层 totalPages 个静态面板
  *
- * 性能目标：滚动 0 卡顿，DOM 节点数恒定，FPS 稳定 60
+ * 性能目标：滚动 0 卡顿（骨架层零 JS），FPS 稳定 60
  */
 
 import type { VxeGridProps } from 'vxe-table'
@@ -137,15 +140,72 @@ const showDataLayer = ref(true)
 // ==================== 面板数组 ====================
 
 /**
- * 面板 ID 列表：[0, 1, 2, ..., panelCount-1]。
+ * 数据层面板 ID 列表：[0, 1, 2, ..., panelCount-1]。
  *
- * 仅当 panelCount 变化（窗口 resize）时重建——这是合理的开销。
- * 模板 v-for 用这个列表给骨架层/数据层 v-for，传 panelId 给每个面板。
+ * 仅当 panelCount 变化（窗口 resize / pageSize 切换）时重建——这是合理的开销。
+ * 数据层 v-for 用这个列表，传 panelId 给每个 DataPanel（tank tread 索引）。
+ *
+ * 骨架层不再用这个列表——骨架层有自己的 totalPageList（全量渲染 totalPages 个面板）。
  */
 const panelIds = computed<number[]>(() => {
   const pc = panelCount.value
   const arr: number[] = []
   for (let i = 0; i < pc; i++) arr.push(i)
+  return arr
+})
+
+/**
+ * 全部页号列表 [0, 1, ..., totalPages-1]：骨架层 v-for 用。
+ *
+ * 设计缘由（骨架层从「tank tread 滚动」改为「全量静态渲染 + 浏览器 visibility 剔除」）：
+ * - 旧架构：panelCount 个面板按滚动切换 pageIdx（tank tread），骨架层重渲染虽廉价
+ *   但仍是 JS 驱动，快速滚动时仍可能滞后视口前缘
+ * - 新架构：一次性渲染 totalPages 个面板，每个面板 pageIdx 静态不变，靠
+ *   content-visibility: auto + contain-intrinsic-block-size 让浏览器自身跳过
+ *   屏幕外面板的 layout/paint——零 JS 滚动 handler 开销
+ *
+ * 内存与性能：
+ * - DOM 节点数：totalPages × pageSize × columnCount。典型 pageSize=50 × 20 页 × 9 列 = 9000 cell，
+ *   远低于 vxe-grid 数据层单页的开销
+ * - 渲染开销：浏览器对 content-visibility: auto 的 off-screen 子树跳过 layout/paint，
+ *   实测启动 ~5ms（pageSize=50 × 20 页场景）
+ * - 浏览器支持：content-visibility: auto 在 Chrome 85+/Edge 85+/Safari 17.4+/Firefox 125+
+ *
+ * 与数据层的分工差异：
+ * - 骨架便宜：全量静态渲染，浏览器原生 visibility 剔除
+ * - 数据贵（vxe-grid）：仍用 tank tread，固定 panelCount 个 grid 实例永远活着
+ */
+const totalPageList = computed<number[]>(() => {
+  const tp = totalPages.value
+  const arr: number[] = []
+  for (let i = 0; i < tp; i++) arr.push(i)
+  return arr
+})
+
+/**
+ * 视口可见页号范围：[firstVisible, firstVisible + visiblePageCount)。
+ *
+ * 用途：scrollMode 判定 + ensurePagesLoaded 触发——**不再驱动骨架层渲染**。
+ *
+ * 设计缘由：scrollMode 需要知道「当前视口里有哪些页」以判断是否都在缓存内，
+ * ensurePagesLoaded 需要知道「该加载哪些页」。骨架层全量渲染后，
+ * 这两个用途从旧 skeletonPageIdxs 改用本 computed，更精确地反映视口实际范围。
+ *
+ * 与旧 skeletonPageIdxs 的差异：
+ * - 旧值范围 [firstVisible - treadBuffer, firstVisible - treadBuffer + panelCount)：
+ *   覆盖视口上下预备页（panelCount 个面板的 pageIdx 集合）
+ * - 新值范围 [firstVisible, firstVisible + visiblePageCount)：仅视口实际可见的页，
+ *   scrollMode 判定更精确（不会因预备页未缓存就误判 OUT_OF_RANGE），
+ *   ensurePagesLoaded 也更精确（只加载视口真正需要的页）
+ *
+ * +1 兜底：visiblePageCount 多算 1 页，避免跨页时视口底部边界页漏判。
+ */
+const visiblePageRange = computed<number[]>(() => {
+  const start = firstVisiblePageIdx.value
+  const ch = Math.max(clientHeight.value, 1)
+  const visiblePageCount = Math.max(1, Math.ceil(ch / pageBlockHeight.value) + 1)
+  const arr: number[] = []
+  for (let i = 0; i < visiblePageCount; i++) arr.push(start + i)
   return arr
 })
 
@@ -189,8 +249,9 @@ columnClasses.push(cssModule.colLastVisitTime)
  *
  * 由 updateTreadMap 函数手动 diff 更新（每次滚动最多 1 个 entry 变化）。
  *
- * 骨架层不再使用 reactive Map——改用整体平移的 computed 数组（见 skeletonPageIdxs）。
- * 骨架面板重渲染极廉价（compositor-only transform + text），不需要坦克履带精准响应式。
+ * 骨架层不再使用 reactive Map——改用「全量静态渲染」（见 totalPageList）：
+ * totalPages 个 SkeletonPanel 各自固定 pageIdx，浏览器 content-visibility:auto
+ * 剔除屏幕外面板。骨架零 JS 滚动 handler 开销，根本不需要响应式追踪。
  */
 const dataPageIdxMap = reactive(new Map<number, number>())
 
@@ -228,31 +289,6 @@ const firstVisiblePageIdx = computed(() => Math.floor(scrollTop.value / pageBloc
 /** 数据层的可见页号：基于节流版 dataScrollTop 派生，跟随 dataScrollTop 的更新节奏 */
 const dataFirstVisiblePageIdx = computed(() => Math.floor(dataScrollTop.value / pageBlockHeight.value))
 
-/**
- * 骨架层每个面板显示的页号数组：按「整体平移」生成，索引即 panelId。
- *
- * 公式：skeletonPageIdxs[panelId] = firstVisiblePageIdx - treadBuffer + panelId
- * - treadBuffer（视口上方预备页数）让 firstVisiblePageIdx 处于面板数组「中间偏前」
- * - panelId 升序对应 pageIdx 升序，物理上从上到下排列
- *
- * 为什么骨架层用整体平移而非数据层的坦克履带？
- * - 骨架面板只是「分割条文字 + shimmer 占位行」，重渲染 = compositor-only transform +
- *   text node 改动，sub-ms 开销；panelCount 个面板同时 ±1 全部重渲染也无感
- * - 数据层（vxe-grid）重渲染才贵（calcCellHeight reflow 几十毫秒），才需要坦克履带
- *   用数论取模让每次滚动只 1 个面板的 pageIdx 真变，其余面板完全无感
- * - 给骨架层也上坦克履带是过度设计——一个 computed 数组够用且代码直观
- *
- * treadBuffer/panelCount 是 computed（在下方声明），computed 求值是惰性的，
- * 此处前向引用在首次 .value 访问时已就绪。
- */
-const skeletonPageIdxs = computed<number[]>(() => {
-  const fv = firstVisiblePageIdx.value
-  const buf = treadBuffer.value
-  const pc = panelCount.value
-  const arr: number[] = []
-  for (let i = 0; i < pc; i++) arr.push(fv - buf + i)
-  return arr
-})
 const currentVisiblePage = computed(() =>
   totalPages.value === 0 ? 0 : clamp(firstVisiblePageIdx.value + 1, 1, totalPages.value)
 )
@@ -414,8 +450,8 @@ function updateTreadMap(map: Map<number, number>, firstVisible: number, buffer: 
 // flush: 'sync'：dataScrollTop.value = ... 同步赋值后立即让 dataPageIdxMap 跟上，
 // 行为可预测（未来若在 refreshDataLayer 内同步读 dataPageIdxMap 不必再考虑 flush）。
 //
-// 骨架层不需要 watch——它用 skeletonPageIdxs computed 数组（整体平移），
-// Vue 3 computed 求值是同步懒加载，scrollMode.value 读取时自然拿到当前帧的最新值。
+// 骨架层不需要 watch——它全量静态渲染 totalPages 个面板，pageIdx 永不变，
+// 浏览器 content-visibility: auto 自身负责视口附近的 paint 剔除。
 watch(
   () => [dataFirstVisiblePageIdx.value, treadBuffer.value, panelCount.value] as const,
   ([fv, buf, pc]) => updateTreadMap(dataPageIdxMap, fv, buf, pc),
@@ -479,17 +515,17 @@ function buildPageData(pageIdx: number): MeetHr[] {
  *   能触发重算（cachedPageSet 是非响应式 Set，自身变化 computed 不会知道）
  *
  * 依赖链：
- * - skeletonPageIdxs（基于实时 scrollTop，onScroll 16ms 节流）→ 反映「用户当前实际位置」
+ * - visiblePageRange（基于实时 scrollTop）→ 反映「视口当前实际可见的页」
  * - totalPages（基于 total/pageSize）
  * - dataVersion（cachedPageSet 变化的显式触发点）
  *
- * 数组迭代追踪：computed 读 skeletonPageIdxs.value 时 Vue 追踪整个数组（length + 索引），
- * 数组重新生成（firstVisible ±1）会触发本 computed 重算。开销很小（≤panelCount 次 Set.has）。
+ * 数组迭代追踪：computed 读 visiblePageRange.value 时 Vue 追踪整个数组（length + 索引），
+ * 数组重新生成（firstVisible ±1）会触发本 computed 重算。开销很小（≤visiblePageCount 次 Set.has）。
  */
 const scrollMode = computed<ScrollMode>(() => {
   void dataVersion.value
   const tp = totalPages.value
-  for (const idx of skeletonPageIdxs.value) {
+  for (const idx of visiblePageRange.value) {
     // 只检查 [0, totalPages) 范围内的页（越界页是 EMPTY_ROWS，不影响模式）
     if (idx >= 0 && idx < tp && !cachedPageSet.has(idx)) {
       return ScrollMode.OUT_OF_RANGE
@@ -539,7 +575,7 @@ function refreshDataLayer(): void {
   if (scrollMode.value === ScrollMode.IN_RANGE) {
     dataScrollTop.value = scrollTop.value
   }
-  const idxs = skeletonPageIdxs.value
+  const idxs = visiblePageRange.value
   void ensurePagesLoaded(idxs)
   preloadAdjacent(idxs)
 }
@@ -575,32 +611,34 @@ function preloadAdjacent(idxs: readonly number[]): void {
 // ==================== 滚动 handler ====================
 
 /**
- * 滚动事件处理：骨架层零延迟响应 + 数据层按节奏加载。
+ * 滚动事件处理：数据层按节奏加载（骨架层无需 handler，全量静态渲染）。
  *
- * 设计缘由（不用 useThrottleFn 节流，与早期版本的关键差异）：
- * - 早期版本用 useThrottleFn(onScroll, 16) 把整个 handler 节流到 60Hz。
- *   问题是：骨架层追踪（读 DOM scrollTop + 赋 ref）也被一起节流——快速滚动时
- *   骨架 panel 位置滞后视口 1~2 帧，"真空"出现在前缘（panel 还没追到的地方）。
- * - 拆分关注点：骨架层追踪是 sub-ms 操作，不该被节流；数据层昂贵操作本身就有去重守卫。
+ * 骨架层为什么不需要 JS handler（全量静态架构的核心红利）：
+ * - 骨架层是 totalPages 个 SkeletonPanel 静态渲染，每个 pageIdx 永不变
+ * - 浏览器 content-visibility: auto 自身负责「视口附近才 paint」，
+ *   滚动时骨架层自然跟随视口——零 JS 计算、零响应式追踪、零 re-render
+ * - 这就是「全量静态渲染」相对「tank tread 滚动」的根本优势：骨架面板不需要"追"，它本来就在那
+ *
+ * 数据层仍需 handler：vxe-grid 太贵不能全量渲染，必须靠 tank tread + 节流。
+ * - IN_RANGE：立即 refreshDataLayer，dataScrollTop 同 tick 跟上，数据层无缝滚动
+ * - OUT_OF_RANGE：scheduleOutOfRangeRefresh 节流，300ms 后让 dataScrollTop 跟一次
+ *   期间骨架层已自然在新位置显示 shimmer（无需 JS），数据层稳定停在旧位置兜底
+ *
+ * 设计缘由（不用 useThrottleFn 节流）：
+ * - 早期版本用 useThrottleFn(onScroll, 16) 把整个 handler 节流到 60Hz——
+ *   scrollMode 判定 + 数据层节流都被一起节流，快速滚动时数据层永远慢一拍
+ * - 数据层昂贵操作本身就有去重守卫，不需要外层节流：
  *   · ensurePagesLoaded 用 loadingPages Set 去重并发请求
  *   · scheduleOutOfRangeRefresh 用 timer 去重 300ms 节流
  *   · refreshDataLayer 内 dataScrollTop 赋值对相同值是 no-op（Vue ref 不触发响应式）
- * - 现代浏览器 scroll 事件频率 ≤ 显示器刷新率（60~120Hz），onScroll 本身又轻量，
- *   不外层节流也不会过载——骨架层"零延迟"给用户最丝滑的滚动反馈。
- *
- * 验证：关闭"显示数据层"开关后快速滚动，骨架层始终覆盖视口无"真空"。
  */
 function onScroll(e: Event): void {
   // 编辑中锁滚动：editingPageIdx !== null 表示有 grid 在编辑或有未保存变更
   if (editingPageIdx.value !== null) return
 
   scrollTop.value = (e.target as HTMLElement).scrollTop
-  // 骨架层 computed 自动跟踪 scrollTop（闪电响应），无需手动调
 
-  // 数据层根据 mode 决定何时让 dataScrollTop 跟上 scrollTop：
-  // - IN_RANGE：立即 refreshDataLayer，dataScrollTop 同 tick 跟上，数据层无缝滚动
-  // - OUT_OF_RANGE：scheduleOutOfRangeRefresh 节流，300ms 后让 dataScrollTop 跟一次
-  //   期间骨架层已追到新位置显示 shimmer，数据层稳定停在旧位置兜底
+  // 数据层根据 mode 决定何时让 dataScrollTop 跟上 scrollTop
   if (scrollMode.value === ScrollMode.IN_RANGE) {
     refreshDataLayer()
   } else {
@@ -860,7 +898,8 @@ async function onAfterMutation(): Promise<void> {
   await nextTick()
 
   // 清空缓存已让 cachedPageSet 为空 → scrollMode 必为 OUT_OF_RANGE。
-  // 骨架层是 computed，自动跟踪 scrollTop/totalPages 变化无需手动调。
+  // 骨架层全量静态渲染，totalPages/pageBlockHeight 变化时 Vue 自动重建 totalPageList，
+  // 浏览器自身处理可见性剔除，无需任何手动调。
   // 数据层需要：让 dataScrollTop 跟上 scrollTop（数据层也追到当前位置）+
   // bump dataVersion（让 buildPageData 重新读已清空的 rowCache，否则会命中 pageDataMemo
   // 旧 memo 显示陈旧数据）。
@@ -868,7 +907,7 @@ async function onAfterMutation(): Promise<void> {
   dataVersion.value++
 
   // 拉取当前可见范围（成功后内部 bump dataVersion 让数据层显示）
-  await ensurePagesLoaded(skeletonPageIdxs.value)
+  await ensurePagesLoaded(visiblePageRange.value)
 }
 
 // ESC 键取消编辑：编辑态按 Esc 触发 handleCancel
@@ -883,8 +922,8 @@ useEventListener(window, 'keydown', (e: KeyboardEvent) => {
 useResizeObserver(scrollShellEl, (entries) => {
   const rect = entries[0]?.contentRect
   if (rect) {
-    // clientHeight 变化让 panelCount/skeletonPageIdxs/dataPageIdxs 全部 computed 自动重算，
-    // 骨架层/数据层会自动跟到新位置——无需任何手动干预
+    // clientHeight 变化让 panelCount/visiblePageRange/dataPageIdxs 全部 computed 自动重算，
+    // 骨架层全量静态渲染不受影响（content-visibility:auto 视口范围自动适配），无需手动干预
     clientHeight.value = rect.height
   }
 })
@@ -939,9 +978,9 @@ watch(pageSize, (newSize, oldSize) => {
   jumpTarget.value = newPageIdx + 1
   void nextTick(() => {
     if (scrollShellEl.value) scrollShellEl.value.scrollTop = newScrollTop
-    // pageBlockHeight 变化让 skeletonPageIdxs/dataPageIdxs computed 重算新 pageIdxs，
-    // dataPanels/skeletonPanels 自动跟随。rowCache 已被 recomputeCachedPageSet 重扫但
-    // buildPageData 读的是同一 Map，无需 bump dataVersion
+    // pageBlockHeight 变化让 totalPages 重算 → totalPageList 重建骨架层（panelCount 不变但 pageIdx 重新分配），
+    // visiblePageRange/dataPageIdxs computed 自动跟新位置。rowCache 已被 recomputeCachedPageSet
+    // 重扫但 buildPageData 读的是同一 Map，无需 bump dataVersion
   })
 })
 
@@ -980,10 +1019,12 @@ onMounted(async () => {
   // 等 ResizeObserver 第一次回调把 clientHeight 设上
   await nextTick()
 
-  // total/clientHeight 变化让 panelCount/treadBuffer/skeletonPageIdxs 由 computed 自动派生，
-  // 进而触发 watch 把 dataPageIdxMap 填好。
+  // total/clientHeight 变化让 totalPages/totalPageList/visiblePageRange/panelCount 全部 computed 派生：
+  // - totalPageList 让骨架层一次性渲染 totalPages 个静态面板（content-visibility 自动剔除屏幕外的）
+  // - visiblePageRange 让 scrollMode 计算有依赖
+  // - panelCount/treadBuffer 通过 watch 把 dataPageIdxMap 填好（数据层 tank tread）
   // scrollTop/dataScrollTop 初始都是 0，数据层和骨架层都从第 0 页开始
-  await ensurePagesLoaded(skeletonPageIdxs.value)
+  await ensurePagesLoaded(visiblePageRange.value)
 })
 
 // ==================== 调试接口（挂 window，方便 DevTools 验证）====================
@@ -1006,7 +1047,10 @@ interface InfiniteTransformTrickDebug {
   readonly cachedPages: readonly number[]
   readonly loadingPages: readonly number[]
   readonly rowCacheSize: number
-  readonly skeletonPanels: ReadonlyArray<{ panelId: number; pageIdx: number }>
+  /** 骨架层全部渲染的面板数（= totalPages） */
+  readonly skeletonPanelCount: number
+  /** 视口实际可见的页号范围（用于 scrollMode 判定与缓存加载触发） */
+  readonly visiblePageRange: readonly number[]
   readonly dataPanels: ReadonlyArray<{ panelId: number; pageIdx: number; rowCount: number }>
   readonly scrollMode: ScrollMode
   scrollToPage: (pageIdx1Based: number) => void
@@ -1063,8 +1107,11 @@ if (window !== void 0) {
     get rowCacheSize() {
       return rowCache.size
     },
-    get skeletonPanels() {
-      return skeletonPageIdxs.value.map((pageIdx, panelId) => ({ panelId, pageIdx }))
+    get skeletonPanelCount() {
+      return totalPageList.value.length
+    },
+    get visiblePageRange() {
+      return visiblePageRange.value.slice()
     },
     get dataPanels() {
       return Array.from(dataPageIdxMap.entries()).map(([panelId, pageIdx]) => ({
@@ -1155,9 +1202,9 @@ if (window !== void 0) {
         </label>
       </div>
       <span :class="$style.status">
-        共 {{ total }} 条 · 已缓存 {{ cachedPageSet.size }} 页 · 实际DOM表格总数 {{ panelCount }} ·
-        scrollTop {{ Math.round(scrollTop) }}px · dataScrollTop {{ Math.round(dataScrollTop) }}px · 页
-        {{ currentVisiblePage }}/{{ totalPages }}
+        共 {{ total }} 条 · 已缓存 {{ cachedPageSet.size }} 页 · 骨架 {{ totalPages }} 面板 · 数据层
+        {{ panelCount }} grid · scrollTop {{ Math.round(scrollTop) }}px · dataScrollTop
+        {{ Math.round(dataScrollTop) }}px · 页 {{ currentVisiblePage }}/{{ totalPages }}
         <span
           :class="[
             $style.modeTag,
@@ -1184,21 +1231,26 @@ if (window !== void 0) {
         @scroll.passive="onScroll"
       >
         <div :class="$style.spacer">
-          <!-- 骨架层（z-index 1）：始终即时响应用户滚动，提供「闪电响应」。
-               父组件传整体平移的 pageIdx（firstVisible - buffer + panelId），
-               每次滚动所有面板都 ±1 重渲染，但骨架重渲染极廉价（compositor-only transform） -->
-          <SkeletonPanel
-            v-for="pid in panelIds"
-            :key="`s-${pid}`"
-            :panel-id="pid"
-            :page-idx="skeletonPageIdxs[pid]!"
-            :page-block-height="pageBlockHeight"
-            :divider-height="DIVIDER_HEIGHT"
-            :header-height="HEADER_HEIGHT"
-            :row-height="ROW_HEIGHT"
-            :page-size="pageSize"
-            :column-classes="columnClasses"
-          />
+          <!-- 骨架层（z-index 1）：全量静态渲染 totalPages 个面板，零 JS 滚动 handler。
+               每个面板 pageIdx 永不变化（panelId == pageIdx），content-visibility: auto
+               让浏览器自动跳过屏幕外面板的 layout/paint。
+               pageSize/total 变化时 Vue 自动重建列表（key 用 pageIdx 自然稳定）。
+               外层 skeletonLayerWrapper 纯为 DevTools 调试——数千个骨架面板折叠成单一节点，
+               不淹没元素面板；position:absolute+inset:0 不影响内部 SkeletonPanel 的 absolute 定位
+               （子元素 translateY 仍相对 spacer 原点） -->
+          <div :class="$style.skeletonLayerWrapper">
+            <SkeletonPanel
+              v-for="pageIdx in totalPageList"
+              :key="`s-${pageIdx}`"
+              :page-idx="pageIdx"
+              :page-block-height="pageBlockHeight"
+              :divider-height="DIVIDER_HEIGHT"
+              :header-height="HEADER_HEIGHT"
+              :row-height="ROW_HEIGHT"
+              :page-size="pageSize"
+              :column-classes="columnClasses"
+            />
+          </div>
           <!-- 数据层（z-index 2）：vxe-grid 实例固定不变。
                子组件读 reactive Map entry + 自己构造 data，每次滚动只 1 个 DataPanel
                （含 vxe-grid）重渲染，其他 DataPanel 完全无感。
@@ -1222,6 +1274,21 @@ if (window !== void 0) {
             />
           </div>
         </div>
+      </div>
+      <!-- 全局光斑：唯一动画节点（O(1)），transform: translateX 横扫骨架层。
+           双层结构——外层 shimmerOverlay 静态定位 + overflow:hidden 裁剪溢出，
+           内层 shimmerBeam 跑 transform 动画。
+           不能让 shimmerOverlay 自己 transform：translateX(-100%/100%) 会让整个元素
+           跑到 tableContainer 外（左右各溢出一个父宽），tableContainer 没有 overflow:hidden，
+           溢出部分会让浏览器给 html/body 加滚动条。
+           不放进 scrollShell 内：scrollShell 是 scrolling container，absolute 子元素会跟随
+           滚动条移动；放在 tableContainer（非 scrolling）内才能让光斑相对视口固定——
+           用户滚动表格时光斑继续扫动，符合视觉直觉。
+           z-index: 1 = 同 SkeletonPanel 但 DOM 后置 → 在骨架之上；
+           DataPanel z=2 盖住光斑 → IN_RANGE 时光斑被真实数据覆盖（不需要 shimmer 提示），
+           OUT_OF_RANGE 时光斑扫过骨架层（数据层已滚出视口，骨架接管显示） -->
+      <div :class="$style.shimmerOverlay">
+        <div :class="$style.shimmerBeam" />
       </div>
       <div v-if="editingPageIdx !== null" :class="$style.scrollLockOverlay">
         <span>编辑中 · 滚动 / 分页 / 跳页已锁定（保存、删除或按 Esc 解锁）</span>
@@ -1419,22 +1486,24 @@ if (window !== void 0) {
   position: relative;
   width: 100%;
   height: calc(v-bind(spacerHeight) * 1px);
-  /* overflow:hidden 关键：当 last page 时，骨架层与数据层「整体平移」算法会生成
-   * pageIdx ≥ totalPages 的越界面板（例如 totalPages=200，firstVisible=198，panelCount=9，
-   * buffer=3，skeletonPageIdxs 范围会延伸到 195..203）。这些越界面板的 translateY
-   * 会超过 spacerHeight（例：第 204 页 translateY=203×328=66784，超出 65600）。
+  /* overflow:hidden 关键：数据层的 tank tread 算法在末页附近会生成 pageIdx ≥ totalPages
+   * 的越界面板（例如 totalPages=200，firstVisible=198，panelCount=9，buffer=3，
+   * tank tread 范围延伸到 195..203）。这些越界面板的 translateY 会超过 spacerHeight
+   * （例：第 204 页 translateY=203×328=66784，超出 65600）。
+   *
+   * 骨架层全量静态渲染 [0, totalPages) 不会有越界面板，但数据层 tank tread 仍需要这个裁剪。
    *
    * 没有 overflow:hidden 时，position:absolute 子元素的视觉溢出会让外层 scrollShell
-   * 的 scrollHeight 跟着撑大（实测 65600 → 66912，相当于多出 4 页），用户就能继续
-   * 往下滚，看到「第 201 页」「第 202 页」等不存在的分割条——与真实分页总数对不上。
+   * 的 scrollHeight 跟着撑大，用户就能继续往下滚，看到「第 201 页」「第 202 页」等
+   * 不存在的分割条——与真实分页总数对不上。
    *
    * 加上 overflow:hidden 后，越界面板被裁剪到 spacerHeight 范围内，scrollShell 的
    * scrollHeight 严格等于 spacerHeight，maxScrollTop 也被正确钳制为
    * spacerHeight - clientHeight，用户永远滚不到「第 201 页」。
    *
-   * 为什么不在算法层 clamp pageIdx：整体平移算法的精髓就是「panelCount 个面板同时 ±1」，
-   * 越界面板是算法的副作用而不是 bug——它们只是被裁剪不可见。在算法层 clamp 反而
-   * 破坏平移对称性，且需要给两端分别写不对称逻辑。CSS 层一刀切更简洁。 */
+   * 为什么不在算法层 clamp pageIdx：tank tread 算法的精髓是「数论取模代表元」让每次滚动
+   * 最多 1 个面板的 pageIdx 变化，越界面板是算法的副作用而不是 bug——它们只是被裁剪不可见。
+   * 在算法层 clamp 反而破坏取模对称性，且需要给两端分别写不对称逻辑。CSS 层一刀切更简洁。 */
   overflow: hidden;
 }
 
@@ -1466,6 +1535,23 @@ if (window !== void 0) {
   flex: 0 0 auto;
 }
 
+/* 骨架层包装：与 .dataLayerWrapper 严格对称——position:absolute + inset:0
+ * 让 wrapper 精确覆盖 spacer，自身零尺寸效果（不建立新的视觉层）。
+ *
+ * 为什么单独包一层（纯可读性/可调试性，无功能性收益）：
+ * - 全量静态渲染 totalPages 个骨架面板（典型 20~1000 个），DevTools 元素面板里
+ *   数千个 SkeletonPanel 双层 div（positionWrapper + contentWrapper）会"淹没"
+ *   真正的业务结构；包一层后骨架层折叠成单一节点，调试时按需展开
+ * - 与数据层 .dataLayerWrapper 对称呈现，两层架构在 DOM 树上一目了然
+ * - 不影响内部 SkeletonPanel 的 absolute 定位：wrapper 的 inset:0 让其原点
+ *   与 spacer 原点重合，子元素 translateY(pageIdx × pageBlockHeight) 结果不变
+ * - 不引入渲染开销：wrapper 本身不画背景/边框/阴影，不参与 paint，仅作为
+ *   positioning context（position:absolute 触发自身建立 containing block） */
+.skeletonLayerWrapper {
+  position: absolute;
+  inset: 0;
+}
+
 /* 数据层包装：position:absolute + inset:0 让它精确覆盖 spacer，
  * 不影响内部 DataPanel 的 absolute 定位（子元素 translateY 仍相对 spacer 原点） */
 .dataLayerWrapper {
@@ -1478,6 +1564,88 @@ if (window !== void 0) {
  * 比 opacity:0 好——opacity:0 仍可交互（pointer-events 默认 auto），用户可能误点 */
 .dataLayerHidden {
   visibility: hidden;
+}
+
+/* 全局光斑：单一 transform 动画驱动整个骨架层的 shimmer 效果。
+ *
+ * 双层结构（关键 bug 规避）：
+ * - 外层 shimmerOverlay：static 定位 + overflow:hidden，**自身不 transform**
+ * - 内层 shimmerBeam：absolute 充满 overlay，跑 transform: translateX 动画
+ * - 如果让 shimmerOverlay 自己 transform，translateX(-100%/100%) 会让整个元素跑到
+ *   tableContainer 外（左右各溢出 1 个父宽），tableContainer 没有 overflow:hidden，
+ *   溢出部分会让浏览器给 html/body 加滚动条——这是必须双层拆分的根本原因
+ *
+ * 设计缘由（从 per-cell background-position 改为单一 transform）：
+ * - 旧方案：每个 skeletonBar 各自 animation: shimmer，pageSize × 列数 × 可见面板数
+ *   ≈ 数百个动画节点，每帧 CPU 都要处理 paint（background-position 触发 paint 阶段）
+ * - 新方案：唯一一个 beam 跑 transform: translateX，单一合成层 GPU 完成 composite，
+ *   CPU 消耗与骨架规模彻底解耦——表格再大、骨架再多，动画开销恒定
+ *
+ * transform 横扫的实现关键：
+ * - beam width: 100% 充满 overlay，background 是窄光斑（宽 = 一个 flex 列宽）
+ * - background-repeat: no-repeat 让光斑只在 beam 左侧出现一次
+ * - transform: translateX(-100%) → translateX(100%)：相对 beam 自身宽度（== overlay 宽），
+ *   起始 beam 整体在 overlay 左外（被 overflow:hidden 裁剪不可见），
+ *   终止在 overlay 右外（同样裁剪）；过程中 background 跟随 beam 移动，
+ *   视觉上光斑从 overlay 左外扫到右外，覆盖整个表格宽度
+ * - will-change: transform 显式提示浏览器建立合成层，让动画全程在 GPU 跑
+ *
+ * 为什么光斑宽度 = flex 列宽（不严格按每列精确对齐）：
+ * - 列宽混合（fixed 列 50/60/170 px、flex 列平均分剩余空间），单一光斑宽度无法精确匹配每列
+ * - 取 flex 列宽（calc((100% - 450px) / 5)）作为光斑宽度，扫过 flex 列时刚好覆盖，
+ *   扫过 fixed 列时宽度略宽于列但视觉上仍是"光带横扫"，可接受
+ * - 想严格按列对齐可以用 mask-image: linear-gradient(...) 列出每列中心位置（每列 4 个
+ *   stop × 9 列 = 36 个 stop），CSS 变长可读性下降；先做简化版，视觉不足再加 mask
+ *
+ * 为什么放在 scrollShell 外（tableContainer 内）：
+ * - scrollShell 是 scrolling container（overflow:auto），其 absolute 子元素的
+ *   containing block 是 scrollShell 的内容区，会跟随滚动条移动——光斑会被"带走"
+ * - 放在 tableContainer 内（非 scrolling），absolute 相对 tableContainer 定位，
+ *   永远覆盖视口可见区域，滚动时光斑继续扫动
+ *
+ * inset: 1px：跳过 scrollShell 的 border（1px），让光斑精确对齐 scrollShell content area。
+ * 后续如果改 scrollShell 的 border 宽度，需要同步调整这里。
+ */
+.shimmerOverlay {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  bottom: 1px;
+  pointer-events: none;
+  overflow: hidden;
+  /* 同 SkeletonPanel z=1，但 DOM 后置 → 在骨架之上；DataPanel z=2 在光斑之上 */
+  z-index: 1;
+}
+
+.shimmerBeam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  /* 光斑宽度 = flex 列宽。450 = FIXED_COLUMN_WIDTHS 总和（50+60+170+170），
+   * 5 = FLEX_COLUMN_COUNT；改列宽时这两个常量要同步更新 */
+  background-size: calc((100% - 450px) / 5) 100%;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  will-change: transform;
+  animation: shimmerSweep 2.5s ease-in-out infinite;
+}
+
+@keyframes shimmerSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .scrollLockOverlay {

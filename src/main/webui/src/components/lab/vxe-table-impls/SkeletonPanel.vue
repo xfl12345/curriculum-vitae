@@ -1,46 +1,47 @@
 <script setup lang="ts">
 /**
- * 骨架面板（SkeletonPanel）—— transform trick 架构的「即时响应层」。
+ * 骨架面板（SkeletonPanel）—— 全量静态渲染的「即时响应层」。
  *
  * 角色（两层架构中的底层，z-index: 1）：
- * - 始终即时响应用户滚动，onScroll 时立即更新 pageIdx + translateY
- * - 在数据层（DataPanel）之下作为兜底显示，绝不留 UI 空洞
+ * - 父组件一次性渲染 totalPages 个 SkeletonPanel，每个面板对应**固定**页号
+ * - pageIdx 永不变化，transform 是静态的——零 JS 滚动 handler 开销
+ * - content-visibility: auto + contain-intrinsic-block-size 让浏览器自身剔除
+ *   屏幕外面板的 layout/paint，骨架层自然跟随滚动条
  * - 显示「第 X 页」分割条 + 列形骨架（表头 + pageSize 行）
  * - 视觉上强烈反馈「现在滚动到了第几页」，避免数据未加载时的空白感
  *
- * 与数据层（DataPanel）的分工（两层都自带分割条，不依赖透明穿透）：
- * - IN_RANGE：数据层与骨架层 pageIdx 同步重合，数据层（z-index 2，不透明白底）
- *   完全盖住骨架层，用户看到的是数据层的分割条 + 真实数据。
- * - OUT_OF_RANGE：数据层冻结在旧 pageIdx（旧位置通常已滚出视口），骨架层即时
- *   追踪到新 pageIdx（视口内），用户在新位置看到骨架层的分割条 + shimmer 占位。
- * - 两层各自位于自己的 translateY 位置，永不重叠——即使都渲染分割条也不会出现
- *   "双分割条"，因此骨架层不需要透明背景，数据层也不需要透明 hack。
+ * 与数据层（DataPanel）的分工：
+ * - IN_RANGE：数据层（z-index 2，不透明白底）覆盖在骨架层之上，用户看到真实数据
+ * - OUT_OF_RANGE：数据层冻结在旧 pageIdx（旧位置通常已滚出视口），用户在新位置看到
+ *   骨架层的分割条 + shimmer 占位（骨架层因为全量渲染，新位置本来就有面板等着）
+ * - 两层各自位于自己的 translateY 位置，骨架层的全量面板与数据层的 tank tread 面板
+ *   永不重叠（z-index 决定层叠），各自渲染分割条不会出现"双分割条"——骨架层在下方，
+ *   数据层不透明白底完全盖住对应位置的骨架层
  *
- * 与 InfinitePagesImpl 的本质差异：
- * - 后者是「按需挂载 grid」：每页一个 grid 实例，跨页时挂载/卸载（vxe-grid 挂载开销 ~秒级）
- * - 本实现是「零挂载/卸载」：固定 panelCount 个面板永远活着，只是切换显示哪页
+ * 与早期 tank tread 架构的本质差异：
+ * - 旧：panelCount 个面板按滚动切换 pageIdx（tank tread / 整体平移），JS 驱动响应
+ * - 新：totalPages 个面板各自静态渲染（pageIdx 永不变），浏览器原生 visibility 剔除
+ *
+ * 为什么可以全量渲染（早期为什么不敢）：
+ * - 骨架面板是纯 CSS 渲染（divider + 静态灰条），没有 vxe-grid 的 calcCellHeight 等
+ *   reflow 开销；浏览器 layout 单页骨架 sub-ms
+ * - content-visibility: auto 是浏览器原生优化，屏幕外面板完全不进 paint 阶段，
+ *   即使 totalPages=10000 也不会卡（浏览器厂商测试到 100k 元素级别）
+ * - 内存：DOM 节点存在但不渲染，Chrome 内部对 skipped 子树有内存优化
  *
  * 设计缘由：软件心理学——UI 必须以闪电般的速度响应用户输入，渐进式加载可以接受。
- * 骨架层就是那个「闪电响应」，数据层是「渐进加载」。
+ * 骨架层是「闪电响应」（现在更是零延迟——它本来就在那），数据层是「渐进加载」。
  */
 
 import { computed } from 'vue'
 
 interface Props {
-  /** 面板固定 ID（仅用于 v-for key，永不变化） */
-  panelId: number
   /**
-   * 本面板显示的页号（0-based）。
+   * 本面板固定显示的页号（0-based）。
    *
-   * 父组件用一个简单 computed 数组按「整体平移」生成 pageIdxs：
-   *   pageIdxs[panelId] = firstVisible - buffer + panelId
-   * 每次 firstVisible ±1，所有 panelCount 个面板的 pageIdx 都 ±1，全部重渲染。
-   *
-   * 为什么骨架层不用数据层的「坦克履带」精准响应式？
-   * - 骨架面板只是「分割条文字 + shimmer 占位行」，重渲染 = 改一个 div 的 transform + text，
-   *   compositor-only 操作，sub-ms 开销，panelCount 个同时重渲染无感
-   * - 数据层（vxe-grid）重渲染才贵（calcCellHeight 重 reflow 几十毫秒），才需要坦克履带
-   * - 给骨架层也上坦克履带是过度设计
+   * 全量静态渲染：父组件 v-for 渲染 totalPages 个面板，每个面板的 pageIdx
+   * 等于它在 v-for 中的索引，永不变化。translateY 由 pageIdx × pageBlockHeight
+   * 一次计算后固定，pageBlockHeight 仅在 pageSize 变化时改变（低频）。
    */
   pageIdx: number
   /** 单页块高度（含分割条 + 表头 + pageSize 行）。父组件按 pageBlockHeight 计算确定值 */
@@ -95,12 +96,19 @@ const panelTransform = computed(() => `translateY(${props.pageIdx * props.pageBl
 </template>
 
 <style module>
-/* 骨架面板：absolute 定位 + transform 平移
+/* 骨架面板：absolute 定位 + 静态 transform 平移
  * - position: absolute 让面板层叠在 spacer 内
  * - left/right:0 width:100% 占满横向
- * - transform: translateY(...) 性能关键——只触发合成（compositor），
- *   不触发布局（layout）和绘制（paint），是「闪电响应」的根基
- * - will-change: transform 让浏览器把面板提升到独立 layer，进一步优化 */
+ * - transform: translateY(...) **静态**——pageIdx 永不变，transform 永不变，
+ *   不再需要 will-change: transform（早期 tank tread 架构才需要）
+ *
+ * content-visibility: auto + contain-intrinsic-block-size（核心优化）：
+ * - 浏览器自身判断面板是否在视口附近，远离视口时跳过 layout/paint
+ * - contain-intrinsic-block-size 提供面板高度，让浏览器在跳过 layout 时
+ *   仍知道面板尺寸（避免尺寸塌陷影响其他计算）
+ * - 这是「全量静态渲染 + 浏览器原生 visibility 剔除」方案的根基——
+ *   totalPages 个面板 DOM 存在，但只有视口附近的几个真正进入 paint 阶段
+ * - 浏览器支持：Chrome 85+/Edge 85+/Safari 17.4+/Firefox 125+ */
 .panel {
   position: absolute;
   left: 0;
@@ -109,7 +117,8 @@ const panelTransform = computed(() => `translateY(${props.pageIdx * props.pageBl
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  will-change: transform;
+  content-visibility: auto;
+  contain-intrinsic-block-size: calc(v-bind('pageBlockHeight') * 1px);
   /* 骨架层在数据层下方：z-index 1 */
   z-index: 1;
   pointer-events: none;
@@ -179,23 +188,16 @@ const panelTransform = computed(() => `translateY(${props.pageIdx * props.pageBl
   border-right: none;
 }
 
-/* 灰色长条模拟文本：动画 shimmer 让骨架有「正在加载」的动感，
- * 缓和用户等待焦虑（软件心理学） */
+/* 灰色长条模拟文本：静态灰条作为「文本占位」。
+ *
+ * shimmer 动画由父组件 InfiniteTransformTrickImpl.vue 的 .shimmerOverlay 全局提供——
+ * 把 per-cell background-position 动画（O(rows × cols) 节点）改为单一 transform 动画
+ * （O(1) 节点），让骨架层的 CPU 消耗与表格规模彻底解耦。
+ * 详见父组件 .shimmerOverlay 注释。 */
 .skeletonBar {
   width: 70%;
   height: 14px;
   border-radius: 3px;
-  background: linear-gradient(90deg, #e8e8e8 0%, #f5f5f5 50%, #e8e8e8 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+  background: #e8e8e8;
 }
 </style>
