@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { VxeGridInstance, VxeGridProps } from 'vxe-table'
+import type { VxeGridProps } from 'vxe-table'
 
 import { useEventListener, useResizeObserver, useThrottleFn } from '@vueuse/core'
 import { NInputNumber, NSelect } from 'naive-ui'
@@ -15,6 +15,7 @@ import {
   mockGetMeetHrPage,
   mockUpdateMeetHr,
 } from './mock-data'
+import PageBlockPanel from './PageBlockPanel.vue'
 import { buildMeetHrColumns, clamp, createEmptyMeetHr, ROW_HEIGHT } from './shared'
 
 /**
@@ -102,14 +103,36 @@ const loadingPages = ref<Set<number>>(new Set())
 /** 跳页输入框绑定值（1-based） */
 const jumpTarget = ref(1)
 
-// ==================== 多 grid 实例追踪（CRUD 用） ====================
+// ==================== 多面板实例追踪（CRUD 用） ====================
 
 /**
- * 每个渲染页对应的 vxe-grid 实例：pageIdx → VxeGridInstance。
- * 用普通 Map（非 reactive）：function ref 在 v-for 里维护，CRUD 操作时按需读取，
- * 模板不需要响应式依赖它。
+ * PageBlockPanel 实例数组：Vue 3 在 v-for 上用 `:ref="pagePanelRefs"` 自动填充数组，
+ * 数组索引与 renderedPageIndices 的索引对齐——即 pagePanelRefs[i] 对应
+ * renderedPageIndices[i] 这个 pageIdx 的面板。
+ *
+ * 不再持有原始 VxeGridInstance——grid 实例藏在 PageBlockPanel 内部，
+ * 父级只通过子组件 defineExpose 的语义化方法（insert/getPendingChanges/
+ * getSelectedRecords/clearEdit/cancel）操作，避免父级紧耦合 vxe-grid API。
+ *
+ * 为什么不用 function ref + Map<pageIdx, panel>：
+ * - v-for 每次 re-render 都会创建新的闭包函数，Vue 检测到 ref 函数引用变了会先
+ *   用旧函数调 null、再用新函数调 el——Map.set/delete 频繁触发，纯属浪费。
+ * - array ref 是 Vue 3 官方推荐的 v-for ref 模式，零回调开销。
  */
-const pageGridRefs = new Map<number, VxeGridInstance>()
+const pagePanelRefs = ref<InstanceType<typeof PageBlockPanel>[]>([])
+
+/**
+ * 按页号查 PageBlockPanel 实例：先用 indexOf 在 renderedPageIndices 里找位置，
+ * 再取同位置的数组元素。renderedPageIndices 通常只有 1~2 个元素，indexOf O(n) 极快。
+ *
+ * @returns 找不到返回 void 0（编码规范：不以 undefined 作值）
+ */
+function getPanelByPageIdx(pageIdx: number): InstanceType<typeof PageBlockPanel> | void {
+  const idx = renderedPageIndices.value.indexOf(pageIdx)
+  if (idx < 0) return
+  return pagePanelRefs.value[idx] ?? void 0
+}
+
 /**
  * 当前正在编辑/有未保存变更的页号（0-based）。null 表示空闲。
  *
@@ -117,22 +140,13 @@ const pageGridRefs = new Map<number, VxeGridInstance>()
  * - 点新增时设为 firstVisiblePageIdx（用户当前看的页）
  * - 保存/删除/取消完成时清空
  *
- * CRUD 按钮都通过它路由到正确的 grid；scroll/pageSize/jumpToPage 在它非 null 时被锁，
- * 防止 renderedPageIndices 变化导致编辑中的 grid 被卸载、丢失 vxe-grid 内部的
+ * CRUD 按钮都通过它路由到正确的面板；scroll/pageSize/jumpToPage 在它非 null 时被锁，
+ * 防止 renderedPageIndices 变化导致编辑中的面板被卸载、丢失 vxe-grid 内部的
  * insertRecords/updateRecords（vxe-grid 卸载即销毁内部状态）。
  */
 const editingPageIdx = ref<number | null>(null)
 /** 是否处于"单元格编辑中"（edit-actived/closed 之间）。用于更细的 UI 状态显示 */
 const isEditing = ref(false)
-
-/** v-for 里的 function ref：vxe-grid 挂载时入表，卸载时出表 */
-function setPageGridRef(pageIdx: number, el: VxeGridInstance | null) {
-  if (el) {
-    pageGridRefs.set(pageIdx, el)
-  } else {
-    pageGridRefs.delete(pageIdx)
-  }
-}
 
 // ==================== 派生 ====================
 
@@ -358,18 +372,17 @@ function nextPage() {
 // ==================== CRUD（多 grid 版，不能复用 useVxeGridCrud） ====================
 
 /**
- * 多 grid 实例下 CRUD 的核心路由：editingPageIdx 决定操作哪页的 grid。
+ * 多面板下 CRUD 的核心路由：editingPageIdx 决定操作哪页的面板。
  * 空闲时默认首个可见页（用户当前看的页）。
  */
 async function handleInsert() {
   if (total.value === 0) return
   // 已在编辑某页时连续插入到同一页；否则用首个可见页
   const idx = editingPageIdx.value ?? firstVisiblePageIdx.value
-  const grid = pageGridRefs.get(idx)
-  if (!grid) return
+  const panel = getPanelByPageIdx(idx)
+  if (!panel) return
   editingPageIdx.value = idx
-  const { row } = await grid.insert(createEmptyMeetHr())
-  await grid.setEditRow(row)
+  await panel.insert(createEmptyMeetHr())
 }
 
 /** edit-actived 来自具体某页的 grid，通过模板 () => handleEditActived(pageIdx) 闭包传 pageIdx */
@@ -386,20 +399,21 @@ function handleEditClosed() {
 }
 
 async function handleSave() {
-  // 遍历所有渲染中的 grid 收集变更。理论上只有 editingPageIdx 的 grid 有变更，
+  // 遍历所有渲染中的面板收集变更。理论上只有 editingPageIdx 的面板有变更，
   // 但全遍历更保险（防止 edit-closed 触发时机和 insert 时序边界）
   const tasks: Promise<unknown>[] = []
-  for (const grid of pageGridRefs.values()) {
-    const { insertRecords, updateRecords } = grid.getRecordset()
-    for (const record of insertRecords as MeetHr[]) {
+  for (const panel of pagePanelRefs.value) {
+    if (!panel) continue
+    const { insertRecords, updateRecords } = panel.getPendingChanges()
+    for (const record of insertRecords) {
       // 新增记录的 id 是前端临时负数（createEmptyMeetHr 用 -Date.now() - seed），交给后端分配
       record.id = void 0
       tasks.push(mockAddMeetHr(record))
     }
-    for (const record of updateRecords as MeetHr[]) {
+    for (const record of updateRecords) {
       if (record.id) tasks.push(mockUpdateMeetHr(record.id, record))
     }
-    await grid.clearEdit()
+    await panel.clearEdit()
   }
   if (tasks.length > 0) await Promise.all(tasks)
   await onAfterMutation()
@@ -407,9 +421,10 @@ async function handleSave() {
 
 async function handleDelete() {
   const tasks: Promise<unknown>[] = []
-  for (const grid of pageGridRefs.values()) {
-    const selectRecords = grid.getCheckboxRecords()
-    for (const record of selectRecords as MeetHr[]) {
+  for (const panel of pagePanelRefs.value) {
+    if (!panel) continue
+    const selectRecords = panel.getSelectedRecords()
+    for (const record of selectRecords) {
       // 临时负 id（前端未保存的新增行）跳过，没真入库不需要调 deleteFn
       if (record.id && record.id > 0) {
         tasks.push(mockDeleteMeetHr(record.id))
@@ -421,26 +436,17 @@ async function handleDelete() {
 }
 
 /**
- * 取消编辑：先 clearEdit 把 in-flight 的 cell 编辑值 commit 到 updateRecords，
- * 然后才能读到完整的 insertRecords/updateRecords 并撤销。
- *
- * 顺序很关键：若先 getRecordset 再 clearEdit，正在编辑但未 commit 的值会漏掉，
- * clearEdit 反而把它 commit 进 updateRecords，但还原已过了——结果就是值没还原。
+ * 取消编辑：委托给 PageBlockPanel.cancel——子组件内部先 clearEdit 把 in-flight 的
+ * cell 编辑值 commit 到 updateRecords，再 getRecordset 读完整变更并撤销
+ * （顺序很关键：若先 getRecordset 再 clearEdit 会漏掉正在编辑的值）。
  *
  * API：vxe-grid 有 revert 和 revertData 两个方法，但只有 revertData 真正还原 source
  * （revert 在 v4 下未生效，可能是签名变更或被废弃）；remove(insertRecords) 撤销新增行。
  */
 async function handleCancel() {
-  for (const grid of pageGridRefs.values()) {
-    await grid.clearEdit()
-    const { insertRecords, updateRecords } = grid.getRecordset()
-    if (insertRecords.length > 0) {
-      await grid.remove(insertRecords)
-    }
-    if (updateRecords.length > 0) {
-      // revertData 把行还原到 keepSource 的原始数据，需要 gridOptions.keepSource=true
-      await grid.revertData(updateRecords)
-    }
+  for (const panel of pagePanelRefs.value) {
+    if (!panel) continue
+    await panel.cancel()
   }
   editingPageIdx.value = null
   isEditing.value = false
@@ -742,26 +748,18 @@ if (window !== void 0) {
         @scroll.passive="onScroll"
       >
         <div :class="$style.spacer">
-          <div
+          <PageBlockPanel
             v-for="pageIdx in renderedPageIndices"
             :key="pageIdx"
-            :class="$style.pageBlock"
-            :style="{ '--pblock-top': pageIdx * pageBlockHeight + 'px' }"
-          >
-            <div :class="$style.pageDivider">
-              <span :class="$style.pageDividerText">第 {{ pageIdx + 1 }} 页</span>
-            </div>
-            <div :class="$style.gridWrapper">
-              <vxe-grid
-                :ref="(el) => setPageGridRef(pageIdx, el as VxeGridInstance | null)"
-                v-bind="gridOptions"
-                height="100%"
-                :data="renderedPageData.get(pageIdx) ?? EMPTY_ROWS"
-                @edit-actived="() => handleEditActived(pageIdx)"
-                @edit-closed="handleEditClosed"
-              />
-            </div>
-          </div>
+            ref="pagePanelRefs"
+            :page-idx="pageIdx"
+            :page-block-height="pageBlockHeight"
+            :divider-height="DIVIDER_HEIGHT"
+            :grid-options="gridOptions"
+            :data="renderedPageData.get(pageIdx) ?? EMPTY_ROWS"
+            @edit-actived="handleEditActived"
+            @edit-closed="handleEditClosed"
+          />
         </div>
       </div>
       <div v-if="editingPageIdx !== null" :class="$style.scrollLockOverlay">
@@ -930,51 +928,6 @@ if (window !== void 0) {
   position: relative;
   width: 100%;
   height: calc(v-bind(spacerHeight) * 1px);
-}
-
-.pageBlock {
-  position: absolute;
-  left: 0;
-  right: 0;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  /* 性能关键：让浏览器跳过离屏 page-block 的渲染/布局/绘制工作。
-   * 单个 page 内 vxe-grid 的 DOM ~2500 个元素（50 行 × 9 列 × 多层 wrapper），
-   * 4 个同时渲染 = 1 万元素。无 content-visibility 时每次 layout 几乎全节点参与（5665/5967）。
-   * contain-intrinsic-size 给离屏 block 一个占位高度，避免滚动条估算抖动；
-   * height 由 calc(v-bind) 动态计算，top 由每页的 CSS 变量 --pblock-top 驱动（v-for 逐页绑定）。 */
-  content-visibility: auto;
-  contain-intrinsic-size: auto 2488px;
-  top: var(--pblock-top);
-  height: calc(v-bind(pageBlockHeight) * 1px);
-}
-
-/* 分割条：实心蓝底白字，让用户一眼看出"这是第 X 页"。
- * 用渐变让视觉上更突出；letter-spacing 让"第 X 页"显得更正式。 */
-.pageDivider {
-  height: 40px;
-  background: linear-gradient(90deg, #1890ff 0%, #409eff 50%, #1890ff 100%);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(24, 144, 255, 0.3);
-  z-index: 1;
-}
-
-.pageDividerText {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 3px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.gridWrapper {
-  flex: 1;
-  min-height: 0;
-  box-sizing: border-box;
 }
 
 /* 编辑锁屏：半透明黄色蒙层提示用户滚动已被锁，pointer-events:none 不阻挡 grid 编辑 */
