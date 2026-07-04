@@ -58,19 +58,20 @@ export function getClassifiedContentType(response: Response) {
         return ClassifiedContentType.UNKNOWN
       }
 
-      if (/application\/json/i.test(headerContentType)) {
+      const normalizedType = headerContentType.trim().toLowerCase()
+      if (normalizedType.startsWith('application/json')) {
         return ClassifiedContentType.JSON
       }
 
-      if (/text\//i.test(headerContentType)) {
+      if (normalizedType.startsWith('text/')) {
         return ClassifiedContentType.TEXT
       }
 
-      if (/application\/octet-stream/i.test(headerContentType)) {
+      if (normalizedType.startsWith('application/octet-stream')) {
         return ClassifiedContentType.BLOB
       }
 
-      if (/stream/i.test(headerContentType)) {
+      if (normalizedType.includes('stream')) {
         return ClassifiedContentType.STREAM
       }
 
