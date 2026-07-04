@@ -3,7 +3,7 @@ import type { ApiResponse, RespondedHandler } from './types'
 import { alovaHooks, ClassifiedContentType, getClassifiedContentType } from './alova'
 import { RateLimitError } from './types'
 
-export const APP_RESPONSED_HANDLER: RespondedHandler = {
+export const APP_RESPONDED_HANDLER: RespondedHandler = {
   onSuccess: async (response: Response, methodInstance) => {
     if (response.status === 429) {
       const retryAfter = response.headers.get('Retry-After')
@@ -23,9 +23,9 @@ export const APP_RESPONSED_HANDLER: RespondedHandler = {
 }
 
 export function registerAppAlovaHooks() {
-  alovaHooks.responded.add(APP_RESPONSED_HANDLER)
+  alovaHooks.responded.add(APP_RESPONDED_HANDLER)
 }
 
 export function unregisterAppAlovaHooks() {
-  alovaHooks.responded.remove(APP_RESPONSED_HANDLER)
+  alovaHooks.responded.remove(APP_RESPONDED_HANDLER)
 }
