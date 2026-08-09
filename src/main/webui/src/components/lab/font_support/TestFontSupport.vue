@@ -4,9 +4,7 @@ import { onMounted, reactive, ref, watch } from 'vue'
 import { isDifferentArray, renderFontChar } from '@/model/browser/FontDetector'
 import { getBroswerDefaultFirstFontFamilyName } from '@/model/browser/FontUtils'
 
-import type { BenchMarkState } from './types'
-
-import { BenchMarkResult } from './BenchMarkResult'
+import { BenchMarkResult, type BenchMarkResultTypes } from './BenchMarkResult'
 import { FONT_NAMES, type FontNameEntry } from './FontNames'
 
 const canvasSize = ref(600)
@@ -41,7 +39,10 @@ function isDifferentArraySimple(aaList: number[], bbList: number[]): boolean {
   return toString(aaList) !== toString(bbList)
 }
 
-async function benchMark(testFunc: () => boolean, resultOutput: BenchMarkState): Promise<boolean> {
+async function benchMark(
+  testFunc: () => boolean,
+  resultOutput: BenchMarkResultTypes.Props
+): Promise<boolean> {
   resultOutput.pending = true
   resultOutput.isError = false
   const startTime = Date.now()
@@ -65,8 +66,8 @@ const defaultFontCanvasRef = ref<HTMLCanvasElement>()
 const selectedFontCanvasRef = ref<HTMLCanvasElement>()
 const currentDefaultFont = getBroswerDefaultFirstFontFamilyName()
 const benchMarkResult = reactive<{
-  algorithmA: BenchMarkState
-  algorithmB: BenchMarkState
+  algorithmA: BenchMarkResultTypes.Props
+  algorithmB: BenchMarkResultTypes.Props
 }>({
   algorithmA: {
     algorithmName: 'algorithmA',
