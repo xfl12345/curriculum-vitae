@@ -28,7 +28,7 @@
 
 import type { VxeGridInstance, VxeGridProps } from 'vxe-table'
 
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 import type { MeetHr } from '@/model/web/api/meet-hr'
 
@@ -70,6 +70,19 @@ interface Props {
    * 深度 reactive 会带来沉重开销。dataVersion 一个数字的 patch 成本忽略不计。
    */
   dataVersion: number
+  /**
+   * 父组件维护的跨页选中行 id 集合（单一真相的视图）。
+   *
+   * 为什么不能用 vxe-grid 自身的 rowConfig.reserve：
+   * - reserve 是 per-grid 实例的：tank tread 模式下同一 pageIdx 在不同时刻可能由
+   *   不同 panelId 渲染（panelId 0 显示过 pageIdx 0，滚走后回来可能由 panelId 2 渲染），
+   *   panelId 2 的 reserve 不知道 panelId 0 曾选过哪些行 → 跨实例失效
+   * - 父级用 reactive Map<rowId, MeetHr> 作为单一真相，本子组件每次 :data 或
+   *   selectedRowIds 变化时主动调 setCheckboxRow 同步勾选到 vxe-grid 内部
+   *
+   * Set 是父级 computed 每次新建的实例（基于 Map.keys()），引用比较即可识别变化。
+   */
+  selectedRowIds: Set<number>
 }
 
 const props = defineProps<Props>()
@@ -79,6 +92,17 @@ const emit = defineEmits<{
   editActived: [pageIdx: number]
   /** 编辑关闭（cell blur 或外部 clearEdit） */
   editClosed: []
+  /**
+   * 用户在当前 grid 内勾选/取消勾选时触发，把当前页所有已选 records 报告给父级。
+   *
+   * 父级据此更新 selectedRowsById：先按 pageIdx 取该页全部 row 从 Map 移除，
+   * 再把本次 records 全部加进 Map——一次性重置该页选中，避免 checkbox-change
+   * 多次累计的重复与漏判。
+   *
+   * 注意：syncSelection 内的 setCheckboxRow 默认 triggerEvent=false，不会反向
+   * 触发 checkbox-change 事件，不会形成「同步→change→同步」无限循环。
+   */
+  pageSelectionChange: [pageIdx: number, records: MeetHr[]]
 }>()
 
 /**
@@ -122,6 +146,96 @@ function onEditActived() {
 function onEditClosed() {
   emit('editClosed')
 }
+
+/**
+ * vxe-grid 内单行 checkbox 状态变化时触发。
+ *
+ * 直接读 grid.getCheckboxRecords() 拿到当前页所有已选 records（不是 diff），
+ * emit 给父级。父级据此重置该页选中：先删该页所有 row 再加本次 records——
+ * 一次性覆盖比 diff 更稳健，避免 vxe-grid 内部状态与父级真相错位。
+ *
+ * 注意：syncSelection 调 setCheckboxRow 时 triggerEvent=false 不会触发本 handler，
+ * 不会形成无限循环。如果未来改为 triggerEvent=true，需要加 isSyncing flag 防递归。
+ */
+function onCheckboxChange() {
+  const grid = gridRef.value
+  if (!grid) return
+  const records = grid.getCheckboxRecords() as MeetHr[]
+  emit('pageSelectionChange', pageIdx.value, records)
+}
+
+/**
+ * 表头全选 checkbox 变化时触发（与 checkbox-change 是独立事件，vxe-grid 不会
+ * 在表头全选时同步触发 checkbox-change）。
+ *
+ * 早期只绑 checkbox-change 导致表头全选后 badge 仍显示「已选 0 行」——表头视觉上
+ * 进入全选态但父级 selectedRowsById 没动，跨页选中真相与 vxe-grid 内部完全脱节。
+ *
+ * 复用 onCheckboxChange 的逻辑：getCheckboxRecords 在表头全选后返回当前页所有行
+ * （取消全选时返回空数组），onPageSelectionChange 的「重置该页 + 合并」语义对两种
+ * 情况都正确处理。
+ */
+function onCheckboxAll() {
+  const grid = gridRef.value
+  if (!grid) return
+  const records = grid.getCheckboxRecords() as MeetHr[]
+  emit('pageSelectionChange', pageIdx.value, records)
+}
+
+/**
+ * 同步勾选：根据父级 selectedRowIds，把当前 :data 中匹配的行调 setCheckboxRow 设为已选。
+ *
+ * 触发时机（两个 watch 来源）：
+ * - :data 变化（tank tread 切换 pageIdx → buildPageData 返回新数组）：vxe-grid 默认
+ *   会清空内部勾选状态，必须手动恢复跨页选中的行
+ * - selectedRowIds 变化（父级清空/外部修改）：同步反映到 vxe-grid 内部
+ *
+ * 等到 nextTick：:data 变化时 vxe-grid 还没把新数据 commit 到内部，提前调 setCheckboxRow
+ * 会找不到目标行；nextTick 等 vxe-grid 渲染完成后再同步才能匹配。
+ *
+ * 流程：先 clearCheckboxRow 清当前所有勾选 → 再 setCheckboxRow 勾选在 selectedRowIds 里的行。
+ * 清空步骤是必要的：vxe-grid 在 :data 切换时虽然默认清空，但 selectedRowIds 变化时
+ * 旧勾选可能仍存在（用户在另一页取消了某些行）。
+ */
+function syncSelection() {
+  const grid = gridRef.value
+  if (!grid) return
+  // 先清当前所有勾选（用 grid 内部已记录的，不用遍历 data）
+  const currentChecked = grid.getCheckboxRecords() as MeetHr[]
+  if (currentChecked.length > 0) {
+    void grid.setCheckboxRow(currentChecked, false)
+  }
+  // 勾选在 selectedRowIds 里的（按 id 匹配，rowConfig.keyField 已设为 'id'）
+  // MeetHr.id 是可选字段，做 void 0 守卫——无 id 的行（理论上只有前端临时新增）不参与选中
+  const toCheck = data.value.filter((r) => r.id !== void 0 && props.selectedRowIds.has(r.id))
+  if (toCheck.length > 0) {
+    void grid.setCheckboxRow(toCheck, true)
+  }
+}
+
+// watch 多源：data 切换（pageIdx 变 → buildPageData 返回新数组）/ selectedRowIds 变化
+// 都要重新同步。data 是 computed ref，watch data 本体即可（不要写成 props.data，Prop 不存在）
+watch(data, () => {
+  void nextTick(syncSelection)
+})
+watch(
+  () => props.selectedRowIds,
+  () => {
+    void nextTick(syncSelection)
+  }
+)
+// 立即同步一次：gridRef 挂载完成后（onMounted 时机），处理"DataPanel 一挂载就显示
+// 已经在 selectedRowIds 里的页"——例如 selectedRowIds 变化时 watch 已经触发 syncSelection，
+// 但当时如果 gridRef 还没就绪 syncSelection 直接 return，需要在 gridRef 就绪后补一次。
+// 实测 EMPTY_ROWS 越界面板（pageIdx=-1）的 :data 永不变，watch data 不会跑，这里的
+// immediate 同步是兜底——让任何状态下面板的 vxe-grid 内部 checkbox 都跟父级真相一致。
+watch(
+  gridRef,
+  () => {
+    void nextTick(syncSelection)
+  },
+  { immediate: true }
+)
 
 // ==================== 暴露给父级的语义化操作 ====================
 //
@@ -211,6 +325,8 @@ defineExpose({ insert, getPendingChanges, getSelectedRecords, clearEdit, cancel 
         :data="data"
         @edit-actived="onEditActived"
         @edit-closed="onEditClosed"
+        @checkbox-change="onCheckboxChange"
+        @checkbox-all="onCheckboxAll"
       />
     </div>
   </div>

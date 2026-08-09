@@ -124,6 +124,36 @@ const cachedPageSet = new Set<number>()
 const editingPageIdx = ref<number | null>(null)
 const isEditing = ref(false)
 
+/**
+ * 跨页选中行：单一真相，key = rowId，value = 完整 row record。
+ *
+ * 为什么不能用 vxe-grid 自身的 rowConfig.reserve：
+ * - reserve 是 per-grid 实例的，tank tread 模式下同一 pageIdx 在不同时刻可能由
+ *   不同 panelId 渲染（panelId 0 显示过 pageIdx 5，滚走后回来可能由 panelId 2 渲染），
+ *   panelId 2 的 reserve 不知道 panelId 0 曾选过哪些行 → 跨实例失效
+ * - 父级 reactive Map 作为单一真相，DataPanel 每次 :data 或派生 Set 变化时主动同步勾选到 vxe-grid
+ *
+ * 为什么是 reactive Map 而非 ref<Map>：
+ * - reactive Map 的 set/delete 直接触发依赖追踪，computed(selectedRowIdsForChild) 自动重算
+ * - ref<Map> 替换整个 Map 实例才能触发，频繁 new Map 内存开销大且语义笨重
+ *
+ * 存储 record 而非仅 id：handleDelete 直接 map.values() 拿到完整 records 调 mockDeleteMeetHr，
+ * 无需再回查 rowCache。rowCache 在 LRU 驱逐/CRUD 后会清空，selectedRowsById 自洽。
+ *
+ * CRUD 后清空：handleSave/handleDelete/handleCancel 末尾 .clear()，避免选中状态错位。
+ */
+const selectedRowsById = reactive(new Map<number, MeetHr>())
+
+/**
+ * 给 DataPanel 的视图：从 selectedRowsById 派生的 Set<rowId>。
+ *
+ * 每次访问都 new Set：依赖 reactive Map，selectedRowsById.set/delete 触发 computed 重算 →
+ * 新 Set 实例 → DataPanel 端 watch(() => props.selectedRowIds) 看到引用变化 → 触发 syncSelection。
+ *
+ * set/delete 频率不高（用户点 checkbox 才触发），new Set 开销可忽略。
+ */
+const selectedRowIdsForChild = computed(() => new Set(selectedRowsById.keys()))
+
 const jumpTarget = ref(1)
 
 /**
@@ -849,25 +879,65 @@ async function handleSave(): Promise<void> {
   await onAfterMutation()
 }
 
-/** 删除：遍历所有数据面板收集 checkbox 选中的行，调 delete API */
+/**
+ * 删除：基于父级维护的跨页选中（selectedRowsById），一次性收集所有 API 任务。
+ *
+ * 与早期遍历 panel.getSelectedRecords() 的差异：
+ * - 早期：每个 panel 只能拿到自己 grid 内的 checkbox records，跨页选中无法保留
+ * - 现在：selectedRowsById 是跨页单一真相，无论用户在哪几页勾选都能完整收集
+ *
+ * 临时负 id（前端未保存的新增行）跳过：理论上选中状态只来自已加载的真实行（id > 0），
+ * 但保险起见仍做一次守卫，避免极端时序下误调 delete API。
+ */
 async function handleDelete(): Promise<void> {
+  if (selectedRowsById.size === 0) return
   const tasks: Promise<unknown>[] = []
-  for (const panel of dataPanelRefs.value) {
-    if (!panel) continue
-    for (const record of panel.getSelectedRecords()) {
-      // 临时负 id（前端未保存的新增行）跳过
-      if (record.id && record.id > 0) {
-        tasks.push(mockDeleteMeetHr(record.id))
-      }
+  for (const record of selectedRowsById.values()) {
+    if (record.id && record.id > 0) {
+      tasks.push(mockDeleteMeetHr(record.id))
     }
   }
   if (tasks.length > 0) await Promise.all(tasks)
+  clearSelection()
   await onAfterMutation()
 }
 
 /**
+ * 跨页选中变化：某页用户勾选/取消勾选时，DataPanel 上报当前页所有已选 records。
+ *
+ * 重置该页 + 合并策略（而非 diff）：
+ * - 先用 buildPageData(pageIdx) 拿该页所有 row，从 Map 删除该页所有 row
+ * - 再把本次 records 全部加进 Map
+ * - 一次性覆盖避免 checkbox-change 多次累计的重复与漏判
+ *
+ * 为什么不 diff：DataPanel 端 onCheckboxChange 用 grid.getCheckboxRecords() 拿当前页
+ * 所有已选——是快照而非 diff。父级做 diff 需要存"上次该页选了啥"，引入额外状态。
+ * 重置+合并把 page 当作原子单元，简单稳健。
+ *
+ * pageSize 变化时该页 rowId 范围跟着变，但 selectedRowsById 按 rowId 索引——
+ * 重置该页时按新 pageSize 取 row，原本跨页选中的 row 仍保留（不会被误删）。
+ */
+function onPageSelectionChange(pageIdx: number, records: MeetHr[]): void {
+  const pageRows = buildPageData(pageIdx)
+  // 先删该页所有 row（无论是否选过）。MeetHr.id 是可选字段，做 void 0 守卫
+  for (const r of pageRows) {
+    if (r.id !== void 0) selectedRowsById.delete(r.id)
+  }
+  // 再加本次 records
+  for (const r of records) {
+    if (r.id !== void 0) selectedRowsById.set(r.id, r)
+  }
+}
+
+/** 清空所有跨页选中。CRUD/取消后调用，避免选中状态与数据错位 */
+function clearSelection(): void {
+  if (selectedRowsById.size === 0) return
+  selectedRowsById.clear()
+}
+
+/**
  * 取消编辑：每面板自己处理 clearEdit + revert/remove 语义（详见 DataPanel.cancel）。
- * 父级只负责清空 editingPageIdx/isEditing 状态。
+ * 父级清空 editingPageIdx/isEditing + 跨页选中（取消等于放弃所有未提交意图，包括选中）。
  */
 async function handleCancel(): Promise<void> {
   for (const panel of dataPanelRefs.value) {
@@ -876,6 +946,7 @@ async function handleCancel(): Promise<void> {
   }
   editingPageIdx.value = null
   isEditing.value = false
+  clearSelection()
 }
 
 /**
@@ -893,6 +964,8 @@ async function onAfterMutation(): Promise<void> {
   total.value = await mockGetMeetHrCount()
   editingPageIdx.value = null
   isEditing.value = false
+  // CRUD 后数据顺序/内容变化，选中的 rowId 可能已失效（被删除或位置变化），统一清空
+  clearSelection()
 
   // 等 nextTick 让 totalPages / spacerHeight 等派生重算
   await nextTick()
@@ -1200,6 +1273,22 @@ if (window !== void 0) {
           显示数据层
           <NSwitch v-model:value="showDataLayer" size="small" :disabled="editingPageIdx !== null" />
         </label>
+        <!-- 跨页选中状态：单一真相的视觉反馈 + 清空按钮。
+             selectedRowsById.size 反映所有页面已勾选的行数，用户滚到任何页都能看到同一个总数 -->
+        <div :class="$style.selectionGroup">
+          <span :class="$style.selectionBadge" :title="`跨页已选 ${selectedRowsById.size} 行`">
+            已选 {{ selectedRowsById.size }} 行
+          </span>
+          <button
+            type="button"
+            :class="$style.clearSelectionBtn"
+            :disabled="selectedRowsById.size === 0 || editingPageIdx !== null"
+            title="清空所有跨页选中"
+            @click="clearSelection"
+          >
+            清空选中
+          </button>
+        </div>
       </div>
       <span :class="$style.status">
         共 {{ total }} 条 · 已缓存 {{ cachedPageSet.size }} 页 · 骨架 {{ totalPages }} 面板 · 数据层
@@ -1269,8 +1358,10 @@ if (window !== void 0) {
               :grid-options="gridOptions"
               :build-page-data="buildPageData"
               :data-version="dataVersion"
+              :selected-row-ids="selectedRowIdsForChild"
               @edit-actived="onEditActived"
               @edit-closed="onEditClosed"
+              @page-selection-change="onPageSelectionChange"
             />
           </div>
         </div>
@@ -1381,6 +1472,48 @@ if (window !== void 0) {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 1px;
   user-select: none;
+}
+
+/* 跨页选中显示组：badge + 清空按钮，与 pageNav 视觉对称 */
+.selectionGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 已选行数 badge：橙色（区别于蓝色页码 badge），凸显「这是跨页累计」语义 */
+.selectionBadge {
+  padding: 4px 12px;
+  border-radius: 4px;
+  background-color: #f56c6c;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 1px;
+  user-select: none;
+}
+
+/* 清空按钮：中性灰边框，hover 变红提示「这是破坏性操作」。
+ * 用 .selectionGroup .clearSelectionBtn 提高特异性覆盖 CrudToolbar 的 `.toolbar button` */
+.selectionGroup .clearSelectionBtn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid #dcdfe6;
+  background-color: #fff;
+  color: #555;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.selectionGroup .clearSelectionBtn:hover:not(:disabled) {
+  border-color: #f56c6c;
+  color: #f56c6c;
+}
+
+.selectionGroup .clearSelectionBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .pageSizeSelect {
