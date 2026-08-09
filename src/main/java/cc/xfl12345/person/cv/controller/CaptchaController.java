@@ -21,6 +21,7 @@ import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -78,7 +79,7 @@ public class CaptchaController {
 
         final CaptchaActionResult ONLY_CAPTCHA_PASSED_RESULT = CaptchaActionResult.builder().captchaPassed(true).build();
         // 验证码校验成功，检查是否有额外数据需要处理
-        if (imageCaptchaTrack.getData() == null) {
+        if (Objects.isNull(imageCaptchaTrack.getData())) {
             return ApiResponse.<CaptchaActionResult>of(JsonApiResult.SUCCEED)
                     .withPayload(ONLY_CAPTCHA_PASSED_RESULT);
         }
@@ -92,7 +93,7 @@ public class CaptchaController {
                     .withPayload(ONLY_CAPTCHA_PASSED_RESULT);
         }
 
-        if (extraData == null || extraData.operation == null) {
+        if (Objects.isNull(extraData) || Objects.isNull(extraData.operation)) {
             return ApiResponse.<CaptchaActionResult>of(JsonApiResult.SUCCEED)
                     .withPayload(ONLY_CAPTCHA_PASSED_RESULT);
         }

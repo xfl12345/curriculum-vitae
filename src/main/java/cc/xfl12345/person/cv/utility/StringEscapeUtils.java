@@ -5,6 +5,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class StringEscapeUtils {
     public static final HashMap<String, HashMap<Character, byte[]>> byteMapper = new HashMap<>();
     public static final HashMap<String, HashMap<Character, String>> urlEscapeMapper = new HashMap<>();
@@ -36,7 +38,7 @@ public class StringEscapeUtils {
 
     public static String escapeBracketsOnly4URL(String content) {
         HashMap<Character, String> charMapper = urlEscapeMapper.get(StandardCharsets.ISO_8859_1.name());
-        if (charMapper == null || content == null || content.isEmpty()) return content;
+        if (charMapper == null || StringUtils.isEmpty(content)) return content;
         StringBuilder sb = new StringBuilder(content.length() << 1);
         for (int i = 0; i < content.length(); i++) {
             char currChar = content.charAt(i);
@@ -51,7 +53,7 @@ public class StringEscapeUtils {
 
     public static String escapeSql4Like(String sqlDialect, String content) {
         HashMap<Character, String> charMapper = sqlEscape4LikeMapper.get(sqlDialect);
-        if (charMapper == null || content == null || content.isEmpty()) return content;
+        if (charMapper == null || StringUtils.isEmpty(content)) return content;
         StringBuilder sb = new StringBuilder(content.length() << 1);
         for (int i = 0; i < content.length(); i++) {
             char currChar = content.charAt(i);

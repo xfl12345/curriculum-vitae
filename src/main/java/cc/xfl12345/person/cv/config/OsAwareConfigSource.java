@@ -5,6 +5,10 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.quarkus.runtime.annotations.RegisterResources;
 import io.quarkus.runtime.annotations.StaticInitSafe;
 import io.quarkus.vertx.core.runtime.config.VertxConfiguration;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
+import io.vertx.core.impl.transports.EpollTransport;
+import io.vertx.core.impl.transports.JDKTransport;
+import io.vertx.core.impl.transports.KQueueTransport;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import java.nio.file.Files;
@@ -24,16 +28,16 @@ import java.util.Set;
  * 确保配置文件中的显式值可以覆盖此默认值。
  *
  * @see <a href="https://quarkus.io/guides/config-extending-support">Extending Configuration Support</a>
- * {@link io.quarkus.vertx.http.runtime.VertxHttpConfig#domainSocket() quarkus.http.domain-socket}
- * {@link io.quarkus.vertx.http.runtime.VertxHttpConfig#domainSocketEnabled() quarkus.http.domain-socket-enabled}
+ * {@link VertxHttpConfig#domainSocket() quarkus.http.domain-socket}
+ * {@link VertxHttpConfig#domainSocketEnabled() quarkus.http.domain-socket-enabled}
  * {@link VertxConfiguration#preferNativeTransport() quarkus.vertx.prefer-native-transport}
  */
 @RegisterForReflection(targets = {
         // io.netty.channel.epoll.Epoll.class,
         // io.netty.channel.epoll.Native.class,
-        io.vertx.core.impl.transports.EpollTransport.class,
-        io.vertx.core.impl.transports.KQueueTransport.class,
-        io.vertx.core.impl.transports.JDKTransport.class
+        EpollTransport.class,
+        KQueueTransport.class,
+        JDKTransport.class
 })
 @RegisterResources(globs = {"META-INF/services/io.vertx.core.spi.transport.Transport"})
 @StaticInitSafe

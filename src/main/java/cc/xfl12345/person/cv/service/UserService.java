@@ -8,6 +8,8 @@ import jakarta.inject.Inject;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @ApplicationScoped
 public class UserService {
@@ -20,7 +22,7 @@ public class UserService {
             .where(m -> m.hrPhoneNumber().eq(phoneNumber))
             .select(m -> m.FETCHER.id())
             .firstOrNull();
-        return meetHr != null ? meetHr.getId() : null;
+        return Optional.ofNullable(meetHr).map(MeetHr::getId).orElse(null);
     }
 
     public List<MeetHr> getHrInfoByPhoneNumber(String phoneNumber) {
@@ -70,8 +72,8 @@ public class UserService {
         MeetHr meetHr = entityQuery.queryable(MeetHr.class)
             .where(m -> m.hrPhoneNumber().eq(phoneNumber))
             .firstOrNull();
-        if (meetHr != null) {
-            if (meetHr.getFirstVisitTime() == null) {
+        if (Objects.nonNull(meetHr)) {
+            if (Objects.isNull(meetHr.getFirstVisitTime())) {
                 meetHr.setFirstVisitTime(visitTime);
             }
             meetHr.setLastVisitTime(visitTime);
@@ -84,8 +86,8 @@ public class UserService {
         MeetHr meetHr = entityQuery.queryable(MeetHr.class)
             .where(m -> m.id().eq(id))
             .firstOrNull();
-        if (meetHr != null) {
-            if (meetHr.getFirstVisitTime() == null) {
+        if (Objects.nonNull(meetHr)) {
+            if (Objects.isNull(meetHr.getFirstVisitTime())) {
                 meetHr.setFirstVisitTime(visitTime);
             }
             meetHr.setLastVisitTime(visitTime);

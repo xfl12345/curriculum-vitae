@@ -21,6 +21,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
 @ApplicationScoped
@@ -88,7 +89,7 @@ public class LoginController {
 
         // 分支一：当前 token 已登录的情况
         String currentLoginId = (String) StpUtil.getLoginIdByToken(currentToken);
-        if (currentLoginId != null) {
+        if (Objects.nonNull(currentLoginId)) {
             // 已登录管理员，直接返回成功
             if (AppConst.XFL_WEBUI_ADMIN_LOGIN_ID.equals(currentLoginId)) {
                 return ApiResponse.of(JsonApiResult.SUCCEED);
@@ -96,7 +97,7 @@ public class LoginController {
 
             // 已登录 HR 账号，检查请求的账号是否与当前登录账号一致
             MeetHr meetHr = userService.getHrInfoAndUpdateVisitTime(phoneNumber, date);
-            if (meetHr == null) {
+            if (Objects.isNull(meetHr)) {
                 // HR 账号不存在或已失效，强制登出
                 StpUtil.logout();
                 return ApiResponse.of(JsonApiResult.FAILED_FORBIDDEN_ACCOUNT);
@@ -122,7 +123,7 @@ public class LoginController {
         if (phoneNumber.equals(adminPhoneNumber)) {
             // 管理员登录：支持 adminPassword 或短信验证码
             boolean passwordMatch = checkPassword(adminPassword, verificationCode);
-            boolean smsCodeMatch = cachedCode != null && checkPassword(cachedCode, verificationCode);
+            boolean smsCodeMatch = Objects.nonNull(cachedCode) && checkPassword(cachedCode, verificationCode);
 
             if (!passwordMatch && !smsCodeMatch) {
                 return ApiResponse.of(JsonApiResult.FAILED);
@@ -134,13 +135,13 @@ public class LoginController {
                 .withPayload(Map.of(JsonApiConst.LOGIN_TOKEN_FIELD, StpUtil.getTokenValue()));
         } else {
             // HR 登录：只支持短信验证码
-            if (cachedCode == null || !checkPassword(cachedCode, verificationCode)) {
+            if (Objects.isNull(cachedCode) || !checkPassword(cachedCode, verificationCode)) {
                 return ApiResponse.of(JsonApiResult.FAILED);
             }
 
             // 获取 HR 信息并登录
             MeetHr meetHr = userService.getHrInfoAndUpdateVisitTime(phoneNumber, date);
-            if (meetHr == null) {
+            if (Objects.isNull(meetHr)) {
                 return ApiResponse.of(JsonApiResult.FAILED);
             }
 
@@ -172,7 +173,7 @@ public class LoginController {
 
         // 确认是超管，常规判空
         String targetToken = StpUtil.getTokenValueByLoginId(loginId);
-        if (targetToken == null) {
+        if (Objects.isNull(targetToken)) {
             return failedResult;
         }
 
@@ -213,7 +214,7 @@ public class LoginController {
 
         // 第二关：检查当前 token 是否已登录
         String currentLoginId = (String) StpUtil.getLoginIdByToken(currentToken);
-        if (currentLoginId != null) {
+        if (Objects.nonNull(currentLoginId)) {
             // 已登录：检查是否是 SMS WebSocket 服务账号
             if (AppConst.XFL_SMS_WEB_SOCKET_SERVICE_LOGIN_ID.equals(currentLoginId)) {
                 // 就是本服务账号，直接返回成功
@@ -228,7 +229,7 @@ public class LoginController {
 
         // 第三关：检查该服务账号是否已被其他会话登录
         String historyToken = StpUtil.getTokenValueByLoginId(AppConst.XFL_SMS_WEB_SOCKET_SERVICE_LOGIN_ID);
-        if (historyToken != null) {
+        if (Objects.nonNull(historyToken)) {
             // 账号已被其他地方登录
             return ApiResponse.of(JsonApiResult.FAILED_ALREADY_LOGIN_BY_OTHER);
         }

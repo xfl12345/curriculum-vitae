@@ -92,7 +92,7 @@ async function loadPage() {
     console.info(`正在拉取 第${currentPage.value}页 数据，当前 pageSize=[${pageSize}]`)
     const result = await getMeetHrPage(currentPage.value, pageSize)
     // tableData.value.concat()
-    tableData.value = [...tableData.value, ...result.data]
+    tableData.value = tableData.value.concat(result.data)
     total.value = result.total
     currentPage.value++
     hasMore.value = tableData.value.length < total.value
@@ -126,10 +126,14 @@ async function resetAndReload() {
   await loadPage()
 }
 
-// 调试用：暴露到 window
+// 调试用：暴露到 window（开发期临时接口，类型故意放宽）
+interface MeetHrDebug {
+  gridRef: typeof gridRef
+  gridBoxRef: typeof gridBoxRef
+  gridReact: typeof gridReact
+}
 if (window) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(window as Record<string, any>).__meetHrDebug = {
+  ;(window as unknown as { __meetHrDebug: MeetHrDebug }).__meetHrDebug = {
     gridRef,
     gridBoxRef,
     gridReact,
@@ -167,7 +171,7 @@ async function handleSave() {
   if (!gridInstance) return
   const { insertRecords, updateRecords } = gridInstance.getRecordset()
   for (const record of insertRecords as MeetHr[]) {
-    record.id = undefined
+    record.id = void 0
     await addMeetHr(record)
   }
   for (const record of updateRecords as MeetHr[]) {

@@ -8,9 +8,11 @@ import cc.xfl12345.person.cv.pojo.*;
 import cc.xfl12345.person.cv.pojo.database.MeetHr;
 import cc.xfl12345.person.cv.pojo.request.ApiRequestBase;
 import cc.xfl12345.person.cv.pojo.request.payload.PhoneNumberDTO;
+import cc.xfl12345.person.cv.framework.bucket4j.UserIdentityResolver;
 import cc.xfl12345.person.cv.pojo.response.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkiverse.bucket4j.runtime.RateLimitException;
+import io.quarkiverse.bucket4j.runtime.RateLimiterRuntimeConfig;
 import io.quarkus.cache.Cache;
 import io.quarkiverse.bucket4j.runtime.RateLimited;
 import io.quarkus.logging.Log;
@@ -33,12 +35,12 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 短信验证码服务，管理验证码生成、缓存、发送及 WebSocket 会话。
  * <p>
- * 验证码缓存使用 {@link io.quarkus.cache.CaffeineCache}（Quarkus Cache），
+ * 验证码缓存使用 {@link CaffeineCache}（Quarkus Cache），
  * 配置在 {@code quarkus.cache.caffeine."sms-validation-code"}。
  * <p>
- * 限流配置在 {@link io.quarkiverse.bucket4j.runtime.RateLimiterRuntimeConfig#buckets()
+ * 限流配置在 {@link RateLimiterRuntimeConfig#buckets()
  * quarkus.rate-limiter.buckets.sms-validation-code}，
- * 身份解析复用 {@link cc.xfl12345.person.cv.framework.bucket4j.UserIdentityResolver}。
+ * 身份解析复用 {@link UserIdentityResolver}。
  */
 @ApplicationScoped
 @ServerEndpoint("/sms/ws-connect")
@@ -55,7 +57,7 @@ public class SMS {
     int validationCodeLength = 6;
 
     /**
-     * 由 bucket4j AOP 消费，限流超限时抛出 {@link io.quarkiverse.bucket4j.runtime.RateLimitException}。
+     * 由 bucket4j AOP 消费，限流超限时抛出 {@link RateLimitException}。
      */
     @RateLimited(bucket = "sms-validation-code")
     protected void consumeBucket() {
@@ -78,7 +80,7 @@ public class SMS {
 
     public String getValidationCode(String phoneNumber) {
         var future = getSmsValidationCodeCache().getIfPresent(phoneNumber);
-        return future == null ? null : (String) future.join();
+        return Optional.ofNullable(future).map(f -> (String) f.join()).orElse(null);
     }
 
     private void putValidationCode(String phoneNumber, String code) {
@@ -172,7 +174,7 @@ public class SMS {
         ApiResponse<Object> failedResult = ApiResponse.of(JsonApiResult.FAILED_NOT_SUPPORT);
 
         // 第一关：检查请求格式是否正确
-        if (phoneNumberDTO.phoneNumber == null) {
+        if (Objects.isNull(phoneNumberDTO.phoneNumber)) {
             return failedResult.withApiResult(JsonApiResult.FAILED_REQUEST_FORMAT_ERROR);
         }
 
@@ -180,7 +182,7 @@ public class SMS {
 
         // 第二关：检查用户权限（是否为受邀面试官）
         MeetHr meetHr = userService.getHrInfoAndUpdateVisitTime(phoneNumber, ZonedDateTime.now());
-        if (meetHr == null) {
+        if (Objects.isNull(meetHr)) {
             return failedResult.withApiResult(JsonApiResult.FAILED_FORBIDDEN)
                 .withMessage("您好，您的权限不足，可联系站长成为受邀面试官。");
         }
@@ -214,7 +216,7 @@ public class SMS {
 
     public boolean closeSessionByLoginId(String loginId) {
         Session session = webSocketSessionMaps.get(loginId);
-        if (session != null) {
+        if (Objects.nonNull(session)) {
             try {
                 session.close();
             } catch (IOException e) {
@@ -229,17 +231,17 @@ public class SMS {
     public void onOpen(Session session) {
         // TODO 修正参数获取方式
         String token = session.getRequestURI().getQuery();
-        if (token != null && token.startsWith("token=")) {
+        if (Objects.nonNull(token) && token.startsWith("token=")) {
             token = token.substring(6);
         }
         String loginId = (String) StpUtil.getLoginIdByToken(token);
-        if (loginId == null) {
+        if (Objects.isNull(loginId)) {
             try { session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Not authenticated")); } catch (IOException e) { /* ignore */ }
             return;
         }
 
         Session oldSession = webSocketSessionMaps.put(loginId, session);
-        if (oldSession != null) {
+        if (Objects.nonNull(oldSession)) {
             try { oldSession.close(); } catch (Exception e) { /* ignore */ }
         }
         session.getUserProperties().put("loginId", loginId);
@@ -249,7 +251,7 @@ public class SMS {
     @OnClose
     public void onClose(Session session, CloseReason closeReason) {
         String loginId = (String) session.getUserProperties().get("loginId");
-        if (loginId != null) {
+        if (Objects.nonNull(loginId)) {
             webSocketSessionMaps.remove(loginId);
             if (closeReason.getCloseCode() == CloseReason.CloseCodes.NORMAL_CLOSURE
                 || closeReason.getCloseCode() == CloseReason.CloseCodes.GOING_AWAY) {

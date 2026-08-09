@@ -1,14 +1,21 @@
 package cc.xfl12345.person.cv.config;
 
 import cc.xfl12345.person.cv.framework.easyquery.ZonedDateTimeJdbcTypeHandler;
+import cc.xfl12345.person.cv.pojo.database.MeetHr;
+import cc.xfl12345.person.cv.pojo.database.proxy.MeetHrProxy;
 import com.easy.query.api.proxy.client.DefaultEasyEntityQuery;
 import com.easy.query.api.proxy.client.EasyEntityQuery;
+import com.easy.query.core.api.client.DefaultEasyQueryClient;
 import com.easy.query.core.api.client.EasyQueryClient;
 import com.easy.query.core.basic.jdbc.types.JdbcTypeHandlerManager;
+import com.easy.query.core.bootstrapper.EasyQueryBuilderConfiguration;
 import com.easy.query.core.bootstrapper.EasyQueryBootstrapper;
+import com.easy.query.core.common.bean.DefaultFastBean;
 import com.easy.query.core.common.bean.ReflectBean;
+import com.easy.query.core.configuration.EasyQueryOption;
 import com.easy.query.core.configuration.nameconversion.NameConversion;
 import com.easy.query.core.configuration.nameconversion.impl.UnderlinedNameConversion;
+import com.easy.query.core.metadata.EntityMetadata;
 import com.easy.query.core.util.EasyBeanUtil;
 import com.easy.query.sqlite.config.SQLiteDatabaseConfiguration;
 import io.quarkus.runtime.Startup;
@@ -23,19 +30,19 @@ import java.time.ZonedDateTime;
 
 @RegisterForReflection(targets = {
         // EasyQuery core
-        com.easy.query.core.bootstrapper.EasyQueryBootstrapper.class,
-        com.easy.query.core.bootstrapper.EasyQueryBuilderConfiguration.class,
-        com.easy.query.core.configuration.EasyQueryOption.class,
-        com.easy.query.core.configuration.nameconversion.impl.UnderlinedNameConversion.class,
-        com.easy.query.core.common.bean.DefaultFastBean.class,
-        com.easy.query.core.metadata.EntityMetadata.class,
-        com.easy.query.core.api.client.DefaultEasyQueryClient.class,
-        com.easy.query.api.proxy.client.DefaultEasyEntityQuery.class,
-        com.easy.query.sqlite.config.SQLiteDatabaseConfiguration.class,
+        EasyQueryBootstrapper.class,
+        EasyQueryBuilderConfiguration.class,
+        EasyQueryOption.class,
+        UnderlinedNameConversion.class,
+        DefaultFastBean.class,
+        EntityMetadata.class,
+        DefaultEasyQueryClient.class,
+        DefaultEasyEntityQuery.class,
+        SQLiteDatabaseConfiguration.class,
 
         // Project entities
-        cc.xfl12345.person.cv.pojo.database.MeetHr.class,
-        cc.xfl12345.person.cv.pojo.database.proxy.MeetHrProxy.class,
+        MeetHr.class,
+        MeetHrProxy.class,
 })
 @ApplicationScoped
 public class EasyQueryConfig {

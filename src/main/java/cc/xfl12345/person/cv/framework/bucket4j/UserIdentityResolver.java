@@ -1,6 +1,7 @@
 package cc.xfl12345.person.cv.framework.bucket4j;
 
 import cn.dev33.satoken.stp.StpUtil;
+import io.quarkiverse.bucket4j.runtime.RateLimiterRuntimeConfig;
 import io.quarkiverse.bucket4j.runtime.resolver.IdentityResolver;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.ext.web.RoutingContext;
@@ -12,8 +13,8 @@ import jakarta.inject.Inject;
  * <p>
  * 在 {@code application.yml} 的 {@code quarkus.rate-limiter.buckets.<name>.identity-resolver} 中以全限定类名配置。
  *
- * @see io.quarkiverse.bucket4j.runtime.resolver.IdentityResolver
- * @see io.quarkiverse.bucket4j.runtime.RateLimiterRuntimeConfig.Bucket#identityResolver()
+ * @see IdentityResolver
+ * @see RateLimiterRuntimeConfig.Bucket#identityResolver()
  */
 @RequestScoped
 public class UserIdentityResolver implements IdentityResolver {

@@ -96,6 +96,11 @@ async function refreshCaptcha() {
   }
 }
 
+/** 关闭按钮点击：把原生 MouseEvent 透传给父级 */
+function clickCloseButton(event: MouseEvent) {
+  emit('clickCloseButton', event)
+}
+
 function movingSlider(trackRecord: TianaiTrackEvent) {
   const moveX = trackRecord.moveX!
   rotateTransform.value = `rotate(${moveX / (sliderAvailableOffsetX.value / 360)}deg)`
@@ -174,7 +179,7 @@ defineExpose({ reset, refreshCaptcha })
       @move-end="valid"
     />
     <div :class="$style.footer">
-      <CloseIcon :class="$style.footerButton" @click="emit('clickCloseButton', $event)" />
+      <CloseIcon :class="$style.footerButton" @click="clickCloseButton" />
       <RefreshIcon :class="$style.footerButton" @click="refreshCaptcha" />
       <div v-if="showFooterFeedback" :class="$style.resultFeedback">
         {{ resultText }}

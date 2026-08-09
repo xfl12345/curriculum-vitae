@@ -1,6 +1,7 @@
 package cc.xfl12345.person.cv.pojo.response;
 
 import cc.xfl12345.person.cv.appconst.JsonApiResult;
+import org.apache.commons.lang3.StringUtils;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -59,7 +60,7 @@ public class ApiResponse<T> {
     }
 
     public void appendMessage(String msg) {
-        if (getMessage() == null || getMessage().isEmpty()) {
+        if (StringUtils.isEmpty(getMessage())) {
             withMessage(msg);
         } else {
             withMessage(getMessage() + ";" + msg);

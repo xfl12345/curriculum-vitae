@@ -1,7 +1,9 @@
 package cc.xfl12345.person.cv.framework.satoken;
 
 import cn.dev33.satoken.context.model.SaRequest;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpServerRequest;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +37,7 @@ public class VertxSaRequest implements SaRequest {
 
     @Override
     public String getCookieValue(String name) {
-        io.vertx.core.http.Cookie cookie = request.getCookie(name);
+        Cookie cookie = request.getCookie(name);
         return cookie != null ? cookie.getValue() : null;
     }
 
@@ -101,7 +103,7 @@ public class VertxSaRequest implements SaRequest {
     }
 
     private static Map<String, String> parseQuery(String query) {
-        if (query == null || query.isEmpty()) return Map.of();
+        if (StringUtils.isEmpty(query)) return Map.of();
         Map<String, String> map = new LinkedHashMap<>();
         for (String pair : query.split("&")) {
             int eq = pair.indexOf('=');

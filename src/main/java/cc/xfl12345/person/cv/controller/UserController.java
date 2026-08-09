@@ -13,6 +13,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
+import java.util.Objects;
 
 @ApplicationScoped
 @Path(AppConst.API_PATH_PREFIX + "/users")
@@ -24,7 +25,7 @@ public class UserController {
 
     @GET
     public ApiResponse<List<MeetHr>> getUsers(@QueryParam("phoneNumber") String phoneNumber) {
-        if (phoneNumber != null) {
+        if (Objects.nonNull(phoneNumber)) {
             return ApiResponse.<List<MeetHr>>of(JsonApiResult.SUCCEED)
                 .withPayload(userService.getHrInfoByPhoneNumber(phoneNumber));
         }

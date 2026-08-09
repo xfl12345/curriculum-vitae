@@ -3,6 +3,7 @@ package cc.xfl12345.person.cv.config;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import io.quarkus.vertx.http.HttpServerStart;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.ObservesAsync;
 import org.eclipse.microprofile.config.Config;
@@ -24,7 +25,7 @@ import java.util.Set;
  * 通过监听 {@link StartupEvent}（HTTP 服务器已绑定端口、socket 文件已创建），
  * 在启动完成后立即放宽权限。</p>
  *
- * @see io.quarkus.vertx.http.runtime.VertxHttpConfig#domainSocket()
+ * @see VertxHttpConfig#domainSocket()
  */
 @ApplicationScoped
 public class UnixDomainSocketPermissionInitializer {
@@ -32,7 +33,7 @@ public class UnixDomainSocketPermissionInitializer {
     /**
      * UDS 文件路径，默认与 Quarkus {@code VertxHttpConfig.domainSocket()} 一致。
      *
-     * @see io.quarkus.vertx.http.runtime.VertxHttpConfig#domainSocket()
+     * @see VertxHttpConfig#domainSocket()
      */
     String getUdsPath(Config config) {
         Optional<String> optionalUdsPath = config.getOptionalValue("quarkus.http.domain-socket", String.class);

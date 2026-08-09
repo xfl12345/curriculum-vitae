@@ -3,18 +3,33 @@
  * 三个 vxe-table 实现共享的工具栏：「新增 / 删除选中 / 保存」按钮 + 配套样式。
  * 默认插槽放在按钮右侧，给状态行（如「已加载 N 条」）或额外按钮用。按钮样式 + slot 内 button 的统一样式都在这里维护。
  */
-defineEmits<{
+const emit = defineEmits<{
   insert: []
   delete: []
   save: []
 }>()
+
+/** 新增按钮点击 */
+function insert() {
+  emit('insert')
+}
+
+/** 删除选中按钮点击 */
+function deleteRecord() {
+  emit('delete')
+}
+
+/** 保存按钮点击 */
+function save() {
+  emit('save')
+}
 </script>
 
 <template>
   <div :class="$style.toolbar">
-    <button type="button" :class="$style.btnSuccess" @click="$emit('insert')">新增</button>
-    <button type="button" :class="$style.btnDanger" @click="$emit('delete')">删除选中</button>
-    <button type="button" :class="$style.btnPrimary" @click="$emit('save')">保存</button>
+    <button type="button" :class="$style.btnSuccess" @click="insert">新增</button>
+    <button type="button" :class="$style.btnDanger" @click="deleteRecord">删除选中</button>
+    <button type="button" :class="$style.btnPrimary" @click="save">保存</button>
     <!-- 取消按钮：仅编辑态显示。位置插在"保存"和默认 slot 之间，保持"操作按钮"语义聚合 -->
     <slot name="cancel" />
     <slot />
