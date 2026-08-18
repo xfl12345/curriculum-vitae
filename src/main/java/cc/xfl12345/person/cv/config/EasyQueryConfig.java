@@ -187,7 +187,7 @@ import java.time.ZonedDateTime;
         SQLFuncImpl.class,
         UnderlinedNameConversion.class,
         UnSupportSaveEntitySetPrimaryKeyGenerator.class,
-        // ── pgsql 方言（com.easy.query.sqlite.*）──
+        // ── sqlite 方言（com.easy.query.sqlite.*）──
         SQLiteDatabaseConfiguration.class,
         // 自定义 logger class
         EasyQuerySlf4jLog.class,
