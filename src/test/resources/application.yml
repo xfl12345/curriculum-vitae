@@ -1,0 +1,7 @@
+quarkus:
+  http:
+    domain-socket-enabled: false
+    host: localhost
+    test-port: 0
+  vertx:
+    prefer-native-transport: false

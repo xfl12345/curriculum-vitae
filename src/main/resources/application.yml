@@ -45,8 +45,9 @@ quarkus:
         expire-after-write: "${app.sms.xfl12345.expiration-in-minute}M"
 
   native:
-    additional-build-args: >
-      --initialize-at-build-time=com.easy-query
+    additional-build-args:
+      - --initialize-at-build-time=cc.xfl12345.person.cv.config,com.easy-query
+      - -H:DeadlockWatchdogInterval=60 # 等待一小时
 
   scheduler:
     start-mode: forced
